@@ -20,7 +20,8 @@ func createHashes() Hashes {
        false if the hash does not contain field, or key does not exist.
 */
 func (obj *hashes) Exists(key string, field string) bool {
-	return false
+	value := obj.Get(key, field)
+	return value != nil
 }
 
 /*
@@ -31,6 +32,11 @@ func (obj *hashes) Exists(key string, field string) bool {
        hash or key does not exist.
 */
 func (obj *hashes) Get(key string, field string) []byte {
+	ins := obj.GetAll(key)
+	if value, ok := ins[field]; ok {
+		return value
+	}
+
 	return nil
 }
 
@@ -40,11 +46,15 @@ func (obj *hashes) Get(key string, field string) []byte {
    the reply is twice the size of the hash.
 
    Returns:
-        list of fields and their values stored in the hash, or an empty list
+        map of fields and their values stored in the hash, or an empty map
         when key does not exist.
 */
-func (obj *hashes) GetAll(key string) []string {
-	return nil
+func (obj *hashes) GetAll(key string) map[string][]byte {
+	if ins, ok := obj.data[key]; ok {
+		return ins
+	}
+
+	return map[string][]byte{}
 }
 
 /*
@@ -56,11 +66,21 @@ func (obj *hashes) GetAll(key string) []string {
    running MultiGet against a non-existing key will return a list of nil values.
 
    Returns:
-        list of values associated with the given fields, in the same order as
-        they are requested.
+        map of field -> values associated with the given fields
 */
-func (obj *hashes) MultiGet(key string, fields ...string) [][]byte {
-	return nil
+func (obj *hashes) MultiGet(key string, fields ...string) map[string][]byte {
+	out := map[string][]byte{}
+	all := obj.GetAll(key)
+	for _, oneField := range fields {
+		if value, ok := all[oneField]; ok {
+			out[oneField] = value
+			continue
+		}
+
+		out[oneField] = nil
+	}
+
+	return out
 }
 
 /*

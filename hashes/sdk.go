@@ -7,8 +7,8 @@ type Hashes interface {
 
 	// Get:
 	Get(key string, field string) []byte
-	GetAll(key string) []string
-	MultiGet(key string, fields ...string) [][]byte
+	GetAll(key string) map[string][]byte
+	MultiGet(key string, fields ...string) map[string][]byte
 
 	// Set:
 	Set(key string, field string, value []byte) bool
