@@ -1,5 +1,8 @@
 package hashes
 
+// FloatMaxPrecision represents the max precision of float number
+const FloatMaxPrecision = 17
+
 // Hashes represents the hashes keystore
 type Hashes interface {
 	// Exists:
@@ -13,20 +16,20 @@ type Hashes interface {
 	// Set:
 	Set(key string, field string, value []byte) bool
 	SetNX(key string, field string, value []byte) bool
-	MultiSet(key string, keyValues ...map[string][]byte)
+	MultiSet(key string, keyValues map[string][]byte)
 
 	// Increment:
-	IncrBy(key string, field string, increment int64) int64
+	IncrBy(key string, field string, increment int64) (int64, error)
 	IncrByFloat(key string, field string, increment float64) (float64, error)
 
 	// Length:
-	Len(key string) int64
+	Len(key string) int
 	StrLen(key string, field string) int
 
 	// Misc:
 	Del(key string, fields ...string) int
 	Keys(key string) []string
-	Vals(key string) []byte
+	Vals(key string) [][]byte
 }
 
 // SDKFunc represents the hash SDK func

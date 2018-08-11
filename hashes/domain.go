@@ -1,5 +1,11 @@
 package hashes
 
+import (
+	"errors"
+	"fmt"
+	"strconv"
+)
+
 type hashes struct {
 	data map[string]map[string][]byte
 }
@@ -93,7 +99,16 @@ func (obj *hashes) MultiGet(key string, fields ...string) map[string][]byte {
         false if field already exists in the hash and the value was updated.
 */
 func (obj *hashes) Set(key string, field string, value []byte) bool {
-	return false
+	if _, ok := obj.data[key]; !ok {
+		obj.data[key] = map[string][]byte{}
+	}
+
+	obj.data[key][field] = value
+	if _, ok := obj.data[field]; ok {
+		return false
+	}
+
+	return true
 }
 
 /*
@@ -106,7 +121,12 @@ func (obj *hashes) Set(key string, field string, value []byte) bool {
         false if field already exists in the hash and no operation was performed.
 */
 func (obj *hashes) SetNX(key string, field string, value []byte) bool {
-	return false
+	if !obj.Exists(key, field) {
+		return false
+	}
+
+	obj.data[key][field] = value
+	return true
 }
 
 /*
@@ -117,14 +137,21 @@ func (obj *hashes) SetNX(key string, field string, value []byte) bool {
    Returns:
         Nothing
 */
-func (obj *hashes) MultiSet(key string, keyValues ...map[string][]byte) {
-
+func (obj *hashes) MultiSet(key string, fieldValues map[string][]byte) {
+	for field, value := range fieldValues {
+		obj.Set(key, field, value)
+	}
 }
 
 /*
    IncrBy increments the number stored at field in the hash stored at key by
    increment. If key does not exist, a new key holding a hash is created. If
    field does not exist the value is set to 0 before the operation is performed.
+   An error is returned if one of the following conditions occur:
+
+       1. The field contains a value of the wrong type.
+       2. The current field content or the specified increment are not
+          parsable as a double precision floating point number.
 
    Note: since the increment argument is signed, both increment and decrement
    operations can be performed.
@@ -132,8 +159,35 @@ func (obj *hashes) MultiSet(key string, keyValues ...map[string][]byte) {
    Returns:
         the value at field after the increment operation.
 */
-func (obj *hashes) IncrBy(key string, field string, increment int64) int64 {
-	return 0
+func (obj *hashes) IncrBy(key string, field string, increment int64) (int64, error) {
+	if _, ok := obj.data[key]; !ok {
+		obj.data[key] = map[string][]byte{}
+	}
+
+	//if the field is not set, set it at 0:
+	if _, ok := obj.data[key][field]; !ok {
+		dst := []byte("")
+		strconv.AppendInt(dst, 0, 10)
+		obj.data[key][field] = dst
+	}
+
+	//parse the current value:
+	currentValue, currentValueErr := strconv.ParseInt(string(obj.data[key][field]), 10, 64)
+	if currentValueErr != nil {
+		str := fmt.Sprintf("the field (%s) at key (%s) is not an parsable to int64", field, key)
+		return 0, errors.New(str)
+	}
+
+	//increment:
+	newValue := currentValue + increment
+
+	//store:
+	dst := []byte("")
+	strconv.AppendInt(dst, newValue, 10)
+	obj.data[key][field] = dst
+
+	//return:
+	return newValue, nil
 }
 
 /*
@@ -148,11 +202,40 @@ func (obj *hashes) IncrBy(key string, field string, increment int64) int64 {
         2. The current field content or the specified increment are not
            parsable as a double precision floating point number.
 
+   The precision is set at 17.
+
    Returns:
         the value of field after the increment.
 */
 func (obj *hashes) IncrByFloat(key string, field string, increment float64) (float64, error) {
-	return float64(0), nil
+	if _, ok := obj.data[key]; !ok {
+		obj.data[key] = map[string][]byte{}
+	}
+
+	//if the field is not set, set it at 0:
+	if _, ok := obj.data[key][field]; !ok {
+		dst := []byte("")
+		strconv.AppendFloat(dst, float64(0), 'f', FloatMaxPrecision, 64)
+		obj.data[key][field] = dst
+	}
+
+	//parse the current value:
+	currentValue, currentValueErr := strconv.ParseFloat(string(obj.data[key][field]), 64)
+	if currentValueErr != nil {
+		str := fmt.Sprintf("the field (%s) at key (%s) is not parsable to a float64", field, key)
+		return 0, errors.New(str)
+	}
+
+	//increment:
+	newValue := currentValue + increment
+
+	//store:
+	dst := []byte("")
+	strconv.AppendFloat(dst, increment, 'f', FloatMaxPrecision, 64)
+	obj.data[key][field] = dst
+
+	//return:
+	return newValue, nil
 }
 
 /*
@@ -161,8 +244,9 @@ func (obj *hashes) IncrByFloat(key string, field string, increment float64) (flo
    Returns:
         the number of fields in the hash, or 0 when key does not exist.
 */
-func (obj *hashes) Len(key string) int64 {
-	return 0
+func (obj *hashes) Len(key string) int {
+	all := obj.GetAll(key)
+	return len(all)
 }
 
 /*
@@ -174,7 +258,12 @@ func (obj *hashes) Len(key string) int64 {
          field is not present in the hash or key does not exist at all.
 */
 func (obj *hashes) StrLen(key string, field string) int {
-	return 0
+	if !obj.Exists(key, field) {
+		return 0
+	}
+
+	el := obj.Get(key, field)
+	return len(string(el))
 }
 
 /*
@@ -187,7 +276,19 @@ func (obj *hashes) StrLen(key string, field string) int {
          specified but non existing fields.
 */
 func (obj *hashes) Del(key string, fields ...string) int {
-	return 0
+	if _, ok := obj.data[key]; !ok {
+		return 0
+	}
+
+	amount := 0
+	for _, oneField := range fields {
+		if obj.Exists(key, oneField) {
+			delete(obj.data[key], oneField)
+			amount++
+		}
+	}
+
+	return amount
 }
 
 /*
@@ -197,7 +298,16 @@ func (obj *hashes) Del(key string, fields ...string) int {
          the list of fields in the hash, or an empty list when key does not exist.
 */
 func (obj *hashes) Keys(key string) []string {
-	return nil
+	if _, ok := obj.data[key]; ok {
+		return []string{}
+	}
+
+	fields := []string{}
+	for oneField := range obj.data[key] {
+		fields = append(fields, oneField)
+	}
+
+	return fields
 }
 
 /*
@@ -206,6 +316,15 @@ func (obj *hashes) Keys(key string) []string {
    Returns:
          the list of values in the hash, or an empty list when key does not exist.
 */
-func (obj *hashes) Vals(key string) []byte {
-	return nil
+func (obj *hashes) Vals(key string) [][]byte {
+	if _, ok := obj.data[key]; ok {
+		return [][]byte{}
+	}
+
+	values := [][]byte{}
+	for _, oneValue := range obj.data[key] {
+		values = append(values, oneValue)
+	}
+
+	return values
 }
