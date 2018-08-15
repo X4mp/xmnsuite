@@ -3,7 +3,7 @@ package hashes
 // FloatMaxPrecision represents the max precision of float number
 const FloatMaxPrecision = 17
 
-// Hashes represents the hashes keystore
+// Hashes represents the hashes store
 type Hashes interface {
 	// Exists:
 	Exists(key string, field string) bool
