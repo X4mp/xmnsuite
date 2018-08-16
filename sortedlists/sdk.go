@@ -1,5 +1,8 @@
 package sortedlists
 
+// WalkFn represents the func called by walk
+type WalkFn func(index int, score int, value []byte) (interface{}, error)
+
 // ValueScore represents a value with a score
 type ValueScore struct {
 	Value []byte
@@ -20,4 +23,5 @@ type SortedLists interface {
 	PushX(key string, values ...*ValueScore) int
 	Pop(key string) []byte
 	Trim(key string, start int, stop int) error
+	Walk(key string, fn WalkFn) []interface{}
 }
