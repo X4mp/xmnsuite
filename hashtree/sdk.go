@@ -18,16 +18,25 @@ type CreateHashTreeParams struct {
 
 // SDKFunc represents the public func of the hashtree
 var SDKFunc = struct {
-	CreateHashTree        func(params CreateHashTreeParams) (HashTree, error)
+	CreateHashTree        func(params CreateHashTreeParams) HashTree
 	CreateJSONCompact     func(compact Compact) *JSONCompact
 	CreateCompactFromJSON func(jsCompact *JSONCompact) (Compact, error)
 }{
-	CreateHashTree: func(params CreateHashTreeParams) (HashTree, error) {
+	CreateHashTree: func(params CreateHashTreeParams) HashTree {
 		if params.Blocks == nil {
-			return nil, errBlockIsMandatory
+			panic(errBlockIsMandatory)
 		}
 
-		return createHashTreeFromBlocks(params.Blocks)
+		if len(params.Blocks) <= 0 {
+			panic(errBlockIsMandatory)
+		}
+
+		out, outErr := createHashTreeFromBlocks(params.Blocks)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
 	},
 	CreateJSONCompact:     createJSONCompact,
 	CreateCompactFromJSON: createCompactFromJSON,

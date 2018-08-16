@@ -13,8 +13,18 @@ type Objects interface {
 	Head() hashtree.HashTree
 	HashTree(key string) hashtree.HashTree
 	HashTrees(keys ...string) []hashtree.HashTree
-	Exists(key string) bool
-	Retrieve(objs ...ObjInKey) int
-	Save(objs ...ObjInKey) int
+	Len() int
+	Exists(key ...string) int
+	Retrieve(objs ...*ObjInKey) int
+	Save(objs ...*ObjInKey) int
 	Delete(key ...string) int
+}
+
+// SDKFunc represents the objects SDK func
+var SDKFunc = struct {
+	Create func() Objects
+}{
+	Create: func() Objects {
+		return createObjects()
+	},
 }

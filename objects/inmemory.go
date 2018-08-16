@@ -1,7 +1,10 @@
 package objects
 
 import (
-	"encoding/json"
+	"errors"
+	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/XMNBlockchain/datamint/hashtree"
 )
@@ -16,20 +19,17 @@ type storedInstance struct {
 }
 
 func createStoredInstance(obj interface{}) *storedInstance {
-	js, jsErr := json.Marshal(obj)
+	js, jsErr := cdc.MarshalJSON(obj)
 	if jsErr != nil {
-		panic(jsErr)
+		str := fmt.Sprintf("the object cannot be stored because it cannot be converted to JSON: %s", jsErr.Error())
+		panic(errors.New(str))
 	}
 
-	ht, htErr := hashtree.SDKFunc.CreateHashTree(hashtree.CreateHashTreeParams{
+	ht := hashtree.SDKFunc.CreateHashTree(hashtree.CreateHashTreeParams{
 		Blocks: [][]byte{
 			js,
 		},
 	})
-
-	if htErr != nil {
-		panic(htErr)
-	}
 
 	out := storedInstance{
 		HT:  ht,
@@ -46,6 +46,22 @@ func createStoredInstance(obj interface{}) *storedInstance {
 type concreteObjects struct {
 	head hashtree.HashTree
 	data map[string]*storedInstance
+}
+
+func createObjects() Objects {
+
+	ht := hashtree.SDKFunc.CreateHashTree(hashtree.CreateHashTreeParams{
+		Blocks: [][]byte{
+			[]byte(strconv.Itoa(int(time.Now().UTC().UnixNano()))),
+		},
+	})
+
+	out := concreteObjects{
+		head: ht,
+		data: map[string]*storedInstance{},
+	}
+
+	return &out
 }
 
 // Head returns the hash head
@@ -72,6 +88,11 @@ func (app *concreteObjects) HashTrees(keys ...string) []hashtree.HashTree {
 	return out
 }
 
+// Len returns the amount of objects stored
+func (app *concreteObjects) Len() int {
+	return len(app.data)
+}
+
 // Exists returns the amount of keys passed to Exists that exists
 func (app *concreteObjects) Exists(key ...string) int {
 	cpt := 0
@@ -84,11 +105,11 @@ func (app *concreteObjects) Exists(key ...string) int {
 }
 
 // Retrieve populates the Obj pointers in the passed ObjInKey instances.  Returns the amount of instances retrieved
-func (app *concreteObjects) Retrieve(objs ...ObjInKey) int {
+func (app *concreteObjects) Retrieve(objs ...*ObjInKey) int {
 	cpt := 0
-	for _, oneObj := range objs {
+	for index, oneObj := range objs {
 		if app.Exists(oneObj.Key) == 1 {
-			oneObj.Obj = app.data[oneObj.Key].Obj
+			objs[index].Obj = app.data[oneObj.Key].Obj
 			cpt++
 		}
 	}
@@ -97,7 +118,7 @@ func (app *concreteObjects) Retrieve(objs ...ObjInKey) int {
 }
 
 // Save saves the Obj at key as explained in the passed ObjInKey instances
-func (app *concreteObjects) Save(objs ...ObjInKey) int {
+func (app *concreteObjects) Save(objs ...*ObjInKey) int {
 	cpt := 0
 	for _, oneObj := range objs {
 		app.data[oneObj.Key] = createStoredInstance(oneObj.Obj)
@@ -129,19 +150,18 @@ func (app *concreteObjects) Delete(key ...string) int {
 }
 
 func (app *concreteObjects) rebuildHead() {
-	blocks := [][]byte{}
+	blocks := [][]byte{
+		[]byte(strconv.Itoa(int(time.Now().UTC().UnixNano()))),
+	}
+
 	for keyname, oneStoredIns := range app.data {
 		blocks = append(blocks, []byte(keyname))
 		blocks = append(blocks, oneStoredIns.HT.Head().Get())
 	}
 
-	ht, htErr := hashtree.SDKFunc.CreateHashTree(hashtree.CreateHashTreeParams{
+	ht := hashtree.SDKFunc.CreateHashTree(hashtree.CreateHashTreeParams{
 		Blocks: blocks,
 	})
-
-	if htErr != nil {
-		panic(htErr)
-	}
 
 	app.head = ht
 }
