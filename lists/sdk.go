@@ -6,6 +6,7 @@ type WalkFn func(index int, value []byte) (interface{}, error)
 // Lists represents the lists data store
 type Lists interface {
 	Retrieve(key string, index int, amount int) []byte
+	Len(key string) int
 	Union(key ...string) []byte
 	UnionStore(destination string, key ...string) int
 	Inter(key ...string) []byte
