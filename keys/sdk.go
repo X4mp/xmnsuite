@@ -9,9 +9,9 @@ type Keys interface {
 	HashTrees(keys ...string) []hashtree.HashTree
 	Len() int
 	Exists(key ...string) int
-	Retrieve(key string) []byte
+	Retrieve(key string) interface{}
 	Search(pattern string) []string
-	Save(key string, data []byte) bool
+	Save(key string, data interface{}) bool
 	Delete(key ...string) int
 }
 

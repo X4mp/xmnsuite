@@ -1,15 +1,13 @@
 package lists
 
-import "github.com/XMNBlockchain/datamint/hashtree"
+import "github.com/XMNBlockchain/datamint/keys"
 
 // WalkFn represents the func called by walk
 type WalkFn func(index int, value []byte) (interface{}, error)
 
 // Lists represents the lists data store
 type Lists interface {
-	Head() hashtree.Hash
-	HashTree(keys string) hashtree.HashTree
-	HashTrees(keys ...string) []hashtree.HashTree
+	Keys() keys.Keys
 	Add(key string, values ...[]byte) int
 	Retrieve(key string, index int, amount int) [][]byte
 	Len(key string) int
@@ -17,7 +15,6 @@ type Lists interface {
 	UnionStore(destination string, key ...string) int
 	Inter(key ...string) [][]byte
 	InterStore(destination string, key ...string) int
-	Delete(key ...string) int
 	Push(key string, values ...[]byte) int
 	PushX(key string, values ...[]byte) int
 	Pop(key string) []byte

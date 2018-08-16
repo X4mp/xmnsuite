@@ -1,6 +1,8 @@
 package keys
 
 import (
+	"bytes"
+	"encoding/gob"
 	"errors"
 	"fmt"
 	"regexp"
@@ -12,18 +14,38 @@ import (
 )
 
 /*
+ * Helper func
+ */
+
+func getBytes(key interface{}) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	err := enc.Encode(key)
+	if err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+/*
  * Stored Instance
  */
 
 type storedInstance struct {
 	HT   hashtree.HashTree
-	Data []byte
+	Data interface{}
 }
 
-func createStoredInstance(data []byte) *storedInstance {
+func createStoredInstance(data interface{}) *storedInstance {
+	blocks, blocksErr := getBytes(data)
+	if blocksErr != nil {
+		str := fmt.Sprintf("the data could not be converted to []byte: %s", blocksErr.Error())
+		panic(errors.New(str))
+	}
+
 	ht := hashtree.SDKFunc.CreateHashTree(hashtree.CreateHashTreeParams{
 		Blocks: [][]byte{
-			data,
+			blocks,
 		},
 	})
 
@@ -95,7 +117,7 @@ func (app *concreteKeys) Exists(key ...string) int {
 }
 
 // Retrieve retrieves data at key
-func (app *concreteKeys) Retrieve(key string) []byte {
+func (app *concreteKeys) Retrieve(key string) interface{} {
 	if app.Exists(key) == 1 {
 		return app.data[key].Data
 	}
@@ -126,7 +148,7 @@ func (app *concreteKeys) Search(pattern string) []string {
 }
 
 // Save saves data at key
-func (app *concreteKeys) Save(key string, data []byte) bool {
+func (app *concreteKeys) Save(key string, data interface{}) bool {
 	//add the data:
 	app.data[key] = createStoredInstance(data)
 
@@ -160,8 +182,14 @@ func (app *concreteKeys) rebuildHead() {
 	}
 
 	for keyname, ins := range app.data {
+		blks, blksErr := getBytes(ins.Data)
+		if blksErr != nil {
+			str := fmt.Sprintf("the data could not be converted to []byte: %s", blksErr.Error())
+			panic(errors.New(str))
+		}
+
 		blocks = append(blocks, []byte(keyname))
-		blocks = append(blocks, ins.Data)
+		blocks = append(blocks, blks)
 	}
 
 	ht := hashtree.SDKFunc.CreateHashTree(hashtree.CreateHashTreeParams{

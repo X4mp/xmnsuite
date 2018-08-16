@@ -33,7 +33,7 @@ func (app *concreteObjects) Retrieve(objs ...*ObjInKey) int {
 	cpt := 0
 	for index, oneObj := range objs {
 		if app.keys.Exists(oneObj.Key) == 1 {
-			js := app.keys.Retrieve(oneObj.Key)
+			js := app.keys.Retrieve(oneObj.Key).([]byte)
 			jsErr := cdc.UnmarshalJSON(js, objs[index].Obj)
 			if jsErr != nil {
 				str := fmt.Sprintf("there was an error while unmarshalling json data to the given pointer (index: %d): %s", index, jsErr.Error())
