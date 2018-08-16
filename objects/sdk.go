@@ -1,6 +1,6 @@
 package objects
 
-import "github.com/XMNBlockchain/redismint/hashtree"
+import "github.com/XMNBlockchain/datamint/hashtree"
 
 // ObjInKey represents an object in key
 type ObjInKey struct {
@@ -10,9 +10,10 @@ type ObjInKey struct {
 
 // Objects represents the object data store
 type Objects interface {
-	Head() hashtree.Hash
-	HashTree(keys string) hashtree.HashTree
+	Head() hashtree.HashTree
+	HashTree(key string) hashtree.HashTree
 	HashTrees(keys ...string) []hashtree.HashTree
+	Exists(key string) bool
 	Retrieve(objs ...ObjInKey) int
 	Save(objs ...ObjInKey) int
 	Delete(key ...string) int

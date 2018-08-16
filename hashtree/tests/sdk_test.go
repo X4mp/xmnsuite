@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	hashtree "github.com/XMNBlockchain/xmnsuite/tools/hashtree"
+	hashtree "github.com/XMNBlockchain/datamint/hashtree"
 )
 
 func TestAll_Success(t *testing.T) {

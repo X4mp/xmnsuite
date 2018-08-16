@@ -1,6 +1,6 @@
 package lists
 
-import "github.com/XMNBlockchain/redismint/hashtree"
+import "github.com/XMNBlockchain/datamint/hashtree"
 
 // WalkFn represents the func called by walk
 type WalkFn func(index int, value []byte) (interface{}, error)
