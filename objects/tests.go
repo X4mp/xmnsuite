@@ -30,23 +30,3 @@ func createObjForTests() *objFortests {
 
 	return &out
 }
-
-type nonJSONObjForTests struct {
-	ID   *uuid.UUID    `json:"id"`
-	Name string        `json:"name"`
-	Ref  testInterface `json:"reference"`
-}
-
-type testInterface interface {
-	GetName() string
-}
-
-func createNonJSONObjForTests() *nonJSONObjForTests {
-	id, _ := uuid.NewV4()
-	out := nonJSONObjForTests{
-		ID:   &id,
-		Name: "some name",
-	}
-
-	return &out
-}

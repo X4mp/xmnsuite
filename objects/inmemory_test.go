@@ -123,27 +123,6 @@ func TestSingle_save_thenExists_thenRetrieve_thenDelete_Success(t *testing.T) {
 
 }
 
-func TestSingle_save_withNonJSONObj_panic(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("the code was expected to panic")
-		}
-	}()
-
-	//variables:
-	obj := createNonJSONObjForTests()
-	key := fmt.Sprintf("entity:by_id:%s", obj.ID.String())
-
-	//create the application:
-	app := createObjects()
-
-	//save the object:
-	app.Save(&ObjInKey{
-		Key: key,
-		Obj: obj,
-	})
-}
-
 func TestSingle_saveInvalid_retrieve_panic(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {

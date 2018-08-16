@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/XMNBlockchain/datamint"
 	"github.com/XMNBlockchain/datamint/keys"
 )
 
@@ -33,10 +34,10 @@ func (app *concreteObjects) Retrieve(objs ...*ObjInKey) int {
 	cpt := 0
 	for index, oneObj := range objs {
 		if app.keys.Exists(oneObj.Key) == 1 {
-			js := app.keys.Retrieve(oneObj.Key).([]byte)
-			jsErr := cdc.UnmarshalJSON(js, objs[index].Obj)
-			if jsErr != nil {
-				str := fmt.Sprintf("there was an error while unmarshalling json data to the given pointer (index: %d): %s", index, jsErr.Error())
+			data := app.keys.Retrieve(oneObj.Key)
+			marErr := datamint.Marshal(data.([]byte), objs[index].Obj)
+			if marErr != nil {
+				str := fmt.Sprintf("there was an error while unmarshalling data to the given pointer (index: %d): %s", index, marErr.Error())
 				panic(errors.New(str))
 			}
 
@@ -51,13 +52,13 @@ func (app *concreteObjects) Retrieve(objs ...*ObjInKey) int {
 func (app *concreteObjects) Save(objs ...*ObjInKey) int {
 	cpt := 0
 	for _, oneObj := range objs {
-		js, jsErr := cdc.MarshalJSON(oneObj.Obj)
-		if jsErr != nil {
-			str := fmt.Sprintf("there was an error while marshalling an instance to json: %s", jsErr.Error())
+		bytes, bytesErr := datamint.GetBytes(oneObj.Obj)
+		if bytesErr != nil {
+			str := fmt.Sprintf("there was an error while converting an instance to []byte: %s", bytesErr.Error())
 			panic(errors.New(str))
 		}
 
-		app.keys.Save(oneObj.Key, js)
+		app.keys.Save(oneObj.Key, bytes)
 		cpt++
 	}
 

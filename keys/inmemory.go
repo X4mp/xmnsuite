@@ -1,29 +1,14 @@
 package keys
 
 import (
-	"bytes"
-	"encoding/gob"
 	"errors"
 	"fmt"
 	"regexp"
 	"sort"
 
+	"github.com/XMNBlockchain/datamint"
 	"github.com/XMNBlockchain/datamint/hashtree"
 )
-
-/*
- * Helper func
- */
-
-func getBytes(key interface{}) ([]byte, error) {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	err := enc.Encode(key)
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
 
 /*
  * Stored Instance
@@ -35,7 +20,7 @@ type storedInstance struct {
 }
 
 func createStoredInstance(data interface{}) *storedInstance {
-	blocks, blocksErr := getBytes(data)
+	blocks, blocksErr := datamint.GetBytes(data)
 	if blocksErr != nil {
 		str := fmt.Sprintf("the data could not be converted to []byte: %s", blocksErr.Error())
 		panic(errors.New(str))
@@ -177,7 +162,7 @@ func (app *concreteKeys) rebuildHead() {
 	}
 
 	for keyname, ins := range app.data {
-		blks, blksErr := getBytes(ins.Data)
+		blks, blksErr := datamint.GetBytes(ins.Data)
 		if blksErr != nil {
 			str := fmt.Sprintf("the data could not be converted to []byte: %s", blksErr.Error())
 			panic(errors.New(str))
