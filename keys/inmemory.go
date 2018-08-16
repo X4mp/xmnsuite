@@ -148,15 +148,12 @@ func (app *concreteKeys) Search(pattern string) []string {
 }
 
 // Save saves data at key
-func (app *concreteKeys) Save(key string, data interface{}) bool {
+func (app *concreteKeys) Save(key string, data interface{}) {
 	//add the data:
 	app.data[key] = createStoredInstance(data)
 
 	//rebuild the head:
 	app.rebuildHead()
-
-	//returns:
-	return true
 }
 
 // Delete deletes the passed keys

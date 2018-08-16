@@ -25,7 +25,7 @@ func TestSingle_save_thenExists_thenRetrieve_thenDelete_Success(t *testing.T) {
 	//retrieve the head:
 	head := app.Keys().Head()
 	if head.Length() != 2 {
-		t.Errorf("there was supposed to be 1 element in the head hashtree, returned: %d", head.Length())
+		t.Errorf("there was supposed to be 2 elements in the head hashtree, returned: %d", head.Length())
 		return
 	}
 
@@ -88,7 +88,7 @@ func TestSingle_save_thenExists_thenRetrieve_thenDelete_Success(t *testing.T) {
 	//retrieve the head again:
 	headAgain := app.Keys().Head()
 	if headAgain.Length() != 4 {
-		t.Errorf("there was supposed to be 3 elements in the head hashtree, returned: %d", headAgain.Length())
+		t.Errorf("there was supposed to be 4 elements in the head hashtree, returned: %d", headAgain.Length())
 		return
 	}
 

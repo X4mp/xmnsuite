@@ -11,7 +11,7 @@ type Keys interface {
 	Exists(key ...string) int
 	Retrieve(key string) interface{}
 	Search(pattern string) []string
-	Save(key string, data interface{}) bool
+	Save(key string, data interface{})
 	Delete(key ...string) int
 }
 

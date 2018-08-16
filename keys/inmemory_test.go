@@ -51,11 +51,7 @@ func TestSingle_save_thenExists_thenRetrieve_thenDelete_Success(t *testing.T) {
 	}
 
 	//save the object:
-	isSaved := app.Save(key, data)
-	if !isSaved {
-		t.Errorf("the save func was expected to return true, false returned")
-		return
-	}
+	app.Save(key, data)
 
 	//the object does not exists:
 	amountExistsIsOne := app.Exists(key)
