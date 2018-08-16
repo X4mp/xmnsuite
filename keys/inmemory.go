@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"regexp"
 	"sort"
-	"strconv"
-	"time"
 
 	"github.com/XMNBlockchain/datamint/hashtree"
 )
@@ -175,7 +173,7 @@ func (app *concreteKeys) Delete(key ...string) int {
 
 func (app *concreteKeys) rebuildHead() {
 	blocks := [][]byte{
-		[]byte(strconv.Itoa(int(time.Now().UTC().UnixNano()))),
+		[]byte("root"),
 	}
 
 	for keyname, ins := range app.data {
