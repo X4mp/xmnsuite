@@ -3,113 +3,43 @@ package objects
 import (
 	"errors"
 	"fmt"
-	"strconv"
-	"time"
 
-	"github.com/XMNBlockchain/datamint/hashtree"
+	"github.com/XMNBlockchain/datamint/keys"
 )
-
-/*
- * Stored Instance
- */
-
-type storedInstance struct {
-	HT  hashtree.HashTree
-	Obj interface{}
-}
-
-func createStoredInstance(obj interface{}) *storedInstance {
-	js, jsErr := cdc.MarshalJSON(obj)
-	if jsErr != nil {
-		str := fmt.Sprintf("the object cannot be stored because it cannot be converted to JSON: %s", jsErr.Error())
-		panic(errors.New(str))
-	}
-
-	ht := hashtree.SDKFunc.CreateHashTree(hashtree.CreateHashTreeParams{
-		Blocks: [][]byte{
-			js,
-		},
-	})
-
-	out := storedInstance{
-		HT:  ht,
-		Obj: obj,
-	}
-
-	return &out
-}
 
 /*
  * Concrete Objects
  */
 
 type concreteObjects struct {
-	head hashtree.HashTree
-	data map[string]*storedInstance
+	keys keys.Keys
 }
 
 func createObjects() Objects {
-
-	ht := hashtree.SDKFunc.CreateHashTree(hashtree.CreateHashTreeParams{
-		Blocks: [][]byte{
-			[]byte(strconv.Itoa(int(time.Now().UTC().UnixNano()))),
-		},
-	})
-
 	out := concreteObjects{
-		head: ht,
-		data: map[string]*storedInstance{},
+		keys: keys.SDKFunc.Create(),
 	}
 
 	return &out
 }
 
-// Head returns the hash head
-func (app *concreteObjects) Head() hashtree.HashTree {
-	return app.head
-}
-
-// HashTree returns the hashtree of the object at key
-func (app *concreteObjects) HashTree(key string) hashtree.HashTree {
-	if app.Exists(key) == 1 {
-		return app.data[key].HT
-	}
-
-	return nil
-}
-
-// HashTrees returns the hashtrees of the objects at keys
-func (app *concreteObjects) HashTrees(keys ...string) []hashtree.HashTree {
-	out := []hashtree.HashTree{}
-	for _, oneKey := range keys {
-		out = append(out, app.HashTree(oneKey))
-	}
-
-	return out
-}
-
-// Len returns the amount of objects stored
-func (app *concreteObjects) Len() int {
-	return len(app.data)
-}
-
-// Exists returns the amount of keys passed to Exists that exists
-func (app *concreteObjects) Exists(key ...string) int {
-	cpt := 0
-	for _, oneKey := range key {
-		if _, ok := app.data[oneKey]; ok {
-			cpt++
-		}
-	}
-	return cpt
+// Keys returns the keys instance
+func (app *concreteObjects) Keys() keys.Keys {
+	return app.keys
 }
 
 // Retrieve populates the Obj pointers in the passed ObjInKey instances.  Returns the amount of instances retrieved
 func (app *concreteObjects) Retrieve(objs ...*ObjInKey) int {
 	cpt := 0
 	for index, oneObj := range objs {
-		if app.Exists(oneObj.Key) == 1 {
-			objs[index].Obj = app.data[oneObj.Key].Obj
+		if app.keys.Exists(oneObj.Key) == 1 {
+			js := app.keys.Retrieve(oneObj.Key)
+			jsErr := cdc.UnmarshalJSON(js, objs[index].Obj)
+			if jsErr != nil {
+				str := fmt.Sprintf("there was an error while unmarshalling json data to the given pointer (index: %d): %s", index, jsErr.Error())
+				panic(errors.New(str))
+			}
+
 			cpt++
 		}
 	}
@@ -121,47 +51,16 @@ func (app *concreteObjects) Retrieve(objs ...*ObjInKey) int {
 func (app *concreteObjects) Save(objs ...*ObjInKey) int {
 	cpt := 0
 	for _, oneObj := range objs {
-		app.data[oneObj.Key] = createStoredInstance(oneObj.Obj)
+		js, jsErr := cdc.MarshalJSON(oneObj.Obj)
+		if jsErr != nil {
+			str := fmt.Sprintf("there was an error while marshalling an instance to json: %s", jsErr.Error())
+			panic(errors.New(str))
+		}
+
+		app.keys.Save(oneObj.Key, js)
 		cpt++
 	}
 
-	//rebuild the head:
-	app.rebuildHead()
-
 	//returns the amount of saved keys:
 	return cpt
-}
-
-// Delete deletes the passed keys
-func (app *concreteObjects) Delete(key ...string) int {
-	cpt := 0
-	for _, oneKey := range key {
-		if _, ok := app.data[oneKey]; ok {
-			delete(app.data, oneKey)
-			cpt++
-		}
-	}
-
-	//rebuild the head:
-	app.rebuildHead()
-
-	//returns the amount of deleted keys:
-	return cpt
-}
-
-func (app *concreteObjects) rebuildHead() {
-	blocks := [][]byte{
-		[]byte(strconv.Itoa(int(time.Now().UTC().UnixNano()))),
-	}
-
-	for keyname, oneStoredIns := range app.data {
-		blocks = append(blocks, []byte(keyname))
-		blocks = append(blocks, oneStoredIns.HT.Head().Get())
-	}
-
-	ht := hashtree.SDKFunc.CreateHashTree(hashtree.CreateHashTreeParams{
-		Blocks: blocks,
-	})
-
-	app.head = ht
 }
