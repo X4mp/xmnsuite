@@ -8,6 +8,7 @@ import (
 
 // Files represents the files data store
 type Files interface {
+	Head() hashtree.Hash
 	HashTree(keys string) hashtree.HashTree
 	HashTrees(keys ...string) []hashtree.HashTree
 	Init(key string, ht hashtree.HashTree) bool

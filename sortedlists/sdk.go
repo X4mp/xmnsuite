@@ -13,6 +13,7 @@ type ValueScore struct {
 
 // SortedLists represents the lists data store
 type SortedLists interface {
+	Head() hashtree.Hash
 	HashTree(keys string) hashtree.HashTree
 	HashTrees(keys ...string) []hashtree.HashTree
 	Add(key string, values ...*ValueScore) int

@@ -10,6 +10,7 @@ type ObjInKey struct {
 
 // Objects represents the object data store
 type Objects interface {
+	Head() hashtree.Hash
 	HashTree(keys string) hashtree.HashTree
 	HashTrees(keys ...string) []hashtree.HashTree
 	Retrieve(objs ...ObjInKey) int

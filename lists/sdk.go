@@ -7,6 +7,7 @@ type WalkFn func(index int, value []byte) (interface{}, error)
 
 // Lists represents the lists data store
 type Lists interface {
+	Head() hashtree.Hash
 	HashTree(keys string) hashtree.HashTree
 	HashTrees(keys ...string) []hashtree.HashTree
 	Add(key string, values ...[]byte) int
