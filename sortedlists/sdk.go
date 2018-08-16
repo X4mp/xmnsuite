@@ -1,5 +1,7 @@
 package sortedlists
 
+import "github.com/XMNBlockchain/redismint/hashtree"
+
 // WalkFn represents the func called by walk
 type WalkFn func(index int, score int, value []byte) (interface{}, error)
 
@@ -11,6 +13,8 @@ type ValueScore struct {
 
 // SortedLists represents the lists data store
 type SortedLists interface {
+	HashTree(keys string) hashtree.HashTree
+	HashTrees(keys ...string) []hashtree.HashTree
 	Add(key string, values ...*ValueScore) int
 	Retrieve(key string, index int, amount int) []*ValueScore
 	Len(key string) int
