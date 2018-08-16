@@ -14,7 +14,7 @@ func TestSave_thenRetrieve_Success(t *testing.T) {
 	app := createConcreteUsers()
 
 	//retrieve the head:
-	head := app.Head()
+	head := app.Objects().Keys().Head()
 	if head.Length() != 2 {
 		t.Errorf("there was supposed to be 2 elements in the head hashtree, returned: %d", head.Length())
 		return
@@ -27,7 +27,7 @@ func TestSave_thenRetrieve_Success(t *testing.T) {
 	}
 
 	//the lenght should be zero:
-	lenIsZero := app.Len()
+	lenIsZero := app.Objects().Keys().Len()
 	if lenIsZero != 0 {
 		t.Errorf("the length was expected to be 0: returned: %d", lenIsZero)
 		return
@@ -61,14 +61,14 @@ func TestSave_thenRetrieve_Success(t *testing.T) {
 	}
 
 	//get the head again:
-	againHead := app.Head()
+	againHead := app.Objects().Keys().Head()
 	if againHead.Length() != 4 {
 		t.Errorf("there was supposed to be 4 elements in the head hashtree, returned: %d", againHead.Length())
 		return
 	}
 
 	//the lenght should be one:
-	lenIsOne := app.Len()
+	lenIsOne := app.Objects().Keys().Len()
 	if lenIsOne != 1 {
 		t.Errorf("the length was expected to be 1: returned: %d", lenIsOne)
 		return

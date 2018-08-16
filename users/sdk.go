@@ -1,14 +1,13 @@
 package users
 
 import (
-	"github.com/XMNBlockchain/datamint/hashtree"
+	"github.com/XMNBlockchain/datamint/objects"
 	crypto "github.com/tendermint/tendermint/crypto"
 )
 
 // Users represents the users access control
 type Users interface {
-	Head() hashtree.HashTree
-	Len() int
+	Objects() objects.Objects
 	Exists(pubKey crypto.PubKey) bool
 	Insert(pubKey crypto.PubKey) error
 	Delete(pubKey crypto.PubKey) error
