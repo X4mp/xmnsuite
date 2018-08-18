@@ -1,6 +1,8 @@
 package lists
 
 import (
+	"bytes"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -563,6 +565,104 @@ func TestAdd_thenTrimWithAnAmountTooBig_Success(t *testing.T) {
 	expected := []interface{}{firstElement, secondElement, thirdElement, fourthElement, fifthElement}
 	if !reflect.DeepEqual(retElements, expected) {
 		t.Errorf("the retrieved trimmed elements are invalid.  \n Expected: %s \n Returned: %s\n", expected, retElements)
+		return
+	}
+}
+
+func TestAdd_thenWalk_Success(t *testing.T) {
+	//variables:
+	firstElement := []byte("this is the element")
+	secondElement := []byte("this is the third element")
+	thirdElement := []byte("this is the last element")
+	fourthElement := []byte("this is fourth element")
+	fifthElement := []byte("this is fifth element")
+	key := "first-key"
+
+	//create the app:
+	app := createConcreteLists(true)
+
+	//add the elements in the keys:
+	app.Add(key, firstElement, secondElement, thirdElement, fourthElement, fifthElement)
+
+	//walk:
+	elements := app.Walk(key, func(index int, value interface{}) (interface{}, error) {
+		if index < 2 {
+			return nil, errors.New("the index is too small")
+		}
+
+		if index >= 4 {
+			return nil, errors.New("the index is too big")
+		}
+
+		currentEl := value.([]byte)
+		list := [][]byte{currentEl, []byte("works")}
+		out := bytes.Join(list, []byte("-"))
+		return out, nil
+	})
+
+	expected := []interface{}{[]byte("this is the last element-works"), []byte("this is fourth element-works")}
+	if !reflect.DeepEqual(elements, expected) {
+		t.Errorf("the returned elements are invalid")
+		return
+	}
+}
+
+func TestAdd_thenWalkOnInvalidKey_returnsNil_Success(t *testing.T) {
+	//create the app:
+	app := createConcreteLists(true)
+
+	//walk:
+	elements := app.Walk("invalid-key", func(index int, value interface{}) (interface{}, error) {
+		return []byte("works"), nil
+	})
+
+	if elements != nil {
+		t.Errorf("the returned element was expected to be nil, value returned")
+		return
+	}
+}
+
+func TestAdd_thenWalkStore_thenRetrieve_Success(t *testing.T) {
+	//variables:
+	firstElement := []byte("this is the element")
+	secondElement := []byte("this is the third element")
+	thirdElement := []byte("this is the last element")
+	fourthElement := []byte("this is fourth element")
+	fifthElement := []byte("this is fifth element")
+	key := "first-key"
+	destination := "this-is-a-destination"
+
+	//create the app:
+	app := createConcreteLists(true)
+
+	//add the elements in the keys:
+	app.Add(key, firstElement, secondElement, thirdElement, fourthElement, fifthElement)
+
+	//walk:
+	retAmount := app.WalkStore(destination, key, func(index int, value interface{}) (interface{}, error) {
+		if index < 2 {
+			return nil, errors.New("the index is too small")
+		}
+
+		if index >= 4 {
+			return nil, errors.New("the index is too big")
+		}
+
+		currentEl := value.([]byte)
+		list := [][]byte{currentEl, []byte("works")}
+		out := bytes.Join(list, []byte("-"))
+		return out, nil
+	})
+
+	if retAmount != 2 {
+		t.Errorf("the returned amount was expected to be 2, %d returned", retAmount)
+		return
+	}
+
+	retElements := app.Retrieve(destination, 0, -1)
+	expected := []interface{}{[]byte("this is the last element-works"), []byte("this is fourth element-works")}
+	if !reflect.DeepEqual(retElements, expected) {
+		t.Errorf("the returned elements are invalid")
 		return
 	}
 }

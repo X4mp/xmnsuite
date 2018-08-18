@@ -3,7 +3,7 @@ package lists
 import "github.com/XMNBlockchain/datamint/objects"
 
 // WalkFn represents the func called by walk
-type WalkFn func(index int, value []byte) (interface{}, error)
+type WalkFn func(index int, value interface{}) (interface{}, error)
 
 // Lists represents the lists data store
 type Lists interface {
@@ -16,5 +16,6 @@ type Lists interface {
 	Inter(key ...string) []interface{}
 	InterStore(destination string, key ...string) int
 	Trim(key string, index int, amount int) int
-	//Walk(key string, fn WalkFn) []interface{}
+	Walk(key string, fn WalkFn) []interface{}
+	WalkStore(destination string, key string, fn WalkFn) int
 }

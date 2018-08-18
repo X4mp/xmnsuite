@@ -305,3 +305,29 @@ func (app *concreteLists) Trim(key string, index int, amount int) int {
 	app.Add(key, elements...)
 	return len(elements)
 }
+
+// Walk will execute the WalkFn func to every element of the keys and return the list of elements that the called WalkFn calls returned
+func (app *concreteLists) Walk(key string, fn WalkFn) []interface{} {
+	if app.Objects().Keys().Exists(key) != 1 {
+		return nil
+	}
+
+	out := []interface{}{}
+	elements := app.Retrieve(key, 0, -1)
+	for index, oneElement := range elements {
+		ret, retErr := fn(index, oneElement)
+		if retErr != nil {
+			continue
+		}
+
+		out = append(out, ret)
+	}
+
+	return out
+}
+
+// WalkStore executes a Walk, then store the results in the destination key and return the amount of elements the key holds
+func (app *concreteLists) WalkStore(destination string, key string, fn WalkFn) int {
+	elements := app.Walk(key, fn)
+	return app.Add(destination, elements...)
+}
