@@ -52,56 +52,52 @@ func (app *concreteLists) Add(key string, values ...interface{}) int {
 	ptrList := retObj.Obj.(*[]interface{})
 	list := *ptrList
 
-	//if the list is not unique:
-	if !app.isUnique {
-		for _, oneValue := range values {
-			list = append(list, oneValue)
-		}
+	//calculate the begin length:
+	beginLength := len(list)
 
-		retObj.Obj = list
-		app.objs.Save(&retObj)
-		return len(values)
+	//add the elements to the list:
+	for _, oneValue := range values {
+		list = append(list, oneValue)
 	}
 
-	uniqueValues := []interface{}{}
-	for _, oneNewValue := range values {
-		isUnique := true
-		newBytes, newBytesErr := datamint.GetBytes(oneNewValue)
-		if newBytesErr != nil {
-			str := fmt.Sprintf("there was an error while converting a new value interface{} tp []byte: %s", newBytesErr.Error())
-			panic(errors.New(str))
-		}
-
-		for _, oneExistingElement := range list {
-			existingBytes, existingBytesErr := datamint.GetBytes(oneExistingElement)
-			if existingBytesErr != nil {
-				str := fmt.Sprintf("there was an error while converting an existing value interface{} tp []byte: %s", existingBytesErr.Error())
-				panic(errors.New(str))
-			}
-
-			if bytes.Compare(existingBytes, newBytes) == 0 {
-				isUnique = false
-				break
-			}
-		}
-
-		if isUnique {
-			uniqueValues = append(uniqueValues, oneNewValue)
-			continue
-		}
-	}
-
-	//add the unique values to the list:
-	for _, oneUniqueValues := range uniqueValues {
-		list = append(list, oneUniqueValues)
+	//if the list is unique:
+	if app.isUnique {
+		list = datamint.MakeUnique(list...)
 	}
 
 	//save:
 	retObj.Obj = list
 	app.objs.Save(&retObj)
+	return len(list) - beginLength
+}
 
-	//return the amount of element saved:
-	return len(uniqueValues)
+// Del deletes the passed values from the list, then return the amount of deleted elements
+func (app *concreteLists) Del(key string, values ...interface{}) int {
+	elements := app.Retrieve(key, 0, -1)
+	beginLength := len(elements)
+	for _, oneValue := range values {
+		valueAsBytes, valueAsBytesErr := datamint.GetHash(oneValue)
+		if valueAsBytesErr != nil {
+			str := fmt.Sprintf("there was an error while converting a value to []byte: %s", valueAsBytesErr.Error())
+			panic(errors.New(str))
+		}
+
+		for index, oneElement := range elements {
+			elementAsBytes, elementAsBytesErr := datamint.GetHash(oneElement)
+			if elementAsBytesErr != nil {
+				str := fmt.Sprintf("there was an error while converting an element to []byte: %s", elementAsBytesErr.Error())
+				panic(errors.New(str))
+			}
+
+			if bytes.Compare(valueAsBytes, elementAsBytes) == 0 {
+				elements = append(elements[:index], elements[index+1:]...)
+			}
+		}
+	}
+
+	//replace the elements:
+	app.objs.Keys().Delete(key)
+	return beginLength - app.Add(key, elements...)
 }
 
 // Retrieve retrieves a subset of the stored list
@@ -182,33 +178,7 @@ func (app *concreteLists) Union(key ...string) []interface{} {
 		return out
 	}
 
-	unique := []interface{}{}
-	for _, onElement := range out {
-		isUnique := true
-		oneElementAsBytes, oneElementAsBytesErr := datamint.GetBytes(onElement)
-		if oneElementAsBytesErr != nil {
-			str := fmt.Sprintf("there was an error while converting an existing element to []byte: %s", oneElementAsBytesErr.Error())
-			panic(errors.New(str))
-		}
-
-		for _, oneUnique := range unique {
-			oneUniqueAsBytes, oneUniqueAsBytesErr := datamint.GetBytes(oneUnique)
-			if oneUniqueAsBytesErr != nil {
-				str := fmt.Sprintf("there was an error while converting a unique element to []byte: %s", oneUniqueAsBytesErr.Error())
-				panic(errors.New(str))
-			}
-
-			if bytes.Compare(oneElementAsBytes, oneUniqueAsBytes) == 0 {
-				isUnique = false
-			}
-		}
-
-		if isUnique {
-			unique = append(unique, onElement)
-		}
-	}
-
-	return unique
+	return datamint.MakeUnique(out...)
 }
 
 // UnionStore executes a Union, then store the results in the destination key and return the amount of elements the key holds

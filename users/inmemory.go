@@ -25,9 +25,14 @@ func (app *concreteUsers) Objects() objects.Objects {
 	return app.store
 }
 
+// Key returns the key where the user is stored
+func (app *concreteUsers) Key(pubKey crypto.PubKey) string {
+	return fmt.Sprintf("user:by_pubkey:%s", pubKey)
+}
+
 // Exists returns true if the user exists, false otherwise
 func (app *concreteUsers) Exists(pubKey crypto.PubKey) bool {
-	key := app.genKey(pubKey)
+	key := app.Key(pubKey)
 	return app.store.Keys().Exists(key) == 1
 }
 
@@ -38,7 +43,7 @@ func (app *concreteUsers) Insert(pubKey crypto.PubKey) error {
 		return errors.New(str)
 	}
 
-	key := app.genKey(pubKey)
+	key := app.Key(pubKey)
 	app.store.Save(&objects.ObjInKey{
 		Key: key,
 		Obj: pubKey,
@@ -53,11 +58,7 @@ func (app *concreteUsers) Delete(pubKey crypto.PubKey) error {
 		return errors.New(str)
 	}
 
-	key := app.genKey(pubKey)
+	key := app.Key(pubKey)
 	app.store.Keys().Delete(key)
 	return nil
-}
-
-func (app *concreteUsers) genKey(pubKey crypto.PubKey) string {
-	return fmt.Sprintf("user:by_pubkey:%s", pubKey)
 }

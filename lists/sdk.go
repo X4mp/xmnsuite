@@ -9,6 +9,7 @@ type WalkFn func(index int, value interface{}) (interface{}, error)
 type Lists interface {
 	Objects() objects.Objects
 	Add(key string, values ...interface{}) int
+	Del(key string, values ...interface{}) int
 	Retrieve(key string, index int, amount int) []interface{}
 	Len(key string) int
 	Union(key ...string) []interface{}

@@ -9,6 +9,35 @@ import (
 	"github.com/XMNBlockchain/datamint"
 )
 
+func TestAdd_thenDelete_Success(t *testing.T) {
+	//variables:
+	firstElement := []byte("this is the element")
+	secondElement := []byte("this is the element")
+	thirdElement := []byte("this is the third element")
+	key := "this-is-a-key"
+
+	//create the app:
+	app := createConcreteLists(true)
+
+	//add:
+	app.Add(key, firstElement, secondElement, thirdElement)
+
+	//delete:
+	retAmount := app.Del(key, secondElement, []byte("invalid"))
+	if retAmount != 1 {
+		t.Errorf("the returned amount was expected to be 1, returned: %d", retAmount)
+		return
+	}
+
+	//retrieve:
+	retElements := app.Retrieve(key, 0, -1)
+	expected := []interface{}{firstElement, thirdElement}
+	if !reflect.DeepEqual(retElements, expected) {
+		t.Errorf("the returned elements are invalid")
+		return
+	}
+}
+
 func TestAdd_thenRetrieve_notUnique_Success(t *testing.T) {
 	//variables:
 	firstElement := []byte("this is the element")
@@ -140,7 +169,6 @@ func TestAdd_thenRetrieve_notUnique_Success(t *testing.T) {
 func TestAdd_thenRetrieve_isUnique_Success(t *testing.T) {
 	//variables:
 	firstElement := []byte("this is the element")
-	secondElement := []byte("this is the element")
 	thirdElement := []byte("this is the third element")
 	key := "this-is-a-key"
 	emptyKey := "this-is-an-empty-key"
@@ -174,7 +202,7 @@ func TestAdd_thenRetrieve_isUnique_Success(t *testing.T) {
 	}
 
 	//add again:
-	secondAmount := app.Add(key, secondElement, thirdElement)
+	secondAmount := app.Add(key, firstElement, thirdElement)
 	if secondAmount != 1 {
 		t.Errorf("the returned amount was expected to be 1, returned: %d", secondAmount)
 		return
