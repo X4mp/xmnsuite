@@ -19,3 +19,16 @@ type Lists interface {
 	Walk(key string, fn WalkFn) []interface{}
 	WalkStore(destination string, key string, fn WalkFn) int
 }
+
+// SDKFunc represents the objects SDK func
+var SDKFunc = struct {
+	CreateList func() Lists
+	CreateSet  func() Lists
+}{
+	CreateList: func() Lists {
+		return createConcreteLists(false)
+	},
+	CreateSet: func() Lists {
+		return createConcreteLists(true)
+	},
+}
