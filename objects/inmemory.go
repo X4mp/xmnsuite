@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/XMNBlockchain/datamint"
+	"github.com/XMNBlockchain/datamint/helpers"
 	"github.com/XMNBlockchain/datamint/keys"
 )
 
@@ -35,7 +35,7 @@ func (app *concreteObjects) Retrieve(objs ...*ObjInKey) int {
 	for index, oneObj := range objs {
 		if app.keys.Exists(oneObj.Key) == 1 {
 			data := app.keys.Retrieve(oneObj.Key)
-			marErr := datamint.Marshal(data.([]byte), objs[index].Obj)
+			marErr := helpers.Marshal(data.([]byte), objs[index].Obj)
 			if marErr != nil {
 				str := fmt.Sprintf("there was an error while unmarshalling data to the given pointer (index: %d): %s", index, marErr.Error())
 				panic(errors.New(str))
@@ -52,7 +52,7 @@ func (app *concreteObjects) Retrieve(objs ...*ObjInKey) int {
 func (app *concreteObjects) Save(objs ...*ObjInKey) int {
 	cpt := 0
 	for _, oneObj := range objs {
-		bytes, bytesErr := datamint.GetBytes(oneObj.Obj)
+		bytes, bytesErr := helpers.GetBytes(oneObj.Obj)
 		if bytesErr != nil {
 			str := fmt.Sprintf("there was an error while converting an instance to []byte: %s", bytesErr.Error())
 			panic(errors.New(str))

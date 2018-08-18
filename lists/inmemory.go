@@ -7,7 +7,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/XMNBlockchain/datamint"
+	"github.com/XMNBlockchain/datamint/helpers"
 	"github.com/XMNBlockchain/datamint/objects"
 )
 
@@ -62,7 +62,7 @@ func (app *concreteLists) Add(key string, values ...interface{}) int {
 
 	//if the list is unique:
 	if app.isUnique {
-		list = datamint.MakeUnique(list...)
+		list = helpers.MakeUnique(list...)
 	}
 
 	//save:
@@ -76,14 +76,14 @@ func (app *concreteLists) Del(key string, values ...interface{}) int {
 	elements := app.Retrieve(key, 0, -1)
 	beginLength := len(elements)
 	for _, oneValue := range values {
-		valueAsBytes, valueAsBytesErr := datamint.GetHash(oneValue)
+		valueAsBytes, valueAsBytesErr := helpers.GetHash(oneValue)
 		if valueAsBytesErr != nil {
 			str := fmt.Sprintf("there was an error while converting a value to []byte: %s", valueAsBytesErr.Error())
 			panic(errors.New(str))
 		}
 
 		for index, oneElement := range elements {
-			elementAsBytes, elementAsBytesErr := datamint.GetHash(oneElement)
+			elementAsBytes, elementAsBytesErr := helpers.GetHash(oneElement)
 			if elementAsBytesErr != nil {
 				str := fmt.Sprintf("there was an error while converting an element to []byte: %s", elementAsBytesErr.Error())
 				panic(errors.New(str))
@@ -178,7 +178,7 @@ func (app *concreteLists) Union(key ...string) []interface{} {
 		return out
 	}
 
-	return datamint.MakeUnique(out...)
+	return helpers.MakeUnique(out...)
 }
 
 // UnionStore executes a Union, then store the results in the destination key and return the amount of elements the key holds
@@ -203,7 +203,7 @@ func (app *concreteLists) Inter(key ...string) []interface{} {
 		}
 
 		for _, oneElement := range elements {
-			elementAsBytes, elementAsBytesErr := datamint.GetBytes(oneElement)
+			elementAsBytes, elementAsBytesErr := helpers.GetBytes(oneElement)
 			if elementAsBytesErr != nil {
 				str := fmt.Sprintf("there was an error while converting an instance to []byte: %s", elementAsBytesErr.Error())
 				panic(errors.New(str))

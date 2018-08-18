@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/XMNBlockchain/datamint"
+	"github.com/XMNBlockchain/datamint/helpers"
 	"github.com/XMNBlockchain/datamint/lists"
 	crypto "github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
@@ -89,7 +89,7 @@ func (app *concreteRoles) HasWriteAccess(key string, keys ...string) []string {
 	}
 
 	converted := app.convertStrings(out)
-	unique := datamint.MakeUnique(converted...)
+	unique := helpers.MakeUnique(converted...)
 
 	uniqueOut := []string{}
 	for _, oneUnique := range unique {

@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"sort"
 
-	"github.com/XMNBlockchain/datamint"
 	"github.com/XMNBlockchain/datamint/hashtree"
+	"github.com/XMNBlockchain/datamint/helpers"
 )
 
 /*
@@ -20,7 +20,7 @@ type storedInstance struct {
 }
 
 func createStoredInstance(data interface{}) *storedInstance {
-	blocks, blocksErr := datamint.GetBytes(data)
+	blocks, blocksErr := helpers.GetBytes(data)
 	if blocksErr != nil {
 		str := fmt.Sprintf("the data could not be converted to []byte: %s", blocksErr.Error())
 		panic(errors.New(str))
@@ -162,7 +162,7 @@ func (app *concreteKeys) rebuildHead() {
 	}
 
 	for keyname, ins := range app.data {
-		blks, blksErr := datamint.GetBytes(ins.Data)
+		blks, blksErr := helpers.GetBytes(ins.Data)
 		if blksErr != nil {
 			str := fmt.Sprintf("the data could not be converted to []byte: %s", blksErr.Error())
 			panic(errors.New(str))
