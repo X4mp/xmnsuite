@@ -15,9 +15,6 @@ type Lists interface {
 	UnionStore(destination string, key ...string) int
 	Inter(key ...string) []interface{}
 	InterStore(destination string, key ...string) int
-	/*Push(key string, values ...interface{}) int
-	PushX(key string, values ...interface{}) int
-	Pop(key string) interface{}
-	Trim(key string, start int, stop int) error
-	Walk(key string, fn WalkFn) []interface{}*/
+	Trim(key string, index int, amount int) int
+	//Walk(key string, fn WalkFn) []interface{}
 }

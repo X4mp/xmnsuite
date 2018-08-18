@@ -277,3 +277,31 @@ func (app *concreteLists) InterStore(destination string, key ...string) int {
 	elements := app.Inter(key...)
 	return app.Add(destination, elements...)
 }
+
+// Trim only keeps the elements of the list between the index and amount.  It returns the amount of elements remaining in the list
+func (app *concreteLists) Trim(key string, index int, amount int) int {
+	length := app.Len(key)
+	if index > length {
+		app.Objects().Keys().Delete(key)
+		app.Add(key, []interface{}{}...)
+		return 0
+	}
+
+	if index < 0 {
+		index = 0
+	}
+
+	if amount == -1 {
+		amount = length
+	}
+
+	stop := index + amount
+	if stop > length {
+		stop = length
+	}
+
+	elements := app.Retrieve(key, index, stop-index)
+	app.Objects().Keys().Delete(key)
+	app.Add(key, elements...)
+	return len(elements)
+}

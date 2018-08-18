@@ -411,3 +411,158 @@ func TestAdd_thenInterstore_Success(t *testing.T) {
 	}
 
 }
+
+func TestAdd_thenTrim_Success(t *testing.T) {
+	//variables:
+	firstElement := []byte("this is the element")
+	secondElement := []byte("this is the third element")
+	thirdElement := []byte("this is the last element")
+	fourthElement := []byte("this is fourth element")
+	fifthElement := []byte("this is fifth element")
+	key := "first-key"
+
+	//create the app:
+	app := createConcreteLists(true)
+
+	//add the elements in the keys:
+	app.Add(key, firstElement, secondElement, thirdElement, fourthElement, fifthElement)
+
+	//trim the key, keep only the third and fourth element:
+	retAmount := app.Trim(key, 2, 2)
+	if retAmount != 2 {
+		t.Errorf("the returned amount was expected to be 2, %d returned", retAmount)
+		return
+	}
+
+	//retrieve the elements:
+	retElements := app.Retrieve(key, 0, -1)
+	expected := []interface{}{thirdElement, fourthElement}
+	if !reflect.DeepEqual(retElements, expected) {
+		t.Errorf("the retrieved trimmed elements are invalid.  \n Expected: %s \n Returned: %s\n", expected, retElements)
+		return
+	}
+}
+
+func TestAdd_thenTrimWithAnIndexTooBig_Success(t *testing.T) {
+	//variables:
+	firstElement := []byte("this is the element")
+	secondElement := []byte("this is the third element")
+	thirdElement := []byte("this is the last element")
+	fourthElement := []byte("this is fourth element")
+	fifthElement := []byte("this is fifth element")
+	key := "first-key"
+
+	//create the app:
+	app := createConcreteLists(true)
+
+	//add the elements in the keys:
+	app.Add(key, firstElement, secondElement, thirdElement, fourthElement, fifthElement)
+
+	//trim the key, keep only the third and fourth element:
+	retAmount := app.Trim(key, 234, 2)
+	if retAmount != 0 {
+		t.Errorf("the returned amount was expected to be 0, %d returned", retAmount)
+		return
+	}
+
+	//retrieve the elements:
+	retElements := app.Retrieve(key, 0, -1)
+	expected := []interface{}{}
+	if !reflect.DeepEqual(retElements, expected) {
+		t.Errorf("the retrieved trimmed elements are invalid.  \n Expected: %s \n Returned: %s\n", expected, retElements)
+		return
+	}
+}
+
+func TestAdd_thenTrimWithAnIndexTooSmall_Success(t *testing.T) {
+	//variables:
+	firstElement := []byte("this is the element")
+	secondElement := []byte("this is the third element")
+	thirdElement := []byte("this is the last element")
+	fourthElement := []byte("this is fourth element")
+	fifthElement := []byte("this is fifth element")
+	key := "first-key"
+
+	//create the app:
+	app := createConcreteLists(true)
+
+	//add the elements in the keys:
+	app.Add(key, firstElement, secondElement, thirdElement, fourthElement, fifthElement)
+
+	//trim the key, keep only the third and fourth element:
+	retAmount := app.Trim(key, -1, 2)
+	if retAmount != 2 {
+		t.Errorf("the returned amount was expected to be 2, %d returned", retAmount)
+		return
+	}
+
+	//retrieve the elements:
+	retElements := app.Retrieve(key, 0, -1)
+	expected := []interface{}{firstElement, secondElement}
+	if !reflect.DeepEqual(retElements, expected) {
+		t.Errorf("the retrieved trimmed elements are invalid.  \n Expected: %s \n Returned: %s\n", expected, retElements)
+		return
+	}
+}
+
+func TestAdd_thenTrimWithAMinusOneAmount_Success(t *testing.T) {
+	//variables:
+	firstElement := []byte("this is the element")
+	secondElement := []byte("this is the third element")
+	thirdElement := []byte("this is the last element")
+	fourthElement := []byte("this is fourth element")
+	fifthElement := []byte("this is fifth element")
+	key := "first-key"
+
+	//create the app:
+	app := createConcreteLists(true)
+
+	//add the elements in the keys:
+	app.Add(key, firstElement, secondElement, thirdElement, fourthElement, fifthElement)
+
+	//trim the key, keep only the third and fourth element:
+	retAmount := app.Trim(key, 0, -1)
+	if retAmount != 5 {
+		t.Errorf("the returned amount was expected to be 5, %d returned", retAmount)
+		return
+	}
+
+	//retrieve the elements:
+	retElements := app.Retrieve(key, 0, -1)
+	expected := []interface{}{firstElement, secondElement, thirdElement, fourthElement, fifthElement}
+	if !reflect.DeepEqual(retElements, expected) {
+		t.Errorf("the retrieved trimmed elements are invalid.  \n Expected: %s \n Returned: %s\n", expected, retElements)
+		return
+	}
+}
+
+func TestAdd_thenTrimWithAnAmountTooBig_Success(t *testing.T) {
+	//variables:
+	firstElement := []byte("this is the element")
+	secondElement := []byte("this is the third element")
+	thirdElement := []byte("this is the last element")
+	fourthElement := []byte("this is fourth element")
+	fifthElement := []byte("this is fifth element")
+	key := "first-key"
+
+	//create the app:
+	app := createConcreteLists(true)
+
+	//add the elements in the keys:
+	app.Add(key, firstElement, secondElement, thirdElement, fourthElement, fifthElement)
+
+	//trim the key, keep only the third and fourth element:
+	retAmount := app.Trim(key, 0, 234234)
+	if retAmount != 5 {
+		t.Errorf("the returned amount was expected to be 5, %d returned", retAmount)
+		return
+	}
+
+	//retrieve the elements:
+	retElements := app.Retrieve(key, 0, -1)
+	expected := []interface{}{firstElement, secondElement, thirdElement, fourthElement, fifthElement}
+	if !reflect.DeepEqual(retElements, expected) {
+		t.Errorf("the retrieved trimmed elements are invalid.  \n Expected: %s \n Returned: %s\n", expected, retElements)
+		return
+	}
+}
