@@ -2,6 +2,8 @@ package lists
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 
@@ -212,5 +214,66 @@ func (app *concreteLists) Union(key ...string) []interface{} {
 // UnionStore executes a Union, then store the results in the destination key and return the amount of elements the key holds
 func (app *concreteLists) UnionStore(destination string, key ...string) int {
 	elements := app.Union(key...)
+	return app.Add(destination, elements...)
+}
+
+// Inter intersects the elements of all the passed keys and returned the ones that are contained in all keys
+func (app *concreteLists) Inter(key ...string) []interface{} {
+
+	type el struct {
+		obj       interface{}
+		occurence int
+	}
+
+	all := map[string]*el{}
+	for _, oneKey := range key {
+		elements := app.Retrieve(oneKey, 0, -1)
+		if elements == nil {
+			continue
+		}
+
+		for _, oneElement := range elements {
+			elementAsBytes, elementAsBytesErr := datamint.GetBytes(oneElement)
+			if elementAsBytesErr != nil {
+				str := fmt.Sprintf("there was an error while converting an instance to []byte: %s", elementAsBytesErr.Error())
+				panic(errors.New(str))
+			}
+
+			ha := sha256.New()
+			_, haErr := ha.Write(elementAsBytes)
+			if haErr != nil {
+				str := fmt.Sprintf("there was an error while []byte: %s", haErr.Error())
+				panic(errors.New(str))
+			}
+
+			key := hex.EncodeToString(ha.Sum(nil))
+			if _, ok := all[key]; ok {
+				all[key].occurence++
+				continue
+			}
+
+			all[key] = &el{
+				obj:       oneElement,
+				occurence: 1,
+			}
+		}
+	}
+
+	out := []interface{}{}
+	amountKeys := len(key)
+	for _, oneEl := range all {
+		if oneEl.occurence < amountKeys {
+			continue
+		}
+
+		out = append(out, oneEl.obj)
+	}
+
+	return out
+}
+
+// InterStore executes an Inter, then store the results in the destination key and return the amount of elements the key holds
+func (app *concreteLists) InterStore(destination string, key ...string) int {
+	elements := app.Inter(key...)
 	return app.Add(destination, elements...)
 }

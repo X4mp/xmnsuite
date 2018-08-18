@@ -13,9 +13,9 @@ type Lists interface {
 	Len(key string) int
 	Union(key ...string) []interface{}
 	UnionStore(destination string, key ...string) int
-	/*Inter(key ...string) []interface{}
+	Inter(key ...string) []interface{}
 	InterStore(destination string, key ...string) int
-	Push(key string, values ...interface{}) int
+	/*Push(key string, values ...interface{}) int
 	PushX(key string, values ...interface{}) int
 	Pop(key string) interface{}
 	Trim(key string, start int, stop int) error

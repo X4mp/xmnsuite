@@ -336,3 +336,78 @@ func TestAdd_thenUnionStore_unique_Success(t *testing.T) {
 	}
 
 }
+
+func TestInterstore_Success(t *testing.T) {
+	//variables:
+	firstElement := []byte("this is the element")
+	secondElement := []byte("this is the third element")
+	thirdElement := []byte("this is the last element")
+	fourthElement := []byte("this is fourth element")
+	fifthElement := []byte("this is fifth element")
+	firstKey := "first-key"
+	secondKey := "second-key"
+	thirdKey := "third-key"
+	fourthKey := "fourth-key"
+	fifthKey := "fifth-key"
+
+	//create the app:
+	app := createConcreteLists(true)
+
+	//add the elements in the keys:
+	app.Add(firstKey, firstElement, secondElement, fifthElement)
+	app.Add(secondKey, secondElement, firstElement, fifthElement)
+	app.Add(thirdKey, firstElement, fifthElement)
+	app.Add(fourthKey, fifthElement, secondElement, firstElement, fourthElement)
+	app.Add(fifthKey, thirdElement, fifthElement, firstElement)
+
+	//interstore:
+	results := app.Inter(firstKey, secondKey, thirdKey, fourthKey, fifthKey)
+	firstExpected := []interface{}{firstElement, fifthElement}
+	secondExpected := []interface{}{fifthElement, firstElement}
+	if !reflect.DeepEqual(results, firstExpected) && !reflect.DeepEqual(results, secondExpected) {
+		t.Errorf("the returned results are invalid")
+		return
+	}
+}
+
+func TestAdd_thenInterstore_Success(t *testing.T) {
+	//variables:
+	firstElement := []byte("this is the element")
+	secondElement := []byte("this is the third element")
+	thirdElement := []byte("this is the last element")
+	fourthElement := []byte("this is fourth element")
+	fifthElement := []byte("this is fifth element")
+	firstKey := "first-key"
+	secondKey := "second-key"
+	thirdKey := "third-key"
+	fourthKey := "fourth-key"
+	fifthKey := "fifth-key"
+	destination := "this-is-a-destination"
+
+	//create the app:
+	app := createConcreteLists(true)
+
+	//add the elements in the keys:
+	app.Add(firstKey, firstElement, secondElement, fifthElement)
+	app.Add(secondKey, secondElement, firstElement, fifthElement)
+	app.Add(thirdKey, firstElement, fifthElement)
+	app.Add(fourthKey, fifthElement, secondElement, firstElement, fourthElement)
+	app.Add(fifthKey, thirdElement, fifthElement, firstElement)
+
+	//interstore:
+	retAmount := app.InterStore(destination, firstKey, secondKey, thirdKey, fourthKey, fifthKey)
+	if retAmount != 2 {
+		t.Errorf("the returned amount was expected to be 2, returned: %d", retAmount)
+		return
+	}
+
+	//inter:
+	retInter := app.Retrieve(destination, 0, -1)
+	firstExpected := []interface{}{firstElement, fifthElement}
+	secondExpected := []interface{}{fifthElement, firstElement}
+	if !reflect.DeepEqual(retInter, firstExpected) && !reflect.DeepEqual(retInter, secondExpected) {
+		t.Errorf("the returned results are invalid")
+		return
+	}
+
+}
