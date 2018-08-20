@@ -11,7 +11,7 @@ import (
 const luaKey = "xkeys"
 const luaLists = "xlists"
 const luaSets = "xsets"
-const luaObjs = "xobjects"
+const luaObjs = "xtables"
 const luaUsers = "xusers"
 const luaRoles = "xroles"
 
@@ -64,39 +64,6 @@ func (app *XMN) registerKeys() {
 		return 1
 	}
 
-	//execute the len command on the keys instance:
-	keysLen := func(l *lua.LState) int {
-		p := checkKeys(l)
-		if l.GetTop() == 1 {
-			amount := p.Len()
-			l.Push(lua.LNumber(amount))
-			return 1
-		}
-
-		l.ArgError(1, "the save func expected 0 parameter")
-		return 1
-	}
-
-	//execute the exists command on the keys instance:
-	keysExists := func(l *lua.LState) int {
-		p := checkKeys(l)
-		amount := l.GetTop()
-		if amount < 2 {
-			l.ArgError(1, "the save func expected 0 parameter")
-			return 1
-		}
-
-		keys := []string{}
-		for i := 2; i <= amount; i++ {
-			oneKey := l.CheckString(i)
-			keys = append(keys, oneKey)
-		}
-
-		existsAmount := p.Exists(keys...)
-		l.Push(lua.LNumber(existsAmount))
-		return 1
-	}
-
 	// execute the retrieve command on the keys instance:
 	keysRetrieve := func(l *lua.LState) int {
 		p := checkKeys(l)
@@ -117,27 +84,6 @@ func (app *XMN) registerKeys() {
 		return 1
 	}
 
-	// execute the retrieve command on the keys instance:
-	keysSearch := func(l *lua.LState) int {
-		p := checkKeys(l)
-		amount := l.GetTop()
-		if amount != 2 {
-			l.ArgError(1, "the retrieve func expected 1 parameter")
-			return 1
-		}
-
-		pattern := l.CheckString(2)
-		results := p.Search(pattern)
-
-		keys := lua.LTable{}
-		for index, oneResult := range results {
-			keys.Insert(index, lua.LString(oneResult))
-		}
-
-		l.Push(&keys)
-		return 1
-	}
-
 	//execute the save command on the keys instance:
 	keysSave := func(l *lua.LState) int {
 		p := checkKeys(l)
@@ -152,34 +98,26 @@ func (app *XMN) registerKeys() {
 		return 1
 	}
 
-	// execute the delete command on the keys instance:
-	keysDelete := func(l *lua.LState) int {
-		p := checkKeys(l)
-		amount := l.GetTop()
-		if amount < 1 {
-			l.ArgError(1, "the retrieve func expected at least 1 parameter")
-			return 1
-		}
-
-		keys := []string{}
-		for i := 2; i <= amount; i++ {
-			oneKey := l.CheckString(i)
-			keys = append(keys, oneKey)
-		}
-
-		amountDeleted := p.Delete(keys...)
-		l.Push(lua.LNumber(amountDeleted))
-		return 1
-	}
-
 	// the keys methods:
 	var keysMethods = map[string]lua.LGFunction{
-		"len":      keysLen,
-		"exists":   keysExists,
+		"len": func(l *lua.LState) int {
+			p := checkKeys(l)
+			return app.lenFn(p)(l)
+		},
+		"exists": func(l *lua.LState) int {
+			p := checkKeys(l)
+			return app.existsFn(p)(l)
+		},
 		"retrieve": keysRetrieve,
-		"search":   keysSearch,
-		"save":     keysSave,
-		"delete":   keysDelete,
+		"search": func(l *lua.LState) int {
+			p := checkKeys(l)
+			return app.searchFn(p)(l)
+		},
+		"save": keysSave,
+		"delete": func(l *lua.LState) int {
+			p := checkKeys(l)
+			return app.delFn(p)(l)
+		},
 	}
 
 	mt := app.l.NewTypeMetatable(luaKey)
@@ -233,7 +171,7 @@ func (app *XMN) registerObjects() {
 			oneParam.ForEach(func(name lua.LValue, value lua.LValue) {
 				valueType := value.Type()
 				nameAsString := name.String()
-				if nameAsString == "object" && valueType == lua.LTTable {
+				if nameAsString == "table" && valueType == lua.LTTable {
 					oneObjInKey.Obj = app.convertLTableToHashMap(value.(*lua.LTable))
 				}
 
@@ -272,8 +210,24 @@ func (app *XMN) registerObjects() {
 
 	// the objects methods:
 	var methods = map[string]lua.LGFunction{
-		"save":     saveFn,
+		"len": func(l *lua.LState) int {
+			p := checkObjects(l)
+			return app.lenFn(p.Keys())(l)
+		},
+		"exists": func(l *lua.LState) int {
+			p := checkObjects(l)
+			return app.existsFn(p.Keys())(l)
+		},
 		"retrieve": retrieveFn,
+		"search": func(l *lua.LState) int {
+			p := checkObjects(l)
+			return app.searchFn(p.Keys())(l)
+		},
+		"save": saveFn,
+		"delete": func(l *lua.LState) int {
+			p := checkObjects(l)
+			return app.delFn(p.Keys())(l)
+		},
 	}
 
 	mt := app.l.NewTypeMetatable(luaObjs)
@@ -313,4 +267,86 @@ func (app *XMN) convertLTableToHashMap(table *lua.LTable) map[string]interface{}
 	})
 
 	return hashmap
+}
+
+func (app *XMN) existsFn(p keys.Keys) lua.LGFunction {
+	fn := func(l *lua.LState) int {
+		amount := l.GetTop()
+		if amount < 2 {
+			l.ArgError(1, "the save func expected 0 parameter")
+			return 1
+		}
+
+		keys := []string{}
+		for i := 2; i <= amount; i++ {
+			oneKey := l.CheckString(i)
+			keys = append(keys, oneKey)
+		}
+
+		existsAmount := p.Exists(keys...)
+		l.Push(lua.LNumber(existsAmount))
+		return 1
+	}
+
+	return fn
+}
+
+func (app *XMN) lenFn(p keys.Keys) lua.LGFunction {
+	fn := func(l *lua.LState) int {
+		if l.GetTop() == 1 {
+			amount := p.Len()
+			l.Push(lua.LNumber(amount))
+			return 1
+		}
+
+		l.ArgError(1, "the save func expected 0 parameter")
+		return 1
+	}
+
+	return fn
+}
+
+func (app *XMN) searchFn(p keys.Keys) lua.LGFunction {
+	fn := func(l *lua.LState) int {
+		amount := l.GetTop()
+		if amount != 2 {
+			l.ArgError(1, "the retrieve func expected 1 parameter")
+			return 1
+		}
+
+		pattern := l.CheckString(2)
+		results := p.Search(pattern)
+
+		keys := lua.LTable{}
+		for index, oneResult := range results {
+			keys.Insert(index, lua.LString(oneResult))
+		}
+
+		l.Push(&keys)
+		return 1
+	}
+
+	return fn
+}
+
+func (app *XMN) delFn(p keys.Keys) lua.LGFunction {
+	fn := func(l *lua.LState) int {
+		amount := l.GetTop()
+		if amount < 1 {
+			l.ArgError(1, "the retrieve func expected at least 1 parameter")
+			return 1
+		}
+
+		keys := []string{}
+		for i := 2; i <= amount; i++ {
+			oneKey := l.CheckString(i)
+			keys = append(keys, oneKey)
+		}
+
+		amountDeleted := p.Delete(keys...)
+		l.Push(lua.LNumber(amountDeleted))
+		return 1
+	}
+
+	return fn
 }
