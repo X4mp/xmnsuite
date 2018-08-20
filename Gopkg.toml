@@ -1,7 +1,15 @@
 [[override]]
   name = "github.com/tendermint/tendermint"
   version = "0.22.8"
-  
+
+[[override]]
+  name = "github.com/yuin/gopher-lua"
+  branch = "master"
+
+[[override]]
+  name = "github.com/bluebird75/luaunit"
+  version = "3.0"
+
 [prune]
   go-tests = true
   unused-packages = true

@@ -21,7 +21,7 @@ type objFortests struct {
 }
 
 func createObjForTests() *objFortests {
-	id, _ := uuid.NewV4()
+	id := uuid.NewV4()
 	out := objFortests{
 		ID:          &id,
 		Name:        "My name",
