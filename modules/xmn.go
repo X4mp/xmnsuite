@@ -2,11 +2,35 @@ package modules
 
 import (
 	"encoding/gob"
+	"encoding/hex"
+	"errors"
 
 	keys "github.com/XMNBlockchain/datamint/keys"
 	objects "github.com/XMNBlockchain/datamint/objects"
+	users "github.com/XMNBlockchain/datamint/users"
+	amino "github.com/tendermint/go-amino"
+	crypto "github.com/tendermint/tendermint/crypto"
+	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 	lua "github.com/yuin/gopher-lua"
 )
+
+var cdc = amino.NewCodec()
+
+func init() {
+	Register(cdc)
+}
+
+// Register registers all the interface -> struct to amino
+func Register(codec *amino.Codec) {
+	// crypto.PubKey
+	func() {
+		defer func() {
+			recover()
+		}()
+		codec.RegisterInterface((*crypto.PubKey)(nil), nil)
+		codec.RegisterConcrete(ed25519.PubKeyEd25519{}, ed25519.Ed25519PubKeyAminoRoute, nil)
+	}()
+}
 
 const luaKey = "xkeys"
 const luaLists = "xlists"
@@ -14,12 +38,19 @@ const luaSets = "xsets"
 const luaObjs = "xtables"
 const luaUsers = "xusers"
 const luaRoles = "xroles"
+const luaCrypto = "xcrypto"
 
 // XMN represents the XMN module:
 type XMN struct {
 	l   *lua.LState
 	k   keys.Keys
 	obj objects.Objects
+	usr users.Users
+}
+
+// Crypto represents a crypto instance
+type Crypto struct {
+	pk crypto.PrivKey
 }
 
 func createXMN(l *lua.LState) *XMN {
@@ -29,6 +60,7 @@ func createXMN(l *lua.LState) *XMN {
 		l:   l,
 		k:   keys.SDKFunc.Create(),
 		obj: objects.SDKFunc.Create(),
+		usr: users.SDKFunc.Create(),
 	}
 
 	//register the module on the lua state:
@@ -39,8 +71,68 @@ func createXMN(l *lua.LState) *XMN {
 }
 
 func (app *XMN) register() {
+	app.registerCrypto()
 	app.registerKeys()
 	app.registerObjects()
+	app.registerUsers()
+}
+
+func (app *XMN) registerCrypto() {
+	//verifies that the given type is a Crypto instance:
+	checkFn := func(l *lua.LState) *Crypto {
+		ud := l.CheckUserData(1)
+		if v, ok := ud.Value.(*Crypto); ok {
+			return v
+		}
+
+		l.ArgError(1, "users expected")
+		return nil
+	}
+
+	// create a new crypto instance:
+	newCrypto := func(l *lua.LState) int {
+		ud := l.NewUserData()
+		ud.Value = &Crypto{
+			pk: ed25519.GenPrivKey(),
+		}
+
+		l.SetMetatable(ud, l.GetTypeMetatable(luaCrypto))
+		l.Push(ud)
+		return 1
+	}
+
+	//execute the pubKey command on the objects instance:
+	pubKeyFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		if l.GetTop() == 1 {
+			pubKeyAsBytes, pubKeyAsBytesErr := cdc.MarshalBinary(p.pk.PubKey())
+			if pubKeyAsBytesErr != nil {
+				l.ArgError(1, "the public key of the private key is invalid")
+				return 1
+			}
+
+			pubKey := hex.EncodeToString(pubKeyAsBytes)
+			l.Push(lua.LString(pubKey))
+			return 1
+		}
+
+		l.ArgError(1, "the save func expected 0 parameter")
+		return 1
+	}
+
+	// the users methods:
+	var methods = map[string]lua.LGFunction{
+		"pubKey": pubKeyFn,
+	}
+
+	mt := app.l.NewTypeMetatable(luaCrypto)
+	app.l.SetGlobal(luaCrypto, mt)
+
+	// static attributes
+	app.l.SetField(mt, "new", app.l.NewFunction(newCrypto))
+
+	// methods
+	app.l.SetField(mt, "__index", app.l.SetFuncs(app.l.NewTable(), methods))
 }
 
 func (app *XMN) registerKeys() {
@@ -240,6 +332,83 @@ func (app *XMN) registerObjects() {
 	app.l.SetField(mt, "__index", app.l.SetFuncs(app.l.NewTable(), methods))
 }
 
+func (app *XMN) registerUsers() {
+	//verifies that the given type is a Users instance:
+	checkFn := func(l *lua.LState) users.Users {
+		ud := l.CheckUserData(1)
+		if v, ok := ud.Value.(users.Users); ok {
+			return v
+		}
+
+		l.ArgError(1, "users expected")
+		return nil
+	}
+
+	// load the Users instance:
+	loadUsers := func(l *lua.LState) int {
+		ud := l.NewUserData()
+		ud.Value = app.usr
+		l.SetMetatable(ud, l.GetTypeMetatable(luaUsers))
+		l.Push(ud)
+		return 1
+	}
+
+	//execute the key command on the objects instance:
+	keyFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		if l.GetTop() != 2 {
+			l.ArgError(1, "the save func expected 1 parameter")
+			return 1
+		}
+
+		pubKeyAsString := l.CheckString(2)
+		pubKey, pubKeyErr := app.fromStringToPubKey(pubKeyAsString)
+		if pubKeyErr != nil {
+			l.ArgError(1, pubKeyErr.Error())
+			return 1
+		}
+
+		key := p.Key(pubKey)
+		l.Push(lua.LString(key))
+		return 1
+	}
+
+	//execute the exists command on the objects instance:
+	existsFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		if l.GetTop() < 2 {
+			l.ArgError(1, "the exists func expected 1 parameter")
+			return 1
+		}
+
+		pubKeyAsString := l.CheckString(2)
+		pubKey, pubKeyErr := app.fromStringToPubKey(pubKeyAsString)
+		if pubKeyErr != nil {
+			l.ArgError(1, pubKeyErr.Error())
+			return 1
+		}
+
+		exists := p.Exists(pubKey)
+		l.Push(lua.LBool(exists))
+		return 1
+	}
+
+	// the users methods:
+	var methods = map[string]lua.LGFunction{
+		"key":    keyFn,
+		"exists": existsFn,
+	}
+
+	mt := app.l.NewTypeMetatable(luaUsers)
+	app.l.SetGlobal(luaUsers, mt)
+
+	// static attributes
+	app.l.SetField(mt, "load", app.l.NewFunction(loadUsers))
+
+	// methods
+	app.l.SetField(mt, "__index", app.l.SetFuncs(app.l.NewTable(), methods))
+}
+
 func (app *XMN) convertHashMapToLTable(hashmap map[string]interface{}) *lua.LTable {
 	out := lua.LTable{}
 	for keyname, value := range hashmap {
@@ -349,4 +518,19 @@ func (app *XMN) delFn(p keys.Keys) lua.LGFunction {
 	}
 
 	return fn
+}
+
+func (app *XMN) fromStringToPubKey(pubKeyAsString string) (crypto.PubKey, error) {
+	pubKeyAsBytes, pubKeyAsBytesErr := hex.DecodeString(pubKeyAsString)
+	if pubKeyAsBytesErr != nil {
+		return nil, errors.New("the encoded public key is invalid")
+	}
+
+	pubKey := new(ed25519.PubKeyEd25519)
+	pubKeyErr := cdc.UnmarshalBinary(pubKeyAsBytes, pubKey)
+	if pubKeyErr != nil {
+		return nil, errors.New("the public key []byte is invalid")
+	}
+
+	return pubKey, nil
 }
