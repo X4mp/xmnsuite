@@ -58,17 +58,36 @@ func (app *XMN) registerXMNKeys() {
 		return 1
 	}
 
-	//execute the save command on the keys instance:
-	keysSave := func(l *lua.LState) int {
+	//execute the len command on the keys instance:
+	keysLen := func(l *lua.LState) int {
 		p := checkKeys(l)
-		if l.GetTop() == 3 {
-			key := l.CheckString(2)
-			value := l.CheckString(3)
-			p.Save(key, value)
-			return 0
+		if l.GetTop() == 1 {
+			amount := p.Len()
+			l.Push(lua.LNumber(amount))
+			return 1
 		}
 
-		l.ArgError(1, "the save func expected 2 parameters")
+		l.ArgError(1, "the save func expected 0 parameter")
+		return 1
+	}
+
+	//execute the exists command on the keys instance:
+	keysExists := func(l *lua.LState) int {
+		p := checkKeys(l)
+		amount := l.GetTop()
+		if amount < 2 {
+			l.ArgError(1, "the save func expected 0 parameter")
+			return 1
+		}
+
+		keys := []string{}
+		for i := 2; i <= amount; i++ {
+			oneKey := l.CheckString(i)
+			keys = append(keys, oneKey)
+		}
+
+		existsAmount := p.Exists(keys...)
+		l.Push(lua.LNumber(existsAmount))
 		return 1
 	}
 
@@ -89,6 +108,41 @@ func (app *XMN) registerXMNKeys() {
 		}
 
 		l.Push(lua.LString(value.(string)))
+		return 1
+	}
+
+	// execute the retrieve command on the keys instance:
+	keysSearch := func(l *lua.LState) int {
+		p := checkKeys(l)
+		amount := l.GetTop()
+		if amount != 2 {
+			l.ArgError(1, "the retrieve func expected 1 parameter")
+			return 1
+		}
+
+		pattern := l.CheckString(2)
+		results := p.Search(pattern)
+
+		keys := lua.LTable{}
+		for index, oneResult := range results {
+			keys.Insert(index, lua.LString(oneResult))
+		}
+
+		l.Push(&keys)
+		return 1
+	}
+
+	//execute the save command on the keys instance:
+	keysSave := func(l *lua.LState) int {
+		p := checkKeys(l)
+		if l.GetTop() == 3 {
+			key := l.CheckString(2)
+			value := l.CheckString(3)
+			p.Save(key, value)
+			return 0
+		}
+
+		l.ArgError(1, "the save func expected 2 parameters")
 		return 1
 	}
 
@@ -114,8 +168,11 @@ func (app *XMN) registerXMNKeys() {
 
 	// the keys methods:
 	var keysMethods = map[string]lua.LGFunction{
-		"save":     keysSave,
+		"len":      keysLen,
+		"exists":   keysExists,
 		"retrieve": keysRetrieve,
+		"search":   keysSearch,
+		"save":     keysSave,
 		"delete":   keysDelete,
 	}
 
