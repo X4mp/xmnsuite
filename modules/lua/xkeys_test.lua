@@ -2,7 +2,7 @@
 require('luaunit')
 
 TestKeys = {} --class
-    function TestKeys:testSaveThenRetrieve()
+    function TestKeys:testSaveThenRetrieve_Success()
         -- variables:
         key = "my-key"
         value = "this is some value"
