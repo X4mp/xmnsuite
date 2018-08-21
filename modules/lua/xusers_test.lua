@@ -10,11 +10,23 @@ TestUsers = {} --class
         -- execute:
         usrs = xusers.load()
         invalidUsrKey = usrs:key(pubKey)
-        exists = usrs:exists(pubKey)
+        firstExists = usrs:exists(pubKey)
+        isInserted = usrs:insert(pubKey)
+        amountUsers = usrs:len()
+        isInsertedAgain = usrs:insert(pubKey)
+        isDeleted = usrs:delete(pubKey)
+        isDeletedAgain = usrs:delete(pubKey)
+        secondAmountUsers = usrs:len()
 
         -- verify:
         assertEquals(type(invalidUsrKey), "string")
-        assertEquals(exists, false)
+        assertEquals(firstExists, false)
+        assertEquals(isInserted, true)
+        assertEquals(amountUsers, 1)
+        assertEquals(isInsertedAgain, false)
+        assertEquals(isDeleted, true)
+        assertEquals(isDeletedAgain, false)
+        assertEquals(secondAmountUsers, 0)
     end
 
 -- class TestUsers

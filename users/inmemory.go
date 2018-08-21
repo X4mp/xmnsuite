@@ -1,7 +1,6 @@
 package users
 
 import (
-	"errors"
 	"fmt"
 
 	"github.com/XMNBlockchain/datamint/objects"
@@ -37,10 +36,9 @@ func (app *concreteUsers) Exists(pubKey crypto.PubKey) bool {
 }
 
 // Add adds a user
-func (app *concreteUsers) Insert(pubKey crypto.PubKey) error {
+func (app *concreteUsers) Insert(pubKey crypto.PubKey) bool {
 	if app.Exists(pubKey) {
-		str := fmt.Sprintf("the given public key (%s) is already assigned to another user", pubKey)
-		return errors.New(str)
+		return false
 	}
 
 	key := app.Key(pubKey)
@@ -48,17 +46,17 @@ func (app *concreteUsers) Insert(pubKey crypto.PubKey) error {
 		Key: key,
 		Obj: pubKey,
 	})
-	return nil
+
+	return true
 }
 
 // Delete deletes a user
-func (app *concreteUsers) Delete(pubKey crypto.PubKey) error {
+func (app *concreteUsers) Delete(pubKey crypto.PubKey) bool {
 	if !app.Exists(pubKey) {
-		str := fmt.Sprintf("the given public key (%s) is not assigned to a user", pubKey)
-		return errors.New(str)
+		return false
 	}
 
 	key := app.Key(pubKey)
 	app.store.Keys().Delete(key)
-	return nil
+	return true
 }

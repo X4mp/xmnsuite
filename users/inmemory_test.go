@@ -34,16 +34,16 @@ func TestSave_thenRetrieve_Success(t *testing.T) {
 	}
 
 	//delete should fail:
-	delErr := app.Delete(pubKey)
-	if delErr == nil {
-		t.Errorf("the returned error was expected to be an error, nil returned")
+	isDeleted := app.Delete(pubKey)
+	if isDeleted {
+		t.Errorf("the returned bool was expected to be false, true returned")
 		return
 	}
 
 	//insert the user:
-	insertErr := app.Insert(pubKey)
-	if insertErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", insertErr.Error())
+	isInserted := app.Insert(pubKey)
+	if !isInserted {
+		t.Errorf("the returned bool was expected to be true, false returned")
 		return
 	}
 
@@ -54,9 +54,9 @@ func TestSave_thenRetrieve_Success(t *testing.T) {
 	}
 
 	//insert the user again:
-	insertAgainErr := app.Insert(pubKey)
-	if insertAgainErr == nil {
-		t.Errorf("the returned error was expected to be an error, nil returned")
+	isInsertedAgain := app.Insert(pubKey)
+	if isInsertedAgain {
+		t.Errorf("the returned bool was expected to be false, true returned")
 		return
 	}
 
@@ -75,9 +75,9 @@ func TestSave_thenRetrieve_Success(t *testing.T) {
 	}
 
 	//delete the user:
-	delSuccessErr := app.Delete(pubKey)
-	if delSuccessErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", delSuccessErr.Error())
+	isDelSuccess := app.Delete(pubKey)
+	if !isDelSuccess {
+		t.Errorf("the returned bool was expected to be true, false returned")
 		return
 	}
 }

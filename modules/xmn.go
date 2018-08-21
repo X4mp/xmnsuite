@@ -393,10 +393,56 @@ func (app *XMN) registerUsers() {
 		return 1
 	}
 
+	//execute the insert command on the objects instance:
+	insertFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		if l.GetTop() < 2 {
+			l.ArgError(1, "the exists func expected 1 parameter")
+			return 1
+		}
+
+		pubKeyAsString := l.CheckString(2)
+		pubKey, pubKeyErr := app.fromStringToPubKey(pubKeyAsString)
+		if pubKeyErr != nil {
+			l.ArgError(1, pubKeyErr.Error())
+			return 1
+		}
+
+		isInserted := p.Insert(pubKey)
+		l.Push(lua.LBool(isInserted))
+		return 1
+	}
+
+	//execute the delete command on the objects instance:
+	deleteFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		if l.GetTop() < 2 {
+			l.ArgError(1, "the exists func expected 1 parameter")
+			return 1
+		}
+
+		pubKeyAsString := l.CheckString(2)
+		pubKey, pubKeyErr := app.fromStringToPubKey(pubKeyAsString)
+		if pubKeyErr != nil {
+			l.ArgError(1, pubKeyErr.Error())
+			return 1
+		}
+
+		isDeleted := p.Delete(pubKey)
+		l.Push(lua.LBool(isDeleted))
+		return 1
+	}
+
 	// the users methods:
 	var methods = map[string]lua.LGFunction{
+		"len": func(l *lua.LState) int {
+			p := checkFn(l)
+			return app.lenFn(p.Objects().Keys())(l)
+		},
 		"key":    keyFn,
 		"exists": existsFn,
+		"insert": insertFn,
+		"delete": deleteFn,
 	}
 
 	mt := app.l.NewTypeMetatable(luaUsers)

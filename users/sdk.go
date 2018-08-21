@@ -10,8 +10,8 @@ type Users interface {
 	Objects() objects.Objects
 	Key(pubKey crypto.PubKey) string
 	Exists(pubKey crypto.PubKey) bool
-	Insert(pubKey crypto.PubKey) error
-	Delete(pubKey crypto.PubKey) error
+	Insert(pubKey crypto.PubKey) bool
+	Delete(pubKey crypto.PubKey) bool
 }
 
 // SDKFunc represents the users SDK func
