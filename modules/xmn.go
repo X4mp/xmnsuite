@@ -574,12 +574,38 @@ func (app *XMN) registerRoles() {
 		return 1
 	}
 
+	//execute the hasWriteAccess command on the roles instance:
+	hasWriteAccessFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		amount := l.GetTop()
+		if amount < 2 {
+			l.ArgError(1, "the exists func expected ast least 2 parameters")
+			return 1
+		}
+
+		key := l.CheckString(2)
+		keys := []string{}
+		for i := 3; i <= amount; i++ {
+			keys = append(keys, l.CheckString(i))
+		}
+
+		returnedKeys := p.HasWriteAccess(key, keys...)
+		table := lua.LTable{}
+		for _, oneKey := range returnedKeys {
+			table.Append(lua.LString(oneKey))
+		}
+
+		l.Push(&table)
+		return 1
+	}
+
 	// the users methods:
 	var methods = map[string]lua.LGFunction{
 		"add":                addFn,
 		"del":                delFn,
 		"enableWriteAccess":  enableWriteAccessFn,
 		"disableWriteAccess": disableWriteAccessFn,
+		"hasWriteAccess":     hasWriteAccessFn,
 	}
 
 	mt := app.l.NewTypeMetatable(luaRoles)
