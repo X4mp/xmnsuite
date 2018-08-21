@@ -5,6 +5,7 @@ TestRoles = {} --class
     function TestRoles:testAdd_Success()
         -- variables:
         key = "this-is-my-role-key"
+        onKey = "this-is-a-key-to-enable-write-access-on"
         firstPK = xcrypto.new()
         secondPK = xcrypto.new()
         thirdPK = xcrypto.new()
@@ -16,10 +17,10 @@ TestRoles = {} --class
         amountAdded = rols:add(key, firstPK:pubKey(), secondPK:pubKey(), thirdPK:pubKey())
         amountDel = rols:del(key, secondPK:pubKey())
 
-        firstAmountEnabled = rols:enableWriteAccess(key, usrs:key(firstPK:pubKey()), usrs:key(thirdPK:pubKey()))
-        firstAmountWriteAccess = rols:hasWriteAccess(key, usrs:key(firstPK:pubKey()), usrs:key(secondPK:pubKey()), usrs:key(thirdPK:pubKey()))
-        firstAmountDisabled = rols:disableWriteAccess(key, usrs:key(firstPK:pubKey()))
-        secondAmountWriteAccess = rols:hasWriteAccess(key, usrs:key(firstPK:pubKey()), usrs:key(secondPK:pubKey()), usrs:key(thirdPK:pubKey()))
+        firstAmountEnabled = rols:enableWriteAccess(onKey, usrs:key(firstPK:pubKey()), usrs:key(thirdPK:pubKey()))
+        firstAmountWriteAccess = rols:hasWriteAccess(onKey, usrs:key(firstPK:pubKey()), usrs:key(secondPK:pubKey()), usrs:key(thirdPK:pubKey()))
+        firstAmountDisabled = rols:disableWriteAccess(onKey, usrs:key(firstPK:pubKey()))
+        secondAmountWriteAccess = rols:hasWriteAccess(onKey, usrs:key(firstPK:pubKey()), usrs:key(secondPK:pubKey()), usrs:key(thirdPK:pubKey()))
 
         -- verify:
         assertEquals(type(amountAdded), "number")
