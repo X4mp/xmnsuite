@@ -7,6 +7,7 @@ import (
 
 	keys "github.com/XMNBlockchain/datamint/keys"
 	objects "github.com/XMNBlockchain/datamint/objects"
+	roles "github.com/XMNBlockchain/datamint/roles"
 	users "github.com/XMNBlockchain/datamint/users"
 	amino "github.com/tendermint/go-amino"
 	crypto "github.com/tendermint/tendermint/crypto"
@@ -42,10 +43,11 @@ const luaCrypto = "xcrypto"
 
 // XMN represents the XMN module:
 type XMN struct {
-	l   *lua.LState
-	k   keys.Keys
-	obj objects.Objects
-	usr users.Users
+	l    *lua.LState
+	k    keys.Keys
+	obj  objects.Objects
+	usr  users.Users
+	rols roles.Roles
 }
 
 // Crypto represents a crypto instance
@@ -57,10 +59,11 @@ func createXMN(l *lua.LState) *XMN {
 
 	//create the instance:
 	out := XMN{
-		l:   l,
-		k:   keys.SDKFunc.Create(),
-		obj: objects.SDKFunc.Create(),
-		usr: users.SDKFunc.Create(),
+		l:    l,
+		k:    keys.SDKFunc.Create(),
+		obj:  objects.SDKFunc.Create(),
+		usr:  users.SDKFunc.Create(),
+		rols: roles.SDKFunc.Create(),
 	}
 
 	//register the module on the lua state:
@@ -75,6 +78,7 @@ func (app *XMN) register() {
 	app.registerKeys()
 	app.registerObjects()
 	app.registerUsers()
+	app.registerRoles()
 }
 
 func (app *XMN) registerCrypto() {
@@ -453,6 +457,98 @@ func (app *XMN) registerUsers() {
 
 	// methods
 	app.l.SetField(mt, "__index", app.l.SetFuncs(app.l.NewTable(), methods))
+}
+
+func (app *XMN) registerRoles() {
+	//verifies that the given type is a Roles instance:
+	checkFn := func(l *lua.LState) roles.Roles {
+		ud := l.CheckUserData(1)
+		if v, ok := ud.Value.(roles.Roles); ok {
+			return v
+		}
+
+		l.ArgError(1, "roles expected")
+		return nil
+	}
+
+	// load the Roles instance:
+	loadRoles := func(l *lua.LState) int {
+		ud := l.NewUserData()
+		ud.Value = app.rols
+		l.SetMetatable(ud, l.GetTypeMetatable(luaRoles))
+		l.Push(ud)
+		return 1
+	}
+
+	//execute the add command on the roles instance:
+	addFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		amount := l.GetTop()
+		if amount < 2 {
+			l.ArgError(1, "the exists func expected ast least 2 parameters")
+			return 1
+		}
+
+		pubKeys := []crypto.PubKey{}
+		key := l.CheckString(2)
+		for i := 3; i <= amount; i++ {
+			pubKeyAsString := l.CheckString(i)
+			pubKey, pubKeyErr := app.fromStringToPubKey(pubKeyAsString)
+			if pubKeyErr != nil {
+				l.ArgError(1, pubKeyErr.Error())
+				return 1
+			}
+
+			pubKeys = append(pubKeys, pubKey)
+		}
+
+		amountAdded := p.Add(key, pubKeys...)
+		l.Push(lua.LNumber(amountAdded))
+		return 1
+	}
+
+	//execute the del command on the roles instance:
+	delFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		amount := l.GetTop()
+		if amount < 2 {
+			l.ArgError(1, "the exists func expected ast least 2 parameters")
+			return 1
+		}
+
+		pubKeys := []crypto.PubKey{}
+		key := l.CheckString(2)
+		for i := 3; i <= amount; i++ {
+			pubKeyAsString := l.CheckString(i)
+			pubKey, pubKeyErr := app.fromStringToPubKey(pubKeyAsString)
+			if pubKeyErr != nil {
+				l.ArgError(1, pubKeyErr.Error())
+				return 1
+			}
+
+			pubKeys = append(pubKeys, pubKey)
+		}
+
+		amountAdded := p.Del(key, pubKeys...)
+		l.Push(lua.LNumber(amountAdded))
+		return 1
+	}
+
+	// the users methods:
+	var methods = map[string]lua.LGFunction{
+		"add": addFn,
+		"del": delFn,
+	}
+
+	mt := app.l.NewTypeMetatable(luaRoles)
+	app.l.SetGlobal(luaRoles, mt)
+
+	// static attributes
+	app.l.SetField(mt, "load", app.l.NewFunction(loadRoles))
+
+	// methods
+	app.l.SetField(mt, "__index", app.l.SetFuncs(app.l.NewTable(), methods))
+
 }
 
 func (app *XMN) convertHashMapToLTable(hashmap map[string]interface{}) *lua.LTable {

@@ -20,6 +20,7 @@ func TestKeys_Success(t *testing.T) {
 	executeChunkForTests(l, "lua/xtables_test.lua")
 	executeChunkForTests(l, "lua/xcrypto_test.lua")
 	executeChunkForTests(l, "lua/xusers_test.lua")
+	executeChunkForTests(l, "lua/xroles_test.lua")
 }
 
 func createLuaState() *lua.LState {
