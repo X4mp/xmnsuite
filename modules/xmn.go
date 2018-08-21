@@ -534,10 +534,52 @@ func (app *XMN) registerRoles() {
 		return 1
 	}
 
+	//execute the enableWriteAccess command on the roles instance:
+	enableWriteAccessFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		amount := l.GetTop()
+		if amount < 2 {
+			l.ArgError(1, "the exists func expected ast least 2 parameters")
+			return 1
+		}
+
+		key := l.CheckString(2)
+		patterns := []string{}
+		for i := 3; i <= amount; i++ {
+			patterns = append(patterns, l.CheckString(i))
+		}
+
+		amountEnabled := p.EnableWriteAccess(key, patterns...)
+		l.Push(lua.LNumber(amountEnabled))
+		return 1
+	}
+
+	//execute the disableWriteAccess command on the roles instance:
+	disableWriteAccessFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		amount := l.GetTop()
+		if amount < 2 {
+			l.ArgError(1, "the exists func expected ast least 2 parameters")
+			return 1
+		}
+
+		key := l.CheckString(2)
+		patterns := []string{}
+		for i := 3; i <= amount; i++ {
+			patterns = append(patterns, l.CheckString(i))
+		}
+
+		amountEnabled := p.DisableWriteAccess(key, patterns...)
+		l.Push(lua.LNumber(amountEnabled))
+		return 1
+	}
+
 	// the users methods:
 	var methods = map[string]lua.LGFunction{
-		"add": addFn,
-		"del": delFn,
+		"add":                addFn,
+		"del":                delFn,
+		"enableWriteAccess":  enableWriteAccessFn,
+		"disableWriteAccess": disableWriteAccessFn,
 	}
 
 	mt := app.l.NewTypeMetatable(luaRoles)
