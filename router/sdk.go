@@ -34,8 +34,6 @@ type TrxRoute interface {
 
 // Router represents the router
 type Router interface {
-	RegisterQR(routes ...QueryRoute) int
-	RegisterTR(routes ...TrxRoute) int
 	ExecuteQR(uri string, queryParams map[string]string) Response
 	ExecuteTR(uri string, queryParams map[string]string, trxData map[string]interface{}) Response
 }
