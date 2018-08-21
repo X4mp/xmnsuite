@@ -5,23 +5,12 @@ TestTables = {} --class
     function TestTables:testSaveThenRetrieve_Success()
         -- variables:
         firstKey = "steve-rodrigue"
-        firstTable = {}
-        firstTable.firstName = "Steve"
-        firstTable.lastName = "Rodrigue"
-        firstTable.id = {}
-        firstTable.id.type = "person"
-        firstTable.id.number = "q24234"
-        firstParam = {}
-        firstParam.key = firstKey
-        firstParam.table = firstTable
+        firstTable = {firstName="Steve", lastName=Rodrigue, id={type="person", number="q24234"}}
+        firstParam = {key=firstKey, table=firstTable}
 
         secondKey = "roger-cyr"
-        secondTable = {}
-        secondTable.firstName = "Roger"
-        secondTable.lastName = "Cyr"
-        secondParam = {}
-        secondParam.key = secondKey
-        secondParam.table = secondTable
+        secondTable = {firstName="Roger", lastName="Cyr"}
+        secondParam = {key=secondKey, table=secondTable}
 
         -- execute:
         x = xtables.load()

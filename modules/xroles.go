@@ -18,7 +18,8 @@ type XRoles struct {
 func CreateXRoles(l *lua.LState) *XRoles {
 	//create the instance:
 	out := XRoles{
-		l: l,
+		l:    l,
+		rols: roles.SDKFunc.Create(),
 	}
 
 	//registers the xroles module on the current lua state:
@@ -36,7 +37,7 @@ func (app *XRoles) register() {
 			return v
 		}
 
-		l.ArgError(1, "roles expected")
+		l.ArgError(1, "roles expected, received %d")
 		return nil
 	}
 

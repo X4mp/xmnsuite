@@ -12,6 +12,8 @@ func TestXRoles_Success(t *testing.T) {
 
 	//create the module:
 	CreateXRoles(l)
+	CreateXCrypto(l)
+	CreateXUsers(l)
 
 	//execute the chunk:
 	executeChunkForTests(l, "lua/xroles_test.lua")
