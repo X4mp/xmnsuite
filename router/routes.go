@@ -30,9 +30,9 @@ func createQueryRoute(patternAsString string, handler QueryHandlerFn) (QueryRout
 	return &out, nil
 }
 
-// Pattern returns the regex pattern
-func (obj *queryRoute) Pattern() *regexp.Regexp {
-	return obj.pattern
+// Matches returns true if the route matches, false otherwise
+func (obj *queryRoute) Matches(req Request) bool {
+	return true
 }
 
 // Handler returns the query pattern
@@ -46,31 +46,51 @@ func (obj *queryRoute) Handler() QueryHandlerFn {
  */
 
 type trxRoute struct {
-	pattern *regexp.Regexp
 	handler TrxHandlerFn
 }
 
-func createTrxRoute(patternAsString string, handler TrxHandlerFn) (TrxRoute, error) {
-	pattern, patternErr := createPattern(patternAsString)
-	if patternErr != nil {
-		return nil, patternErr
-	}
-
+func createTrxRoute(handler TrxHandlerFn) (TrxRoute, error) {
 	out := trxRoute{
-		pattern: pattern,
 		handler: handler,
 	}
 
 	return &out, nil
 }
 
-// Pattern returns the regex pattern
-func (obj *trxRoute) Pattern() *regexp.Regexp {
-	return obj.pattern
+// Matches returns true if the route matches, false otherwise
+func (obj *trxRoute) Matches(req Request) bool {
+	return true
 }
 
 // Handler returns the handler
 func (obj *trxRoute) Handler() TrxHandlerFn {
+	return obj.handler
+}
+
+/*
+ * TrxChk route
+ *
+ */
+
+type trxChkRoute struct {
+	handler TrxChkHandlerFn
+}
+
+func createTrxChkRoute(handler TrxChkHandlerFn) (TrxChkRoute, error) {
+	out := trxChkRoute{
+		handler: handler,
+	}
+
+	return &out, nil
+}
+
+// Matches returns true if the route matches, false otherwise
+func (obj *trxChkRoute) Matches(req TrxChkRequest) bool {
+	return true
+}
+
+// Handler returns the handler
+func (obj *trxChkRoute) Handler() TrxChkHandlerFn {
 	return obj.handler
 }
 

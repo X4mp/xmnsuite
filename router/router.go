@@ -1,24 +1,31 @@
 package router
 
 type router struct {
-	qrRoutes []QueryRoute
-	txRoutes []TrxRoute
+	qrRoutes    []QueryRoute
+	txChkRoutes []TrxChkRoute
+	txRoutes    []TrxRoute
 }
 
-func createRouter(qrRoutes []QueryRoute, txRoutes []TrxRoute) Router {
+func createRouter(qrRoutes []QueryRoute, txChkRoutes []TrxChkRoute, txRoutes []TrxRoute) Router {
 	out := router{
-		qrRoutes: qrRoutes,
-		txRoutes: txRoutes,
+		qrRoutes:    qrRoutes,
+		txChkRoutes: txChkRoutes,
+		txRoutes:    txRoutes,
 	}
 	return &out
 }
 
-// ExecuteQR executes a query route and returns its response:
-func (app *router) ExecuteQR(uri string, queryParams map[string]string) Response {
+// Query executes a query route and returns its response:
+func (app *router) Query(req Request) QueryResponse {
 	return nil
 }
 
-// ExecuteTR executes a transaction route and returns its response:
-func (app *router) ExecuteTR(uri string, queryParams map[string]string, trxData map[string]interface{}) Response {
+// Transact executes a transaction route and returns its response:
+func (app *router) Transact(req Request) TrxResponse {
+	return nil
+}
+
+// CheckTrx executes a transaction check route and returns its response:
+func (app *router) CheckTrx(req TrxChkRequest) TrxChkResponse {
 	return nil
 }
