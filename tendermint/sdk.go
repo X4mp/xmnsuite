@@ -63,8 +63,8 @@ type BlockchainService interface {
  * Application
  */
 
-// ApplicationService represents an application service
-type ApplicationService interface {
+// RouterService represents an application service
+type RouterService interface {
 	Spawn() (router.Router, error)
 	Connect(ipAddress string) (router.Router, error)
 }
@@ -93,8 +93,8 @@ type CreateBlockchainServiceParams struct {
 	RootDirPath string
 }
 
-// CreateApplicationServiceParams represents the params of the CreateApplicationService SDK func
-type CreateApplicationServiceParams struct {
+// CreateRouterServiceParams represents the params of the CreateRouterService SDK func
+type CreateRouterServiceParams struct {
 	RootDir  string
 	BlkChain Blockchain
 	Router   router.Router
@@ -102,10 +102,10 @@ type CreateApplicationServiceParams struct {
 
 // SDKFunc represents the tendermint interval blockchains SDK functions
 var SDKFunc = struct {
-	CreatePath               func(params CreatePathParams) Path
-	CreateBlockchain         func(params CreateBlockchainParams) Blockchain
-	CreateBlockchainService  func(params CreateBlockchainServiceParams) BlockchainService
-	CreateApplicationService func(params CreateApplicationServiceParams) ApplicationService
+	CreatePath              func(params CreatePathParams) Path
+	CreateBlockchain        func(params CreateBlockchainParams) Blockchain
+	CreateBlockchainService func(params CreateBlockchainServiceParams) BlockchainService
+	CreateRouterService     func(params CreateRouterServiceParams) RouterService
 }{
 	CreatePath: func(params CreatePathParams) Path {
 		return createPath(params.Namespace, params.Name, params.ID)
@@ -130,7 +130,7 @@ var SDKFunc = struct {
 	CreateBlockchainService: func(params CreateBlockchainServiceParams) BlockchainService {
 		return createBlockchainService(params.RootDirPath)
 	},
-	CreateApplicationService: func(params CreateApplicationServiceParams) ApplicationService {
-		return createApplicationService(params.RootDir, params.BlkChain, params.Router)
+	CreateRouterService: func(params CreateRouterServiceParams) RouterService {
+		return createRouterService(params.RootDir, params.BlkChain, params.Router)
 	},
 }

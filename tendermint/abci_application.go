@@ -108,16 +108,18 @@ type abciApplication struct {
 
 func createABCIApplication(stateKey string, keynamePrefix string, appHash []byte, k keys.Keys, store datastore.DataStore, rt router.Router) (*abciApplication, error) {
 	storedState, storedStateErr := func(stateKey string, k keys.Keys) (*storedState, error) {
-		stateBytes := k.Retrieve(stateKey).([]byte)
-		if len(stateBytes) > 0 {
-			st := new(state)
-			jsErr := json.Unmarshal(stateBytes, st)
-			if jsErr != nil {
-				return nil, jsErr
-			}
+		retState := k.Retrieve(stateKey)
+		if stateBytes, ok := retState.([]byte); ok {
+			if len(stateBytes) > 0 {
+				st := new(state)
+				jsErr := json.Unmarshal(stateBytes, st)
+				if jsErr != nil {
+					return nil, jsErr
+				}
 
-			storedState := createStoredState(st, k)
-			return storedState, nil
+				storedState := createStoredState(st, k)
+				return storedState, nil
+			}
 		}
 
 		st, stErr := createEmptyState(appHash, keynamePrefix)

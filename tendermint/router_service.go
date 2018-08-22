@@ -21,7 +21,7 @@ type routerService struct {
 	rter     router.Router
 }
 
-func createApplicationService(rootDir string, blkChain Blockchain, rter router.Router) ApplicationService {
+func createRouterService(rootDir string, blkChain Blockchain, rter router.Router) RouterService {
 	out := routerService{
 		rootDir:  rootDir,
 		blkChain: blkChain,
@@ -95,6 +95,6 @@ func (obj *routerService) Spawn() (router.Router, error) {
 
 // Connect connects to an external blockchain
 func (obj *routerService) Connect(ipAddress string) (router.Router, error) {
-	out, outErr := createGRPCApplication(ipAddress)
+	out, outErr := createGRPCRouter(ipAddress)
 	return out, outErr
 }

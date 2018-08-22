@@ -10,11 +10,11 @@ import (
 	rpcclient "github.com/tendermint/tendermint/rpc/lib/client"
 )
 
-type grpcApplication struct {
+type grpcRouter struct {
 	cl client.Client
 }
 
-func createGRPCApplication(ipAddress string) (router.Router, error) {
+func createGRPCRouter(ipAddress string) (router.Router, error) {
 
 	healthy := func(ipAddress string) bool {
 		//connect to rpc:
@@ -44,7 +44,7 @@ func createGRPCApplication(ipAddress string) (router.Router, error) {
 		return nil, clErr
 	}
 
-	out := grpcApplication{
+	out := grpcRouter{
 		cl: cl,
 	}
 
@@ -52,7 +52,7 @@ func createGRPCApplication(ipAddress string) (router.Router, error) {
 }
 
 // Query executes a query route and returns its response:
-func (app *grpcApplication) Query(req router.Request) router.QueryResponse {
+func (app *grpcRouter) Query(req router.Request) router.QueryResponse {
 	js, jsErr := cdc.MarshalJSON(req)
 	if jsErr != nil {
 		panic(jsErr)
@@ -76,7 +76,7 @@ func (app *grpcApplication) Query(req router.Request) router.QueryResponse {
 }
 
 // Transact executes a transaction route and returns its response:
-func (app *grpcApplication) Transact(req router.Request) router.TrxResponse {
+func (app *grpcRouter) Transact(req router.Request) router.TrxResponse {
 	js, jsErr := cdc.MarshalJSON(req)
 	if jsErr != nil {
 		panic(jsErr)
@@ -96,7 +96,7 @@ func (app *grpcApplication) Transact(req router.Request) router.TrxResponse {
 }
 
 // CheckTrx executes a transaction check route and returns its response:
-func (app *grpcApplication) CheckTrx(req router.TrxChkRequest) router.TrxChkResponse {
+func (app *grpcRouter) CheckTrx(req router.TrxChkRequest) router.TrxChkResponse {
 	js, jsErr := cdc.MarshalJSON(req)
 	if jsErr != nil {
 		panic(jsErr)
