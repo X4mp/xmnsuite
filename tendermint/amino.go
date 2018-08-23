@@ -1,6 +1,7 @@
 package tendermint
 
 import (
+	"github.com/XMNBlockchain/datamint/router"
 	amino "github.com/tendermint/go-amino"
 	crypto "github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
@@ -14,6 +15,12 @@ func init() {
 
 // Register registers all the interface -> struct to amino
 func Register(codec *amino.Codec) {
+
+	//Dependencies:
+	func() {
+		router.Register(codec)
+	}()
+
 	// PublicKey
 	func() {
 		defer func() {

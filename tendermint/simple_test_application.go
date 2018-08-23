@@ -18,6 +18,16 @@ func createSimpleTestApplication() router.Router {
 	return &out
 }
 
+// Start starts the router
+func (app *simpleTestApplication) Start() error {
+	return nil
+}
+
+// Stop stops the router
+func (app *simpleTestApplication) Stop() {
+
+}
+
 // Query executes a query route and returns its response:
 func (app *simpleTestApplication) Query(req router.Request) router.QueryResponse {
 	path := req.Path()

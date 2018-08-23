@@ -1,18 +1,18 @@
 package tendermint
 
 import (
-	"os"
 	"path/filepath"
 	"strings"
 
 	datastore "github.com/XMNBlockchain/datamint/datastore"
 	keys "github.com/XMNBlockchain/datamint/keys"
 	router "github.com/XMNBlockchain/datamint/router"
+	"github.com/tendermint/tendermint/abci/types"
 	config "github.com/tendermint/tendermint/config"
+	"github.com/tendermint/tendermint/libs/common"
 	log "github.com/tendermint/tendermint/libs/log"
-	nm "github.com/tendermint/tendermint/node"
-	privval "github.com/tendermint/tendermint/privval"
-	proxy "github.com/tendermint/tendermint/proxy"
+
+	abciserver "github.com/tendermint/tendermint/abci/server"
 )
 
 type routerService struct {
@@ -32,7 +32,7 @@ func createRouterService(rootDir string, blkChain Blockchain, rter router.Router
 }
 
 // Spawn spawns a new blockchain application
-func (obj *routerService) Spawn() (router.Router, error) {
+func (obj *routerService) Spawn() (common.Service, router.Router, error) {
 
 	//create the datastore and keys:
 	k := keys.SDKFunc.Create()
@@ -43,15 +43,23 @@ func (obj *routerService) Spawn() (router.Router, error) {
 	keynamePrefix := strings.Replace(gen.GetPath().String(), string(filepath.Separator), "-", -1)
 	middleApp, middleAppErr := createABCIApplication("stateKey", keynamePrefix, []byte(gen.GetHead()), k, store, obj.rter)
 	if middleAppErr != nil {
-		return nil, middleAppErr
+		return nil, nil, middleAppErr
 	}
 
 	//create the config:
 	dirPath := filepath.Join(obj.rootDir, gen.GetPath().String())
 	conf := config.DefaultConfig().SetRoot(dirPath)
 
+	// Start the listener
+	app := types.NewGRPCApplication(middleApp)
+	server := abciserver.NewGRPCServer(conf.RPC.ListenAddress, app)
+	server.SetLogger(log.TestingLogger().With("module", "abci-server"))
+	if err := server.Start(); err != nil {
+		return nil, nil, err
+	}
+
 	//logger:
-	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+	/*logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 	logger = log.NewFilter(logger, log.AllowError())
 
 	//pv file:
@@ -84,17 +92,25 @@ func (obj *routerService) Spawn() (router.Router, error) {
 	}
 
 	//create the client:
-	client, clientErr := obj.Connect(conf.RPC.ListenAddress)
+	client, clientErr := obj.Connect(conf.RPC.GRPCListenAddress)
 	if clientErr != nil {
 		return nil, clientErr
+	}*/
+
+	client, clientErr := obj.Connect(conf.RPC.ListenAddress)
+	if clientErr != nil {
+		return nil, nil, clientErr
 	}
 
-	//returns the client:
-	return client, nil
+	return server, client, nil
 }
 
 // Connect connects to an external blockchain
 func (obj *routerService) Connect(ipAddress string) (router.Router, error) {
 	out, outErr := createGRPCRouter(ipAddress)
+	if outErr != nil {
+		return nil, outErr
+	}
+
 	return out, outErr
 }

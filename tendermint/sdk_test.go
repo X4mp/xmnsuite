@@ -50,10 +50,19 @@ func TestCreateBlockchain_thenSpawn_Success(t *testing.T) {
 		Router:   simpleApp,
 	})
 
-	//spawn the router:
-	client, clientErr := routerService.Spawn()
-	if clientErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", clientErr.Error())
+	//spawn the service:
+	serv, client, spawnErr := routerService.Spawn()
+	if spawnErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", spawnErr.Error())
+		return
+	}
+	defer serv.Stop()
+	defer client.Stop()
+
+	//start the client:
+	startErr := client.Start()
+	if startErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", startErr.Error())
 		return
 	}
 
@@ -64,6 +73,8 @@ func TestCreateBlockchain_thenSpawn_Success(t *testing.T) {
 			Data: []byte("works!"),
 		},
 	))
+
+	fmt.Printf("->-> %s\n\n", trsResponse.Log())
 
 	fmt.Printf("->-> %v\n", trsResponse)
 }

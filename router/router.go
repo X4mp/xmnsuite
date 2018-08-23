@@ -15,6 +15,16 @@ func createRouter(qrRoutes []QueryRoute, txChkRoutes []TrxChkRoute, txRoutes []T
 	return &out
 }
 
+// Start starts the router
+func (app *router) Start() error {
+	return nil
+}
+
+// Stop stops the router
+func (app *router) Stop() {
+
+}
+
 // Query executes a query route and returns its response:
 func (app *router) Query(req Request) QueryResponse {
 	return nil

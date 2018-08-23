@@ -1,54 +1,95 @@
 package tendermint
 
 import (
+	"net"
 	"time"
 
 	"github.com/XMNBlockchain/datamint/router"
-	client "github.com/tendermint/tendermint/abci/client"
+	amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/abci/types"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
-	rpcclient "github.com/tendermint/tendermint/rpc/lib/client"
+	context "golang.org/x/net/context"
+	"google.golang.org/grpc"
+
+	cmn "github.com/tendermint/tendermint/libs/common"
 )
 
+/*
+ * GRPC Codec
+ */
+
+type grpcCodec struct {
+	cdc *amino.Codec
+}
+
+func createGRPCCodec(cdc *amino.Codec) *grpcCodec {
+	out := grpcCodec{
+		cdc: cdc,
+	}
+
+	return &out
+}
+
+// Marshal marshals an object
+func (obj *grpcCodec) Marshal(v interface{}) ([]byte, error) {
+	return cdc.MarshalJSON(v)
+}
+
+// Unmarshal unmarshals an object
+func (obj *grpcCodec) Unmarshal(data []byte, v interface{}) error {
+	return cdc.UnmarshalJSON(data, v)
+}
+
+// String returns the name of the Codec implementation.
+func (obj *grpcCodec) String() string {
+	return "grpc-codec"
+}
+
+/*
+ * GRPC Router
+ */
+
 type grpcRouter struct {
-	cl client.Client
+	cl        types.ABCIApplicationClient
+	ipAddress string
+	conn      *grpc.ClientConn
 }
 
 func createGRPCRouter(ipAddress string) (router.Router, error) {
-
-	healthy := func(ipAddress string) bool {
-		//connect to rpc:
-		rpc := rpcclient.NewJSONRPCClient(ipAddress)
-		ctypes.RegisterAmino(rpc.Codec())
-
-		result := new(ctypes.ResultHealth)
-		_, outErr := rpc.Call("health", nil, result)
-		if outErr == nil {
-			return true
-		}
-
-		return false
-	}
-
-	//wait until healthy:
-	for {
-		if healthy(ipAddress) {
-			break
-		}
-
-		time.Sleep(time.Second)
-	}
-
-	cl, clErr := client.NewClient(ipAddress, "grpc", true)
-	if clErr != nil {
-		return nil, clErr
-	}
-
 	out := grpcRouter{
-		cl: cl,
+		cl:        nil,
+		conn:      nil,
+		ipAddress: ipAddress,
 	}
 
 	return &out, nil
+}
+
+// Start starts the router
+func (app *grpcRouter) Start() error {
+
+	//setup the codec in GRPC:
+	cdcDialOpt := grpc.WithCodec(createGRPCCodec(cdc))
+
+	// Connect to the socket
+	conn, err := grpc.Dial(app.ipAddress, grpc.WithInsecure(), cdcDialOpt, grpc.WithDialer(func(addr string, dur time.Duration) (net.Conn, error) {
+		return cmn.Connect(addr)
+	}))
+
+	if err != nil {
+		return err
+	}
+
+	app.cl = types.NewABCIApplicationClient(conn)
+	app.conn = conn
+	return nil
+}
+
+// Stop stops the router
+func (app *grpcRouter) Stop() {
+	err := app.conn.Close()
+	if err != nil {
+		panic(err)
+	}
 }
 
 // Query executes a query route and returns its response:
@@ -62,7 +103,7 @@ func (app *grpcRouter) Query(req router.Request) router.QueryResponse {
 		Data: js,
 	}
 
-	clResp, clRespErr := app.cl.QuerySync(reqQuery)
+	clResp, clRespErr := app.cl.Query(context.Background(), &reqQuery)
 	if clRespErr != nil {
 		return router.SDKFunc.CreateQueryResponse(router.CreateQueryResponseParams{
 			IsSuccess: false,
@@ -82,11 +123,15 @@ func (app *grpcRouter) Transact(req router.Request) router.TrxResponse {
 		panic(jsErr)
 	}
 
-	clResp, clRespErr := app.cl.DeliverTxSync(js)
+	tx := types.RequestDeliverTx{
+		Tx: js,
+	}
+
+	clResp, clRespErr := app.cl.DeliverTx(context.Background(), &tx)
 	if clRespErr != nil {
 		return router.SDKFunc.CreateTrxResponse(router.CreateTrxResponseParams{
 			IsSuccess: false,
-			Log:       clResp.GetLog(),
+			Log:       clRespErr.Error(),
 		})
 	}
 
@@ -102,7 +147,11 @@ func (app *grpcRouter) CheckTrx(req router.TrxChkRequest) router.TrxChkResponse 
 		panic(jsErr)
 	}
 
-	clResp, clRespErr := app.cl.CheckTxSync(js)
+	tx := types.RequestCheckTx{
+		Tx: js,
+	}
+
+	clResp, clRespErr := app.cl.CheckTx(context.Background(), &tx)
 	if clRespErr != nil {
 		return router.SDKFunc.CreateTrxChkResponse(router.CreateTrxChkResponseParams{
 			CanBeExecuted: false,

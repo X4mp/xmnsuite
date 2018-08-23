@@ -32,7 +32,7 @@ type QueryResponse interface {
 	GazUsed() int64
 	Log() string
 	Data() []byte
-	Matshal(v interface{}) error
+	UnMarshal(v interface{}) error
 }
 
 // TrxResponse represents a transaction response
@@ -81,6 +81,8 @@ type TrxRoute interface {
 
 // Router represents the router
 type Router interface {
+	Start() error
+	Stop()
 	Query(request Request) QueryResponse
 	CheckTrx(request TrxChkRequest) TrxChkResponse
 	Transact(request Request) TrxResponse

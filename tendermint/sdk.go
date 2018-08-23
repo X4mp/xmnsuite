@@ -6,6 +6,7 @@ import (
 	router "github.com/XMNBlockchain/datamint/router"
 	uuid "github.com/satori/go.uuid"
 	crypto "github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/libs/common"
 )
 
 /*
@@ -65,7 +66,7 @@ type BlockchainService interface {
 
 // RouterService represents an application service
 type RouterService interface {
-	Spawn() (router.Router, error)
+	Spawn() (common.Service, router.Router, error)
 	Connect(ipAddress string) (router.Router, error)
 }
 
