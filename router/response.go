@@ -13,7 +13,7 @@ type queryResponse struct {
 	Lg     string `json:"log"`
 }
 
-func createQueryResponse(isSuccess bool, isAuthorized bool, hasNFS bool, gazUsed int64, log string, data []byte) QueryResponse {
+func createQueryResponse(isSuccess bool, isAuthorized bool, hasNFS bool, gazUsed int64, log string, data []byte) (QueryResponse, error) {
 	out := queryResponse{
 		IsSucc: isSuccess,
 		IsAuth: isAuthorized,
@@ -23,7 +23,7 @@ func createQueryResponse(isSuccess bool, isAuthorized bool, hasNFS bool, gazUsed
 		Dat:    data,
 	}
 
-	return &out
+	return &out, nil
 }
 
 // IsSuccess returns true if the query was successful, false otherwise
