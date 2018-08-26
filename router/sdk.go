@@ -245,7 +245,12 @@ var SDKFunc = struct {
 			return ptr
 		}
 
-		return createTrxResponse(params.IsSuccess, params.IsAuthorized, params.IsNFS, params.Tags, params.GazUsed, params.Log)
+		out, outErr := createTrxResponse(params.IsSuccess, params.IsAuthorized, params.IsNFS, params.Tags, params.GazUsed, params.Log)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
 	},
 	CreateRouter: func(params CreateRouterParams) Router {
 		return createRouter(params.QueryRtes, params.TrxChkRtes, params.TrxRtes)

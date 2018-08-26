@@ -1,5 +1,9 @@
 package router
 
+import (
+	"encoding/base64"
+)
+
 /*
  * Query Response
  */
@@ -112,54 +116,123 @@ func (obj *trxChkResponse) Log() string {
  * Trx Response
  */
 
-type trxResponse struct {
+type jsonTrxResponse struct {
 	IsSuc  bool              `json:"is_success"`
 	IsAuth bool              `json:"is_authorized"`
 	IsNFS  bool              `json:"is_nfs"`
-	Tgs    map[string][]byte `json:"tags"`
+	Tgs    map[string]string `json:"tags"`
 	GzUsed int64             `json:"gaz_used"`
 	Lg     string            `json:"log"`
 }
 
-func createTrxResponse(isSuccess bool, isAuthorized bool, isNFS bool, tags map[string][]byte, gazUsed int64, log string) TrxResponse {
-	out := trxResponse{
-		IsSuc:  isSuccess,
-		IsAuth: isAuthorized,
-		IsNFS:  isNFS,
-		Tgs:    tags,
-		GzUsed: gazUsed,
-		Lg:     log,
+func createJSONTrxResponse(res TrxResponse) *jsonTrxResponse {
+
+	input := res.Tags()
+	tgs := map[string]string{}
+	for keyname, oneTg := range input {
+		encodedStr := base64.StdEncoding.EncodeToString(oneTg)
+		tgs[keyname] = encodedStr
+	}
+
+	out := jsonTrxResponse{
+		IsSuc:  res.IsSuccess(),
+		IsAuth: res.IsAuthorized(),
+		IsNFS:  res.HasInsufficientFunds(),
+		Tgs:    tgs,
+		GzUsed: res.GazUsed(),
+		Lg:     res.Log(),
 	}
 
 	return &out
 }
 
+type trxResponse struct {
+	isSuc  bool
+	isAuth bool
+	isNFS  bool
+	tgs    map[string][]byte
+	gzUsed int64
+	lg     string
+}
+
+func createTrxResponse(isSuccess bool, isAuthorized bool, isNFS bool, tags map[string][]byte, gazUsed int64, log string) (TrxResponse, error) {
+	out := trxResponse{
+		isSuc:  isSuccess,
+		isAuth: isAuthorized,
+		isNFS:  isNFS,
+		tgs:    tags,
+		gzUsed: gazUsed,
+		lg:     log,
+	}
+
+	return &out, nil
+}
+
 // IsSuccess returns true if the transaction is successful, false otherwise
 func (obj *trxResponse) IsSuccess() bool {
-	return obj.IsSuc
+	return obj.isSuc
 }
 
 // IsAuthorized returns true if the transaction is authorized, false otherwise
 func (obj *trxResponse) IsAuthorized() bool {
-	return obj.IsAuth
+	return obj.isAuth
 }
 
 // HasInsufficientFunds returns true if the user had insufficient funds, false otherwise
 func (obj *trxResponse) HasInsufficientFunds() bool {
-	return obj.IsNFS
+	return obj.isNFS
 }
 
 // Tags returns the tags
 func (obj *trxResponse) Tags() map[string][]byte {
-	return obj.Tgs
+	return obj.tgs
 }
 
 // GazUsed returns the amount of gaz used
 func (obj *trxResponse) GazUsed() int64 {
-	return obj.GzUsed
+	return obj.gzUsed
 }
 
 // Log returns the logs
 func (obj *trxResponse) Log() string {
-	return obj.Lg
+	return obj.lg
+}
+
+// MarshalJSON converts the instance to JSON
+func (obj *trxResponse) MarshalJSON() ([]byte, error) {
+	jsState := createJSONTrxResponse(obj)
+	js, jsErr := cdc.MarshalJSON(jsState)
+	if jsErr != nil {
+		return nil, jsErr
+	}
+
+	return js, nil
+}
+
+// UnmarshalJSON converts the JSON to an instance
+func (obj *trxResponse) UnmarshalJSON(data []byte) error {
+	jsTrxResponse := new(jsonTrxResponse)
+	jsErr := cdc.UnmarshalJSON(data, jsTrxResponse)
+	if jsErr != nil {
+		return jsErr
+	}
+
+	input := jsTrxResponse.Tgs
+	tgs := map[string][]byte{}
+	for keyname, encodedStr := range input {
+		decodedStr, decodedErr := base64.StdEncoding.DecodeString(encodedStr)
+		if decodedErr != nil {
+			return decodedErr
+		}
+
+		tgs[keyname] = decodedStr
+	}
+
+	obj.isSuc = jsTrxResponse.IsSuc
+	obj.isAuth = jsTrxResponse.IsAuth
+	obj.isNFS = jsTrxResponse.IsNFS
+	obj.tgs = tgs
+	obj.gzUsed = jsTrxResponse.GzUsed
+	obj.lg = jsTrxResponse.Lg
+	return nil
 }

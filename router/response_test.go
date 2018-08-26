@@ -125,3 +125,61 @@ func TestCreateTrxChkResponse_Success(t *testing.T) {
 	empty := new(trxChkResponse)
 	tests.ConvertToJSON(t, response, empty, cdc)
 }
+
+func TestCreateTrxResponse_Success(t *testing.T) {
+	//variables:
+	tags := map[string][]byte{
+		"some":  []byte("this is the value of a tag"),
+		"other": []byte("this is another tag value"),
+	}
+
+	gazUsed := int64(rand.Int() % 20)
+	log := "success"
+
+	//execute:
+	response, responseErr := createTrxResponse(true, false, false, tags, gazUsed, log)
+	if responseErr != nil {
+		t.Errorf("the retured error was expected to be nil, error returned: %s", responseErr.Error())
+		return
+	}
+
+	retIsSuccess := response.IsSuccess()
+	retIsAuthorized := response.IsAuthorized()
+	retHasNFS := response.HasInsufficientFunds()
+	retTags := response.Tags()
+	retGazUsed := response.GazUsed()
+	retLog := response.Log()
+
+	if !retIsSuccess {
+		t.Errorf("the returned isSuccess is exepcted to be true, false returned")
+		return
+	}
+
+	if retIsAuthorized {
+		t.Errorf("the returned isAuthorized is exepcted to be false, true returned")
+		return
+	}
+
+	if retHasNFS {
+		t.Errorf("the returned hasNFS is exepcted to be false, true returned")
+		return
+	}
+
+	if !reflect.DeepEqual(tags, retTags) {
+		t.Errorf("the returned tags is invalid")
+		return
+	}
+
+	if !reflect.DeepEqual(gazUsed, retGazUsed) {
+		t.Errorf("the returned gazUsed is invalid.  Expected: %d, Returned: %d", gazUsed, retGazUsed)
+		return
+	}
+
+	if !reflect.DeepEqual(log, retLog) {
+		t.Errorf("the returned log is invalid")
+		return
+	}
+
+	empty := new(trxResponse)
+	tests.ConvertToJSON(t, response, empty, cdc)
+}
