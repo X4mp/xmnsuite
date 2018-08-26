@@ -77,7 +77,7 @@ type trxChkResponse struct {
 	Lg             string `json:"log"`
 }
 
-func createTrxChkResponse(canBeExecuted bool, canBeAuthorized bool, gazWanted int64, log string) TrxChkResponse {
+func createTrxChkResponse(canBeExecuted bool, canBeAuthorized bool, gazWanted int64, log string) (TrxChkResponse, error) {
 	out := trxChkResponse{
 		CnBeExecuted:   canBeExecuted,
 		CnBeAuthorized: canBeAuthorized,
@@ -85,7 +85,7 @@ func createTrxChkResponse(canBeExecuted bool, canBeAuthorized bool, gazWanted in
 		Lg:             log,
 	}
 
-	return &out
+	return &out, nil
 }
 
 // CanBeExecuted returns true if the transaction can be executed, false otherwise

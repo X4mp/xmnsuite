@@ -226,7 +226,12 @@ var SDKFunc = struct {
 			return ptr
 		}
 
-		return createTrxChkResponse(params.CanBeExecuted, params.CanBeAuthorized, params.GazWanted, params.Log)
+		out, outErr := createTrxChkResponse(params.CanBeExecuted, params.CanBeAuthorized, params.GazWanted, params.Log)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
 	},
 	CreateTrxResponse: func(params CreateTrxResponseParams) TrxResponse {
 		if params.JSData != nil {

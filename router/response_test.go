@@ -84,3 +84,44 @@ func TestCreateQueryResponse_Success(t *testing.T) {
 	tests.ConvertToJSON(t, response, empty, cdc)
 
 }
+
+func TestCreateTrxChkResponse_Success(t *testing.T) {
+	//variables:
+	gazWanted := int64(rand.Int() % 20)
+	log := "success"
+
+	//execute:
+	response, responseErr := createTrxChkResponse(true, false, gazWanted, log)
+	if responseErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", responseErr.Error())
+		return
+	}
+
+	retCanBeExecuted := response.CanBeExecuted()
+	retCanBeAuthorized := response.CanBeAuthorized()
+	retGazWanted := response.GazWanted()
+	retLog := response.Log()
+
+	if !retCanBeExecuted {
+		t.Errorf("the returned canBeExecuted is exepcted to be true, false returned")
+		return
+	}
+
+	if retCanBeAuthorized {
+		t.Errorf("the returned canBeAuthorized is exepcted to be false, true returned")
+		return
+	}
+
+	if !reflect.DeepEqual(gazWanted, retGazWanted) {
+		t.Errorf("the returned gaz wanted is invalid.  Expected: %d, Returned: %d", gazWanted, retGazWanted)
+		return
+	}
+
+	if !reflect.DeepEqual(log, retLog) {
+		t.Errorf("the returned log is invalid.")
+		return
+	}
+
+	empty := new(trxChkResponse)
+	tests.ConvertToJSON(t, response, empty, cdc)
+}
