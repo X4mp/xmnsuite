@@ -1,12 +1,20 @@
 package router
 
 import (
+	"errors"
+	"fmt"
+
 	crypto "github.com/tendermint/tendermint/crypto"
 )
 
 /*
  * Request
  */
+
+type requestSignedStruct struct {
+	Path string `json:"path"`
+	Data []byte `json:"data"`
+}
 
 type request struct {
 	Frm crypto.PubKey `json:"from"`
@@ -15,7 +23,23 @@ type request struct {
 	Sig []byte        `json:"signature"`
 }
 
-func createRequest(from crypto.PubKey, path string, data []byte, sig []byte) Request {
+func createRequest(from crypto.PubKey, path string, data []byte, sig []byte) (Request, error) {
+
+	str := requestSignedStruct{
+		Path: path,
+		Data: data,
+	}
+
+	js, jsErr := cdc.MarshalJSON(str)
+	if jsErr != nil {
+		return nil, jsErr
+	}
+
+	if !from.VerifyBytes(js, sig) {
+		str := fmt.Sprintf("the path, data and signature could not be verified by the given public key")
+		return nil, errors.New(str)
+	}
+
 	out := request{
 		Frm: from,
 		Pth: path,
@@ -23,7 +47,7 @@ func createRequest(from crypto.PubKey, path string, data []byte, sig []byte) Req
 		Sig: sig,
 	}
 
-	return &out
+	return &out, nil
 }
 
 // Path returns the path
@@ -50,6 +74,11 @@ func (obj *request) Signature() []byte {
  * Trx Chk Request
  */
 
+type requestTrxChkSignedStruct struct {
+	Path           string `json:"path"`
+	DtaSizeInBytes int64  `json:"data_size_in_bytes"`
+}
+
 type trxChkRequest struct {
 	Frm            crypto.PubKey `json:"from"`
 	Pth            string        `json:"path"`
@@ -57,7 +86,23 @@ type trxChkRequest struct {
 	Sig            []byte        `json:"signature"`
 }
 
-func createTrxChkRequest(from crypto.PubKey, path string, dataSizeInBytes int64, sig []byte) TrxChkRequest {
+func createTrxChkRequest(from crypto.PubKey, path string, dataSizeInBytes int64, sig []byte) (TrxChkRequest, error) {
+
+	req := requestTrxChkSignedStruct{
+		Path:           path,
+		DtaSizeInBytes: dataSizeInBytes,
+	}
+
+	js, jsErr := cdc.MarshalJSON(req)
+	if jsErr != nil {
+		return nil, jsErr
+	}
+
+	if !from.VerifyBytes(js, sig) {
+		str := fmt.Sprintf("the path, dataSizeInBytes and signature could not be verified by the given public key")
+		return nil, errors.New(str)
+	}
+
 	out := trxChkRequest{
 		Frm:            from,
 		Pth:            path,
@@ -65,7 +110,7 @@ func createTrxChkRequest(from crypto.PubKey, path string, dataSizeInBytes int64,
 		Sig:            sig,
 	}
 
-	return &out
+	return &out, nil
 }
 
 // Path returns the path

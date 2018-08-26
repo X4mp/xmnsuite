@@ -169,7 +169,12 @@ var SDKFunc = struct {
 			return ptr
 		}
 
-		return createRequest(params.From, params.Path, params.Data, params.Signature)
+		out, outErr := createRequest(params.From, params.Path, params.Data, params.Signature)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
 	},
 	CreateTrxChkRequest: func(params CreateTrxChkRequestParams) TrxChkRequest {
 		if params.JSData != nil {
@@ -183,7 +188,12 @@ var SDKFunc = struct {
 			return ptr
 		}
 
-		return createTrxChkRequest(params.From, params.Path, params.DataSizeInBytes, params.Signature)
+		out, outErr := createTrxChkRequest(params.From, params.Path, params.DataSizeInBytes, params.Signature)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
 	},
 	CreateQueryResponse: func(params CreateQueryResponseParams) QueryResponse {
 		if params.JSData != nil {
