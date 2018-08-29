@@ -11,9 +11,6 @@ var cdc = amino.NewCodec()
 // RequestAminoRoute represents the Request amino route
 const RequestAminoRoute = "datamint/router/Request"
 
-// TrxChkRequestAminoRoute represents the TrxChkRequest amino route
-const TrxChkRequestAminoRoute = "datamint/router/TrxChkRequest"
-
 // QueryResponseAminoRoute represents the QueryResponse amino route
 const QueryResponseAminoRoute = "datamint/router/QueryResponse"
 
@@ -51,14 +48,6 @@ func Register(codec *amino.Codec) {
 		}()
 		codec.RegisterInterface((*TrxResponse)(nil), nil)
 		codec.RegisterConcrete(trxResponse{}, TrxResponseAminoRoute, nil)
-	}()
-
-	func() {
-		defer func() {
-			recover()
-		}()
-		codec.RegisterInterface((*TrxChkRequest)(nil), nil)
-		codec.RegisterConcrete(trxChkRequest{}, TrxChkRequestAminoRoute, nil)
 	}()
 
 	func() {

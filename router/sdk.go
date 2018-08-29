@@ -14,7 +14,7 @@ type QueryHandlerFn func(req Request) QueryResponse
 type TrxHandlerFn func(req Request) TrxResponse
 
 // TrxChkHandlerFn represents a transaction check handler func
-type TrxChkHandlerFn func(req TrxChkRequest) TrxChkResponse
+type TrxChkHandlerFn func(req Request) TrxChkResponse
 
 // Request represents a request
 type Request interface {
@@ -45,14 +45,6 @@ type TrxResponse interface {
 	Log() string
 }
 
-// TrxChkRequest represents a transaction check request
-type TrxChkRequest interface {
-	From() crypto.PubKey
-	Path() string
-	DataSizeInBytes() int64
-	Signature() []byte
-}
-
 // TrxChkResponse represents a transaction check response
 type TrxChkResponse interface {
 	CanBeExecuted() bool
@@ -69,7 +61,7 @@ type QueryRoute interface {
 
 // TrxChkRoute represents a transaction check route
 type TrxChkRoute interface {
-	Matches(req TrxChkRequest) bool
+	Matches(req Request) bool
 	Handler() TrxChkHandlerFn
 }
 
@@ -84,7 +76,6 @@ type Router interface {
 	Start() error
 	Stop()
 	Query(request Request) QueryResponse
-	CheckTrx(request TrxChkRequest) TrxChkResponse
 	Transact(request Request) TrxResponse
 }
 
@@ -94,20 +85,10 @@ type Router interface {
 
 // CreateRequestParams represents the CreateRequest params
 type CreateRequestParams struct {
-	From      crypto.PubKey
-	Path      string
-	Data      []byte
-	Signature []byte
-	JSData    []byte
-}
-
-// CreateTrxChkRequestParams represents the CreateTrxChkRequest params
-type CreateTrxChkRequestParams struct {
-	From            crypto.PubKey
-	Path            string
-	DataSizeInBytes int64
-	Signature       []byte
-	JSData          []byte
+	From   crypto.PrivKey
+	Path   string
+	Data   []byte
+	JSData []byte
 }
 
 // CreateRouterParams represents the CreateRouter params
@@ -151,7 +132,6 @@ type CreateTrxResponseParams struct {
 // SDKFunc represents the router SDK func
 var SDKFunc = struct {
 	CreateRequest        func(params CreateRequestParams) Request
-	CreateTrxChkRequest  func(params CreateTrxChkRequestParams) TrxChkRequest
 	CreateQueryResponse  func(param CreateQueryResponseParams) QueryResponse
 	CreateTrxChkResponse func(param CreateTrxChkResponseParams) TrxChkResponse
 	CreateTrxResponse    func(param CreateTrxResponseParams) TrxResponse
@@ -169,26 +149,24 @@ var SDKFunc = struct {
 			return ptr
 		}
 
-		out, outErr := createRequest(params.From, params.Path, params.Data, params.Signature)
-		if outErr != nil {
-			panic(outErr)
+		str := requestSignedStruct{
+			Path: params.Path,
+			Data: params.Data,
 		}
 
-		return out
-	},
-	CreateTrxChkRequest: func(params CreateTrxChkRequestParams) TrxChkRequest {
-		if params.JSData != nil {
-			ptr := new(trxChkRequest)
-			err := cdc.UnmarshalJSON(params.JSData, ptr)
-			if err != nil {
-				str := fmt.Sprintf("invalid json data: %s", err.Error())
-				panic(errors.New(str))
-			}
-
-			return ptr
+		js, jsErr := cdc.MarshalJSON(str)
+		if jsErr != nil {
+			panic(jsErr)
 		}
 
-		out, outErr := createTrxChkRequest(params.From, params.Path, params.DataSizeInBytes, params.Signature)
+		sig, sigErr := params.From.Sign(js)
+		if sigErr != nil {
+			panic(sigErr)
+		}
+
+		from := params.From.PubKey()
+
+		out, outErr := createRequest(from, params.Path, params.Data, sig)
 		if outErr != nil {
 			panic(outErr)
 		}

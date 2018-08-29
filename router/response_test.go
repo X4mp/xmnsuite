@@ -129,8 +129,7 @@ func TestCreateTrxChkResponse_Success(t *testing.T) {
 func TestCreateTrxResponse_Success(t *testing.T) {
 	//variables:
 	tags := map[string][]byte{
-		"some":  []byte("this is the value of a tag"),
-		"other": []byte("this is another tag value"),
+		"some": []byte("this is the value of a tag"),
 	}
 
 	gazUsed := int64(rand.Int() % 20)

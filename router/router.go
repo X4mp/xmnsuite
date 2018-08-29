@@ -27,15 +27,24 @@ func (app *router) Stop() {
 
 // Query executes a query route and returns its response:
 func (app *router) Query(req Request) QueryResponse {
+	for _, oneRoute := range app.qrRoutes {
+		if oneRoute.Matches(req) {
+			fn := oneRoute.Handler()
+			return fn(req)
+		}
+	}
+
 	return nil
 }
 
 // Transact executes a transaction route and returns its response:
 func (app *router) Transact(req Request) TrxResponse {
-	return nil
-}
+	for _, oneRoute := range app.txRoutes {
+		if oneRoute.Matches(req) {
+			fn := oneRoute.Handler()
+			return fn(req)
+		}
+	}
 
-// CheckTrx executes a transaction check route and returns its response:
-func (app *router) CheckTrx(req TrxChkRequest) TrxChkResponse {
 	return nil
 }

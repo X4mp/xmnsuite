@@ -6,13 +6,19 @@ import (
 	"path/filepath"
 	"testing"
 
-	router "github.com/XMNBlockchain/datamint/router"
+	"github.com/XMNBlockchain/datamint/router"
 	uuid "github.com/satori/go.uuid"
+	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 func TestCreateBlockchain_thenSpawn_Success(t *testing.T) {
 
 	//variables:
+	str := createSomeDataForTests("this is some title", "this is some description")
+
+	data, _ := cdc.MarshalJSON(str)
+
+	pk := ed25519.GenPrivKey()
 	namespace := "xmnsuite"
 	name := "users"
 	id := uuid.NewV4()
@@ -51,12 +57,11 @@ func TestCreateBlockchain_thenSpawn_Success(t *testing.T) {
 	})
 
 	//spawn the service:
-	serv, client, spawnErr := routerService.Spawn()
+	client, spawnErr := routerService.Spawn()
 	if spawnErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", spawnErr.Error())
 		return
 	}
-	defer serv.Stop()
 	defer client.Stop()
 
 	//start the client:
@@ -69,12 +74,13 @@ func TestCreateBlockchain_thenSpawn_Success(t *testing.T) {
 	//execute a transaction:
 	trsResponse := client.Transact(router.SDKFunc.CreateRequest(
 		router.CreateRequestParams{
+			From: pk,
 			Path: "/some/resource",
-			Data: []byte("works!"),
+			Data: data,
 		},
 	))
 
-	fmt.Printf("->-> %s\n\n", trsResponse.Log())
+	//fmt.Printf("->-> %s\n\n", trsResponse.Log())
 
 	fmt.Printf("->-> %v\n", trsResponse)
 }

@@ -85,7 +85,7 @@ func createTrxChkRoute(handler TrxChkHandlerFn) (TrxChkRoute, error) {
 }
 
 // Matches returns true if the route matches, false otherwise
-func (obj *trxChkRoute) Matches(req TrxChkRequest) bool {
+func (obj *trxChkRoute) Matches(req Request) bool {
 	return true
 }
 

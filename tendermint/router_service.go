@@ -1,18 +1,24 @@
 package tendermint
 
 import (
+	"context"
+	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	datastore "github.com/XMNBlockchain/datamint/datastore"
 	keys "github.com/XMNBlockchain/datamint/keys"
 	router "github.com/XMNBlockchain/datamint/router"
-	"github.com/tendermint/tendermint/abci/types"
 	config "github.com/tendermint/tendermint/config"
-	"github.com/tendermint/tendermint/libs/common"
 	log "github.com/tendermint/tendermint/libs/log"
-
-	abciserver "github.com/tendermint/tendermint/abci/server"
+	nm "github.com/tendermint/tendermint/node"
+	"github.com/tendermint/tendermint/privval"
+	"github.com/tendermint/tendermint/proxy"
+	ctypes "github.com/tendermint/tendermint/rpc/core/types"
+	core_grpc "github.com/tendermint/tendermint/rpc/grpc"
+	rpcclient "github.com/tendermint/tendermint/rpc/lib/client"
 )
 
 type routerService struct {
@@ -32,7 +38,7 @@ func createRouterService(rootDir string, blkChain Blockchain, rter router.Router
 }
 
 // Spawn spawns a new blockchain application
-func (obj *routerService) Spawn() (common.Service, router.Router, error) {
+func (obj *routerService) Spawn() (router.Router, error) {
 
 	//create the datastore and keys:
 	k := keys.SDKFunc.Create()
@@ -43,74 +49,86 @@ func (obj *routerService) Spawn() (common.Service, router.Router, error) {
 	keynamePrefix := strings.Replace(gen.GetPath().String(), string(filepath.Separator), "-", -1)
 	middleApp, middleAppErr := createABCIApplication("stateKey", keynamePrefix, []byte(gen.GetHead()), k, store, obj.rter)
 	if middleAppErr != nil {
-		return nil, nil, middleAppErr
+		return nil, middleAppErr
 	}
 
 	//create the config:
 	dirPath := filepath.Join(obj.rootDir, gen.GetPath().String())
 	conf := config.DefaultConfig().SetRoot(dirPath)
 
-	// Start the listener
-	app := types.NewGRPCApplication(middleApp)
-	server := abciserver.NewGRPCServer(conf.RPC.ListenAddress, app)
-	server.SetLogger(log.TestingLogger().With("module", "abci-server"))
-	if err := server.Start(); err != nil {
-		return nil, nil, err
-	}
+	//add the GRPC listen address:
+	conf.RPC.GRPCListenAddress = "tcp://0.0.0.0:2350"
 
-	//logger:
-	/*logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
+	// create the node:
+	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 	logger = log.NewFilter(logger, log.AllowError())
-
-	//pv file:
 	pvFile := conf.PrivValidatorFile()
-
 	pv := privval.LoadFilePV(pvFile)
-
-	//local client:
 	papp := proxy.NewLocalClientCreator(middleApp)
-
-	//create the node:
-	node, nodeErr := nm.NewNode(
-		conf,
-		pv,
-		papp,
+	node, nodeErr := nm.NewNode(conf, pv, papp,
 		nm.DefaultGenesisDocProviderFunc(conf),
 		nm.DefaultDBProvider,
 		nm.DefaultMetricsProvider(conf.Instrumentation),
-		logger,
-	)
+		logger)
 
 	if nodeErr != nil {
 		return nil, nodeErr
 	}
 
-	//start the node:
-	nodeStartErr := node.Start()
-	if nodeStartErr != nil {
-		return nil, nodeStartErr
+	// start the node:
+	startErr := node.Start()
+	if startErr != nil {
+		return nil, startErr
 	}
 
-	//create the client:
-	client, clientErr := obj.Connect(conf.RPC.GRPCListenAddress)
-	if clientErr != nil {
-		return nil, clientErr
-	}*/
+	//conf.RPC.GRPCListenAddress = fmt.Sprintf("%s%d", conf.RPC.ListenAddress, 1)
+
+	//wait for RPC and GRPC:
+	waitForRPC(conf.RPC.ListenAddress)
+	waitForGRPC(conf.RPC.GRPCListenAddress)
 
 	client, clientErr := obj.Connect(conf.RPC.ListenAddress)
 	if clientErr != nil {
-		return nil, nil, clientErr
+		return nil, clientErr
 	}
 
-	return server, client, nil
+	return client, nil
 }
 
 // Connect connects to an external blockchain
 func (obj *routerService) Connect(ipAddress string) (router.Router, error) {
-	out, outErr := createGRPCRouter(ipAddress)
+	out, outErr := createRPCRouter(ipAddress)
 	if outErr != nil {
 		return nil, outErr
 	}
 
 	return out, outErr
+}
+
+func waitForRPC(laddr string) {
+	client := rpcclient.NewJSONRPCClient(laddr)
+	ctypes.RegisterAmino(client.Codec())
+	result := new(ctypes.ResultStatus)
+	for {
+		_, err := client.Call("status", map[string]interface{}{}, result)
+		if err == nil {
+			return
+		}
+
+		fmt.Println("error", err)
+		time.Sleep(time.Millisecond)
+	}
+}
+
+func waitForGRPC(grpcAddr string) {
+	client := core_grpc.StartGRPCClient(grpcAddr)
+	for {
+		_, err := client.Ping(context.Background(), &core_grpc.RequestPing{})
+		if err == nil {
+			return
+		}
+
+		fmt.Println("error", err)
+		time.Sleep(time.Millisecond)
+	}
 }

@@ -65,13 +65,3 @@ func (app *simpleTestApplication) Transact(req router.Request) router.TrxRespons
 		Log:          "success",
 	})
 }
-
-// CheckTrx executes a transaction check route and returns its response:
-func (app *simpleTestApplication) CheckTrx(req router.TrxChkRequest) router.TrxChkResponse {
-	return router.SDKFunc.CreateTrxChkResponse(router.CreateTrxChkResponseParams{
-		CanBeExecuted:   true,
-		CanBeAuthorized: true,
-		GazWanted:       int64(rand.Int() % 20),
-		Log:             "success",
-	})
-}

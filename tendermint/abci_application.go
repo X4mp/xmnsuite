@@ -4,9 +4,8 @@ import (
 	"encoding/binary"
 	"encoding/json"
 
-	datastore "github.com/XMNBlockchain/datamint/datastore"
+	applications "github.com/XMNBlockchain/datamint/applications"
 	hashtree "github.com/XMNBlockchain/datamint/hashtree"
-	keys "github.com/XMNBlockchain/datamint/keys"
 	router "github.com/XMNBlockchain/datamint/router"
 	code "github.com/tendermint/tendermint/abci/example/code"
 	types "github.com/tendermint/tendermint/abci/types"
@@ -14,132 +13,17 @@ import (
 )
 
 /*
- * State
- */
-
-type state struct {
-	Hash          []byte `json:"hash"`
-	KeynamePrefix string `json:"keyname_prefix"`
-	Height        int    `json:"height"`
-	Size          int64  `json:"size"`
-}
-
-func createEmptyState(appHash []byte, keynamePrefix string) (*state, error) {
-	out := createState(appHash, keynamePrefix, 0, 0)
-	return out, nil
-}
-
-func createState(hash []byte, keynamePrefix string, height int, size int64) *state {
-	out := state{
-		Hash:          hash,
-		KeynamePrefix: keynamePrefix,
-		Height:        height,
-		Size:          size,
-	}
-
-	return &out
-}
-
-// GetHash returns the hash
-func (obj *state) GetHash() []byte {
-	return obj.Hash
-}
-
-// GetHeight returns the height
-func (obj *state) GetHeight() int {
-	return obj.Height
-}
-
-// GetSize returns the size
-func (obj *state) GetSize() int64 {
-	return obj.Size
-}
-
-// GetKeynamePrefix returns the keyname prefix
-func (obj *state) GetKeynamePrefix() string {
-	return obj.KeynamePrefix
-}
-
-// Increment increments the database size
-func (obj *state) Increment() int64 {
-	obj.Size++
-	return obj.Size
-}
-
-/*
- * StoredState
- */
-
-type storedState struct {
-	st *state
-	k  keys.Keys
-}
-
-func createStoredState(st *state, k keys.Keys) *storedState {
-	out := storedState{
-		st: st,
-		k:  k,
-	}
-
-	return &out
-}
-
-// GetState returns the state
-func (obj *storedState) GetState() *state {
-	return obj.st
-}
-
-// Set sets data to the keyname in the database
-func (obj *storedState) Set(keyname string, data []byte) {
-	obj.k.Save(keyname, data)
-}
-
-/*
- * Application
+ * ABCI Application
  */
 
 type abciApplication struct {
 	types.BaseApplication
-	rt       router.Router
-	store    datastore.DataStore
-	state    *storedState
-	stateKey string
+	app applications.Application
 }
 
-func createABCIApplication(stateKey string, keynamePrefix string, appHash []byte, k keys.Keys, store datastore.DataStore, rt router.Router) (*abciApplication, error) {
-	storedState, storedStateErr := func(stateKey string, k keys.Keys) (*storedState, error) {
-		retState := k.Retrieve(stateKey)
-		if stateBytes, ok := retState.([]byte); ok {
-			if len(stateBytes) > 0 {
-				st := new(state)
-				jsErr := json.Unmarshal(stateBytes, st)
-				if jsErr != nil {
-					return nil, jsErr
-				}
-
-				storedState := createStoredState(st, k)
-				return storedState, nil
-			}
-		}
-
-		st, stErr := createEmptyState(appHash, keynamePrefix)
-		if stErr != nil {
-			return nil, stErr
-		}
-
-		storedState := createStoredState(st, k)
-		return storedState, nil
-	}(stateKey, k)
-
-	if storedStateErr != nil {
-		return nil, storedStateErr
-	}
-
+func createABCIApplication(app applications.Application) (*abciApplication, error) {
 	out := abciApplication{
-		state:    storedState,
-		rt:       rt,
-		store:    store,
-		stateKey: stateKey,
+		app: app,
 	}
 
 	return &out, nil
@@ -147,10 +31,14 @@ func createABCIApplication(stateKey string, keynamePrefix string, appHash []byte
 
 // Info outputs information related to the abciApplication state
 func (app *abciApplication) Info(req types.RequestInfo) types.ResponseInfo {
+	resp := app.app.Info(applications.SDKFunc.CreateInfoRequest(applications.CreateInfoRequestParams{
+		Version: req.GetVersion(),
+	}))
+
 	out := struct {
 		Size int64 `json:"size"`
 	}{
-		Size: app.state.GetState().GetSize(),
+		Size: resp.Size(),
 	}
 
 	js, jsErr := cdc.MarshalJSON(out)
@@ -158,12 +46,16 @@ func (app *abciApplication) Info(req types.RequestInfo) types.ResponseInfo {
 		panic(js)
 	}
 
-	return types.ResponseInfo{Data: string(js)}
+	return types.ResponseInfo{
+		Data:             string(js),
+		Version:          resp.Version(),
+		LastBlockHeight:  resp.LastBlockHeight(),
+		LastBlockAppHash: resp.LastBlockAppHash(),
+	}
 }
 
 // DeliverTx delivers a transaction to the abciApplication
 func (app *abciApplication) DeliverTx(tx []byte) types.ResponseDeliverTx {
-
 	//execute the transaction:
 	resp := app.rt.Transact(router.SDKFunc.CreateRequest(router.CreateRequestParams{
 		JSData: tx,
@@ -196,7 +88,7 @@ func (app *abciApplication) DeliverTx(tx []byte) types.ResponseDeliverTx {
 // CheckTx verifies that a transaction is valid before it gets executed
 func (app *abciApplication) CheckTx(tx []byte) types.ResponseCheckTx {
 	//execute the transaction:
-	resp := app.rt.CheckTrx(router.SDKFunc.CreateTrxChkRequest(router.CreateTrxChkRequestParams{
+	/*resp := app.rt.CheckTrx(router.SDKFunc.CreateRequest(router.CreateRequestParams{
 		JSData: tx,
 	}))
 
@@ -208,7 +100,8 @@ func (app *abciApplication) CheckTx(tx []byte) types.ResponseCheckTx {
 		return types.ResponseCheckTx{Code: code.CodeTypeEncodingError, Log: resp.Log(), GasWanted: resp.GazWanted()}
 	}
 
-	return types.ResponseCheckTx{Code: code.CodeTypeOK, Log: resp.Log(), GasWanted: resp.GazWanted()}
+	return types.ResponseCheckTx{Code: code.CodeTypeOK, Log: resp.Log(), GasWanted: resp.GazWanted()}*/
+	return nil
 }
 
 // Commit commits the blockchain
