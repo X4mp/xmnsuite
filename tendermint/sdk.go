@@ -107,7 +107,7 @@ var SDKFunc = struct {
 	CreateBlockchainService func(params CreateBlockchainServiceParams) BlockchainService
 	CreateRouterService     func(params CreateRouterServiceParams) RouterService
 }{
-	CreatePath: func(params CreatePathParams) Path {
+	/*CreatePath: func(params CreatePathParams) Path {
 		return createPath(params.Namespace, params.Name, params.ID)
 	},
 	CreateBlockchain: func(params CreateBlockchainParams) Blockchain {
@@ -132,5 +132,5 @@ var SDKFunc = struct {
 	},
 	CreateRouterService: func(params CreateRouterServiceParams) RouterService {
 		return createRouterService(params.RootDir, params.BlkChain, params.Router)
-	},
+	},*/
 }

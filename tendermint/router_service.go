@@ -5,11 +5,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
-	datastore "github.com/XMNBlockchain/datamint/datastore"
-	keys "github.com/XMNBlockchain/datamint/keys"
+	applications "github.com/XMNBlockchain/datamint/applications"
 	router "github.com/XMNBlockchain/datamint/router"
 	config "github.com/tendermint/tendermint/config"
 	log "github.com/tendermint/tendermint/libs/log"
@@ -24,14 +22,14 @@ import (
 type routerService struct {
 	rootDir  string
 	blkChain Blockchain
-	rter     router.Router
+	app      applications.Application
 }
 
-func createRouterService(rootDir string, blkChain Blockchain, rter router.Router) RouterService {
+func createRouterService(rootDir string, blkChain Blockchain, app applications.Application) RouterService {
 	out := routerService{
 		rootDir:  rootDir,
 		blkChain: blkChain,
-		rter:     rter,
+		app:      app,
 	}
 
 	return &out
@@ -40,14 +38,11 @@ func createRouterService(rootDir string, blkChain Blockchain, rter router.Router
 // Spawn spawns a new blockchain application
 func (obj *routerService) Spawn() (router.Router, error) {
 
-	//create the datastore and keys:
-	k := keys.SDKFunc.Create()
-	store := datastore.SDKFunc.Create()
-
-	//bind the custom application to the middle application:
+	// retrieve the genesis block:
 	gen := obj.blkChain.GetGenesis()
-	keynamePrefix := strings.Replace(gen.GetPath().String(), string(filepath.Separator), "-", -1)
-	middleApp, middleAppErr := createABCIApplication("stateKey", keynamePrefix, []byte(gen.GetHead()), k, store, obj.rter)
+
+	//create the abci application:
+	middleApp, middleAppErr := createABCIApplication(obj.app)
 	if middleAppErr != nil {
 		return nil, middleAppErr
 	}

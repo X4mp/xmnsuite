@@ -1,13 +1,7 @@
 package tendermint
 
 import (
-	"encoding/binary"
-	"encoding/json"
-
 	applications "github.com/XMNBlockchain/datamint/applications"
-	hashtree "github.com/XMNBlockchain/datamint/hashtree"
-	router "github.com/XMNBlockchain/datamint/router"
-	code "github.com/tendermint/tendermint/abci/example/code"
 	types "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 )
@@ -31,6 +25,8 @@ func createABCIApplication(app applications.Application) (*abciApplication, erro
 
 // Info outputs information related to the abciApplication state
 func (app *abciApplication) Info(req types.RequestInfo) types.ResponseInfo {
+
+	// execute the request on the application:
 	resp := app.app.Info(applications.SDKFunc.CreateInfoRequest(applications.CreateInfoRequestParams{
 		Version: req.GetVersion(),
 	}))
@@ -56,104 +52,96 @@ func (app *abciApplication) Info(req types.RequestInfo) types.ResponseInfo {
 
 // DeliverTx delivers a transaction to the abciApplication
 func (app *abciApplication) DeliverTx(tx []byte) types.ResponseDeliverTx {
-	//execute the transaction:
-	resp := app.rt.Transact(router.SDKFunc.CreateRequest(router.CreateRequestParams{
+
+	// execute the transaction on the application:
+	resp := app.app.Transact(applications.SDKFunc.CreateTransactionRequest(applications.CreateTransactionRequestParams{
 		JSData: tx,
 	}))
 
-	//if the transaction is un-authorized:
-	if !resp.IsAuthorized() {
-		return types.ResponseDeliverTx{Code: code.CodeTypeUnauthorized, Log: resp.Log(), GasUsed: resp.GazUsed()}
-	}
-
-	//if the transaction was not successful, flag the encoding error:
-	if !resp.IsSuccess() {
-		return types.ResponseDeliverTx{Code: code.CodeTypeEncodingError, Log: resp.Log(), GasUsed: resp.GazUsed()}
-	}
+	// fetch the data from response:
+	code := resp.Code()
+	gazUsed := resp.GazUsed()
+	log := resp.Log()
+	inputTags := resp.Tags()
 
 	//create the tags:
-	tags := resp.Tags()
 	tagPairs := []cmn.KVPair{}
-	for key, value := range tags {
+	for key, value := range inputTags {
 		tagPairs = append(tagPairs, cmn.KVPair{
 			Key:   []byte(key),
 			Value: value,
 		})
 	}
 
-	//the transaction was successful:
-	return types.ResponseDeliverTx{Code: code.CodeTypeOK, Log: resp.Log(), GasUsed: resp.GazUsed(), Tags: tagPairs}
+	//return the value:
+	return types.ResponseDeliverTx{Code: uint32(code), Log: log, GasUsed: gazUsed, Tags: tagPairs}
 }
 
 // CheckTx verifies that a transaction is valid before it gets executed
 func (app *abciApplication) CheckTx(tx []byte) types.ResponseCheckTx {
-	//execute the transaction:
-	/*resp := app.rt.CheckTrx(router.SDKFunc.CreateRequest(router.CreateRequestParams{
+
+	// execute the transaction on the application:
+	resp := app.app.CheckTransact(applications.SDKFunc.CreateTransactionRequest(applications.CreateTransactionRequestParams{
 		JSData: tx,
 	}))
 
-	if !resp.CanBeAuthorized() {
-		return types.ResponseCheckTx{Code: code.CodeTypeUnauthorized, Log: resp.Log(), GasWanted: resp.GazWanted()}
+	// fetch the data from response:
+	code := resp.Code()
+	gazWanted := resp.GazUsed()
+	log := resp.Log()
+	inputTags := resp.Tags()
+
+	//create the tags:
+	tagPairs := []cmn.KVPair{}
+	for key, value := range inputTags {
+		tagPairs = append(tagPairs, cmn.KVPair{
+			Key:   []byte(key),
+			Value: value,
+		})
 	}
 
-	if !resp.CanBeExecuted() {
-		return types.ResponseCheckTx{Code: code.CodeTypeEncodingError, Log: resp.Log(), GasWanted: resp.GazWanted()}
-	}
-
-	return types.ResponseCheckTx{Code: code.CodeTypeOK, Log: resp.Log(), GasWanted: resp.GazWanted()}*/
-	return nil
+	//return the value:
+	return types.ResponseCheckTx{Code: uint32(code), Log: log, GasWanted: gazWanted, Tags: tagPairs}
 }
 
 // Commit commits the blockchain
 func (app *abciApplication) Commit() types.ResponseCommit {
+	//execute the commit on the application:
+	resp := app.app.Commit()
 
-	//get the current state:
-	st := app.state.GetState()
-	size := app.state.GetState().GetSize()
+	// fetch the data from the response:
+	appHash := resp.AppHash()
 
-	//generate an app hash:
-	appHash := make([]byte, 8)
-	binary.PutVarint(appHash, size)
-
-	//if the size is bigger than 0, add the store head:
-	if size > 0 {
-		head := hashtree.SDKFunc.CreateHashTree(hashtree.CreateHashTreeParams{
-			Blocks: [][]byte{
-				appHash,
-				app.store.Head().Head().Get(),
-			},
-		})
-
-		appHash = head.Head().Get()
-	}
-
-	//create the updated state:
-	newSt := createState(appHash, st.GetKeynamePrefix(), st.GetHeight()+1, st.GetSize())
-	stJS, stJSErr := json.Marshal(newSt)
-	if stJSErr != nil {
-		panic(stJSErr)
-	}
-
-	//set the updated state:
-	app.state.Set(app.stateKey, stJS)
-
-	//return the response:
+	// return the value:
 	return types.ResponseCommit{Data: appHash}
 }
 
 // Query executes a query on the abciApplication
 func (app *abciApplication) Query(reqQuery types.RequestQuery) types.ResponseQuery {
-	resp := app.rt.Query(router.SDKFunc.CreateRequest(router.CreateRequestParams{
+
+	if !reqQuery.GetProve() {
+		return types.ResponseQuery{
+			Code: uint32(applications.InvalidRequest),
+			Log:  "the query must be proved",
+		}
+	}
+
+	//execute the query on the application:
+	resp := app.app.Query(applications.SDKFunc.CreateQueryRequest(applications.CreateQueryRequestParams{
 		JSData: reqQuery.GetData(),
 	}))
 
-	js, jsErr := cdc.MarshalJSON(resp)
-	if jsErr != nil {
-		panic(jsErr)
-	}
+	//fetch the data from the response:
+	code := resp.Code()
+	key := resp.Key()
+	value := resp.Value()
+	log := resp.Log()
 
+	// return the value:
 	return types.ResponseQuery{
-		Value: js,
-		Log:   "success",
+		Code:  uint32(code),
+		Log:   log,
+		Key:   []byte(key),
+		Value: value,
 	}
 }

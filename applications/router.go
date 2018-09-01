@@ -1,6 +1,7 @@
 package applications
 
 import (
+	"errors"
 	"regexp"
 
 	roles "github.com/XMNBlockchain/datamint/roles"
@@ -16,6 +17,22 @@ type handler struct {
 	saveTrx SaveTransactionFn
 	delTrx  DeleteTransactionFn
 	query   QueryFn
+}
+
+func createHandler(saveTrx SaveTransactionFn, delTrx DeleteTransactionFn, query QueryFn) (Handler, int, error) {
+	if saveTrx != nil {
+		return createHandlerWithSaveTransactionFn(saveTrx), Save, nil
+	}
+
+	if delTrx != nil {
+		return createHandlerWithDeleteTransactionFn(delTrx), Delete, nil
+	}
+
+	if query != nil {
+		return createHandlerWithQueryFn(query), Retrieve, nil
+	}
+
+	return nil, -1, errors.New("one valid func handler is mandatory in order to create an Handler instance")
 }
 
 func createHandlerWithSaveTransactionFn(saveTrx SaveTransactionFn) Handler {
