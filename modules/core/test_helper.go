@@ -1,4 +1,4 @@
-package modules
+package core
 
 import lua "github.com/yuin/gopher-lua"
 

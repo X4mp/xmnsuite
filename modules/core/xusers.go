@@ -1,4 +1,4 @@
-package modules
+package core
 
 import (
 	users "github.com/XMNBlockchain/datamint/users"

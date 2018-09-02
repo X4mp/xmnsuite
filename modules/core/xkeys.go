@@ -1,4 +1,4 @@
-package modules
+package core
 
 import (
 	keys "github.com/XMNBlockchain/datamint/keys"

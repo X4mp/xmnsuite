@@ -1,4 +1,4 @@
-package modules
+package core
 
 import (
 	roles "github.com/XMNBlockchain/datamint/roles"

@@ -1,4 +1,4 @@
-package modules
+package core
 
 import (
 	"testing"
@@ -11,9 +11,7 @@ func TestXRoles_Success(t *testing.T) {
 	defer l.Close()
 
 	//create the module:
-	CreateXRoles(l)
-	CreateXCrypto(l)
-	CreateXUsers(l)
+	Register(l)
 
 	//execute the chunk:
 	executeChunkForTests(l, "lua/xroles_test.lua")
