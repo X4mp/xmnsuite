@@ -9,13 +9,13 @@ import (
 )
 
 // SaveTransactionFn represents a save transaction func
-type SaveTransactionFn func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) TransactionResponse
+type SaveTransactionFn func(from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) (TransactionResponse, error)
 
 // DeleteTransactionFn represents a delete transaction func
-type DeleteTransactionFn func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) TransactionResponse
+type DeleteTransactionFn func(from crypto.PubKey, path string, params map[string]string, sig []byte) (TransactionResponse, error)
 
 // QueryFn represents a query func.  The return values are: code, key, value, log
-type QueryFn func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) QueryResponse
+type QueryFn func(from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error)
 
 const (
 	// IsSuccessful represents a successful query and/or transaction
@@ -93,6 +93,7 @@ type TransactionResponse interface {
 // CommitResponse represents a commit response
 type CommitResponse interface {
 	AppHash() []byte
+	BlockHeight() int64
 }
 
 // QueryRequest represents a query request
@@ -137,11 +138,43 @@ type Router interface {
 
 // Application represents an application
 type Application interface {
+	GetBlockIndex() int64
+	FromBlockIndex() int64
+	ToBlockIndex() int64
 	Info(req InfoRequest) InfoResponse
 	Transact(req TransactionRequest) TransactionResponse
 	CheckTransact(req TransactionRequest) TransactionResponse
 	Commit() CommitResponse
 	Query(req QueryRequest) QueryResponse
+}
+
+// Applications represents an application
+type Applications interface {
+	RetrieveBlockIndex() int64
+	RetrieveByBlockIndex(blkIndex int64) (Application, error)
+}
+
+// ClientTransactionResponse represents a client transaction response
+type ClientTransactionResponse interface {
+	Check() TransactionResponse
+	Transaction() TransactionResponse
+	Height() int64
+	Hash() []byte
+}
+
+// Client represents an application client
+type Client interface {
+	Start() error
+	Query(req QueryRequest) (QueryResponse, error)
+	Transact(req TransactionRequest) (ClientTransactionResponse, error)
+}
+
+// Node represents a node in which an application is running
+type Node interface {
+	GetAddress() string
+	GetClient() (Client, error)
+	Start() error
+	Stop() error
 }
 
 /*
@@ -173,10 +206,27 @@ type CreateTransactionRequestParams struct {
 	JSData []byte
 }
 
+// CreateTransactionResponseParams represents the CreateTransactionResponse params
+type CreateTransactionResponseParams struct {
+	Code    int
+	Log     string
+	GazUsed int64
+	Tags    map[string][]byte
+}
+
 // CreateQueryRequestParams represents the CreateQueryRequest params
 type CreateQueryRequestParams struct {
 	Ptr    ResourcePointer
 	Sig    []byte
+	JSData []byte
+}
+
+// CreateQueryResponseParams represents the CreateQueryResponse params
+type CreateQueryResponseParams struct {
+	Code   int
+	Log    string
+	Key    string
+	Value  []byte
 	JSData []byte
 }
 
@@ -197,19 +247,38 @@ type CreateRouterParams struct {
 
 // CreateApplicationParams represents the CreateApplication params
 type CreateApplicationParams struct {
-	Version      string
-	DataStore    datastore.DataStore
-	RouterParams CreateRouterParams
+	FromBlockIndex int64
+	ToBlockIndex   int64
+	Version        string
+	DataStore      datastore.DataStore
+	RouterParams   CreateRouterParams
+}
+
+// CreateApplicationsParams represents the CreateApplications params
+type CreateApplicationsParams struct {
+	Apps []Application
+}
+
+// CreateClientTransactionResponseParams represents the CreateClientTransactionResponse params
+type CreateClientTransactionResponseParams struct {
+	Chk    TransactionResponse
+	Trx    TransactionResponse
+	Height int64
+	Hash   []byte
 }
 
 // SDKFunc represents the applications SDK func
 var SDKFunc = struct {
-	CreateResourcePointer    func(params CreateResourcePointerParams) ResourcePointer
-	CreateResource           func(params CreateResourceParams) Resource
-	CreateInfoRequest        func(params CreateInfoRequestParams) InfoRequest
-	CreateTransactionRequest func(params CreateTransactionRequestParams) TransactionRequest
-	CreateQueryRequest       func(params CreateQueryRequestParams) QueryRequest
-	CreateApplication        func(params CreateApplicationParams) Application
+	CreateResourcePointer           func(params CreateResourcePointerParams) ResourcePointer
+	CreateResource                  func(params CreateResourceParams) Resource
+	CreateInfoRequest               func(params CreateInfoRequestParams) InfoRequest
+	CreateTransactionRequest        func(params CreateTransactionRequestParams) TransactionRequest
+	CreateTransactionResponse       func(params CreateTransactionResponseParams) TransactionResponse
+	CreateQueryRequest              func(params CreateQueryRequestParams) QueryRequest
+	CreateQueryResponse             func(params CreateQueryResponseParams) QueryResponse
+	CreateApplication               func(params CreateApplicationParams) Application
+	CreateApplications              func(params CreateApplicationsParams) Applications
+	CreateClientTransactionResponse func(params CreateClientTransactionResponseParams) ClientTransactionResponse
 }{
 	CreateResourcePointer: func(params CreateResourcePointerParams) ResourcePointer {
 		out := createResourcePointer(params.From, params.Path)
@@ -224,6 +293,16 @@ var SDKFunc = struct {
 		return out
 	},
 	CreateTransactionRequest: func(params CreateTransactionRequestParams) TransactionRequest {
+		if params.JSData != nil {
+			out := new(transactionRequest)
+			jsErr := cdc.UnmarshalJSON(params.JSData, out)
+			if jsErr != nil {
+				panic(jsErr)
+			}
+
+			return out
+		}
+
 		if params.Ptr != nil {
 			out, outErr := createTransactionRequestWithResourcePointer(params.Ptr, params.Sig)
 			if outErr != nil {
@@ -244,6 +323,23 @@ var SDKFunc = struct {
 
 		panic(errors.New("the params must contain a Resource or a PointerResource"))
 	},
+	CreateTransactionResponse: func(params CreateTransactionResponseParams) TransactionResponse {
+		if params.GazUsed != 0 && params.Tags != nil {
+			out, outErr := createTransactionResponse(params.Code, params.Log, params.GazUsed, params.Tags)
+			if outErr != nil {
+				panic(outErr)
+			}
+
+			return out
+		}
+
+		out, outErr := createFreeTransactionResponse(params.Code, params.Log)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
+	},
 	CreateQueryRequest: func(params CreateQueryRequestParams) QueryRequest {
 		if params.JSData != nil {
 			qr := new(queryRequest)
@@ -262,14 +358,39 @@ var SDKFunc = struct {
 
 		return out
 	},
+	CreateQueryResponse: func(params CreateQueryResponseParams) QueryResponse {
+		if params.JSData != nil {
+			out := new(queryResponse)
+			jsErr := cdc.UnmarshalJSON(params.JSData, out)
+			if jsErr != nil {
+				panic(jsErr)
+			}
+
+			return out
+		}
+
+		if params.Key == "" && params.Value == nil {
+			out, outErr := createEmptyQueryResponse(params.Code, params.Log)
+			if outErr != nil {
+				panic(outErr)
+			}
+
+			return out
+		}
+
+		out, outErr := createQueryResponse(params.Code, params.Log, params.Key, params.Value)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
+	},
 	CreateApplication: func(params CreateApplicationParams) Application {
-
-		// fetch the roles and users:
-		rols := params.DataStore.Roles()
-		usrs := params.DataStore.Users()
-
 		//create the routes:
 		rtes := map[int][]Route{}
+		routerDS := params.RouterParams.DataStore
+		rols := routerDS.Roles()
+		usrs := routerDS.Users()
 		for _, oneRteParams := range params.RouterParams.RtesParams {
 			//create handler:
 			handlr, rteType, handlrErr := createHandler(oneRteParams.SaveTrx, oneRteParams.DelTrx, oneRteParams.QueryTrx)
@@ -306,11 +427,19 @@ var SDKFunc = struct {
 		}
 
 		//create the application:
-		app, appErr := createApplication(params.Version, stateKey, storedState, params.DataStore, rter)
+		app, appErr := createApplication(params.FromBlockIndex, params.ToBlockIndex, params.Version, stateKey, storedState, params.DataStore, rter)
 		if appErr != nil {
 			panic(appErr)
 		}
 
 		return app
+	},
+	CreateApplications: func(params CreateApplicationsParams) Applications {
+		out := createApplications(params.Apps)
+		return out
+	},
+	CreateClientTransactionResponse: func(params CreateClientTransactionResponseParams) ClientTransactionResponse {
+		out := createClientTransactionResponse(params.Chk, params.Trx, params.Height, params.Hash)
+		return out
 	},
 }

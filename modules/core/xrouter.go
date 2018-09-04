@@ -30,17 +30,7 @@ func CreateXRouter(l *lua.LState) *XRouter {
 }
 
 func (app *XRouter) register() {
-	//verifies that the given type is a Crypto instance:
-	/*checkFn := func(l *lua.LState) *XRoute {
-		ud := l.CheckUserData(1)
-		if v, ok := ud.Value.(*XRoute); ok {
-			return v
-		}
-
-		l.ArgError(1, "route expected")
-		return nil
-	}*/
-
+	//verifies that the given type is a Route instance:
 	checkRouteFn := func(l *lua.LState, index int) *routeParams {
 		ud := l.CheckUserData(index)
 		if v, ok := ud.Value.(*routeParams); ok {
@@ -84,7 +74,7 @@ func (app *XRouter) register() {
 	app.l.SetGlobal(luaRouter, mt)
 
 	// static attributes
-	app.l.SetField(mt, "load", app.l.NewFunction(newRouter))
+	app.l.SetField(mt, "new", app.l.NewFunction(newRouter))
 
 	// methods
 	app.l.SetField(mt, "__index", app.l.SetFuncs(app.l.NewTable(), methods))

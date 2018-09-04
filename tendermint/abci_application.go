@@ -12,12 +12,14 @@ import (
 
 type abciApplication struct {
 	types.BaseApplication
-	app applications.Application
+	apps      applications.Applications
+	blkHeight int64
 }
 
-func createABCIApplication(app applications.Application) (*abciApplication, error) {
+func createABCIApplication(apps applications.Applications) (*abciApplication, error) {
 	out := abciApplication{
-		app: app,
+		apps:      apps,
+		blkHeight: apps.RetrieveBlockIndex(),
 	}
 
 	return &out, nil
@@ -25,9 +27,14 @@ func createABCIApplication(app applications.Application) (*abciApplication, erro
 
 // Info outputs information related to the abciApplication state
 func (app *abciApplication) Info(req types.RequestInfo) types.ResponseInfo {
+	// retrieve the app:
+	curApp, curAppErr := app.apps.RetrieveByBlockIndex(app.blkHeight)
+	if curAppErr != nil {
+		panic(curAppErr)
+	}
 
 	// execute the request on the application:
-	resp := app.app.Info(applications.SDKFunc.CreateInfoRequest(applications.CreateInfoRequestParams{
+	resp := curApp.Info(applications.SDKFunc.CreateInfoRequest(applications.CreateInfoRequestParams{
 		Version: req.GetVersion(),
 	}))
 
@@ -43,18 +50,25 @@ func (app *abciApplication) Info(req types.RequestInfo) types.ResponseInfo {
 	}
 
 	return types.ResponseInfo{
-		Data:             string(js),
-		Version:          resp.Version(),
-		LastBlockHeight:  resp.LastBlockHeight(),
-		LastBlockAppHash: resp.LastBlockAppHash(),
+		Data:    string(js),
+		Version: resp.Version(),
+		//LastBlockHeight:  resp.LastBlockHeight(),
+		//LastBlockAppHash: resp.LastBlockAppHash(),
 	}
+
+	//return types.ResponseInfo{Data: fmt.Sprintf("{\"size\":%v}", app.state.Size)}
 }
 
 // DeliverTx delivers a transaction to the abciApplication
 func (app *abciApplication) DeliverTx(tx []byte) types.ResponseDeliverTx {
+	// retrieve the app:
+	curApp, curAppErr := app.apps.RetrieveByBlockIndex(app.blkHeight)
+	if curAppErr != nil {
+		panic(curAppErr)
+	}
 
 	// execute the transaction on the application:
-	resp := app.app.Transact(applications.SDKFunc.CreateTransactionRequest(applications.CreateTransactionRequestParams{
+	resp := curApp.Transact(applications.SDKFunc.CreateTransactionRequest(applications.CreateTransactionRequestParams{
 		JSData: tx,
 	}))
 
@@ -79,9 +93,14 @@ func (app *abciApplication) DeliverTx(tx []byte) types.ResponseDeliverTx {
 
 // CheckTx verifies that a transaction is valid before it gets executed
 func (app *abciApplication) CheckTx(tx []byte) types.ResponseCheckTx {
+	// retrieve the app:
+	curApp, curAppErr := app.apps.RetrieveByBlockIndex(app.blkHeight)
+	if curAppErr != nil {
+		panic(curAppErr)
+	}
 
 	// execute the transaction on the application:
-	resp := app.app.CheckTransact(applications.SDKFunc.CreateTransactionRequest(applications.CreateTransactionRequestParams{
+	resp := curApp.CheckTransact(applications.SDKFunc.CreateTransactionRequest(applications.CreateTransactionRequestParams{
 		JSData: tx,
 	}))
 
@@ -106,11 +125,20 @@ func (app *abciApplication) CheckTx(tx []byte) types.ResponseCheckTx {
 
 // Commit commits the blockchain
 func (app *abciApplication) Commit() types.ResponseCommit {
+	// retrieve the app:
+	curApp, curAppErr := app.apps.RetrieveByBlockIndex(app.blkHeight)
+	if curAppErr != nil {
+		panic(curAppErr)
+	}
+
 	//execute the commit on the application:
-	resp := app.app.Commit()
+	resp := curApp.Commit()
 
 	// fetch the data from the response:
 	appHash := resp.AppHash()
+
+	// update the block height:
+	app.blkHeight = resp.BlockHeight()
 
 	// return the value:
 	return types.ResponseCommit{Data: appHash}
@@ -118,16 +146,21 @@ func (app *abciApplication) Commit() types.ResponseCommit {
 
 // Query executes a query on the abciApplication
 func (app *abciApplication) Query(reqQuery types.RequestQuery) types.ResponseQuery {
-
 	if !reqQuery.GetProve() {
 		return types.ResponseQuery{
 			Code: uint32(applications.InvalidRequest),
-			Log:  "the query must be proved",
+			Log:  "the query cannot be trusted",
 		}
 	}
 
+	// retrieve the app:
+	curApp, curAppErr := app.apps.RetrieveByBlockIndex(app.blkHeight)
+	if curAppErr != nil {
+		panic(curAppErr)
+	}
+
 	//execute the query on the application:
-	resp := app.app.Query(applications.SDKFunc.CreateQueryRequest(applications.CreateQueryRequestParams{
+	resp := curApp.Query(applications.SDKFunc.CreateQueryRequest(applications.CreateQueryRequestParams{
 		JSData: reqQuery.GetData(),
 	}))
 
@@ -138,10 +171,18 @@ func (app *abciApplication) Query(reqQuery types.RequestQuery) types.ResponseQue
 	log := resp.Log()
 
 	// return the value:
-	return types.ResponseQuery{
-		Code:  uint32(code),
-		Log:   log,
-		Key:   []byte(key),
-		Value: value,
+	out := types.ResponseQuery{
+		Code: uint32(code),
+		Log:  log,
 	}
+
+	if key != "" {
+		out.Key = []byte(key)
+	}
+
+	if value != nil {
+		out.Value = value
+	}
+
+	return out
 }

@@ -1,9 +1,9 @@
 package applications
 
 import (
-	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	datastore "github.com/XMNBlockchain/datamint/datastore"
 )
@@ -13,6 +13,8 @@ import (
  */
 
 type application struct {
+	fromIndex   int64
+	toIndex     int64
 	version     string
 	stateKey    string
 	router      Router
@@ -20,8 +22,10 @@ type application struct {
 	storedState *storedState
 }
 
-func createApplication(version string, stateKey string, storedState *storedState, store datastore.DataStore, router Router) (*application, error) {
+func createApplication(fromIndex int64, toIndex int64, version string, stateKey string, storedState *storedState, store datastore.DataStore, router Router) (*application, error) {
 	out := application{
+		fromIndex:   fromIndex,
+		toIndex:     toIndex,
 		version:     version,
 		stateKey:    stateKey,
 		storedState: storedState,
@@ -32,10 +36,25 @@ func createApplication(version string, stateKey string, storedState *storedState
 	return &out, nil
 }
 
+// FromBlockIndex returns the from block index
+func (app *application) FromBlockIndex() int64 {
+	return app.fromIndex
+}
+
+// ToBlockIndex returns the to block index
+func (app *application) ToBlockIndex() int64 {
+	return app.toIndex
+}
+
+// GetBlockIndex returns the block index
+func (app *application) GetBlockIndex() int64 {
+	return app.storedState.State(app.version).Height()
+}
+
 // Info returns the application's information
 func (app *application) Info(req InfoRequest) InfoResponse {
 	version := req.Version()
-	state := app.storedState.State(version)
+	state := app.storedState.State(app.version)
 	size := state.Size()
 	lastBlkHeight := state.Height()
 	lastBlkAppHash := state.Hash()
@@ -70,9 +89,8 @@ func (app *application) Commit() CommitResponse {
 	st := app.storedState.State(app.version)
 	size := st.Size()
 
-	//generate an app hash:
-	appHash := make([]byte, 8)
-	binary.PutVarint(appHash, 0)
+	// get the hash from state:
+	appHash := st.Hash()
 
 	//if the size is bigger than 0, use the store head hash:
 	if size > 0 {
@@ -92,7 +110,7 @@ func (app *application) Commit() CommitResponse {
 		panic(errors.New("there was a problem while saving the state in the storedState"))
 	}
 
-	return createCommitResponse(appHash)
+	return createCommitResponse(appHash, newSt.Height())
 }
 
 // Query executes a query request on the application
@@ -120,7 +138,11 @@ func (app *application) Query(req QueryRequest) QueryResponse {
 	}
 
 	// retrieve the query response:
-	queryResponse := retrieveFunc(app.store, from, prepHandler.Path(), prepHandler.Params(), req.Signature())
+	queryResponse, queryResponseErr := retrieveFunc(from, prepHandler.Path(), prepHandler.Params(), req.Signature())
+	if queryResponseErr != nil {
+		str := fmt.Sprintf("there was an error while executing the query func: %s", queryResponseErr.Error())
+		return outputErrorFn(InvalidRequest, str)
+	}
 
 	//return the query response:
 	return queryResponse
@@ -152,7 +174,12 @@ func (app *application) execTrx(store datastore.DataStore, req TransactionReques
 			return outputErrorFn(InvalidRoute, "the router found a route for the given transaction, but its handler had no save transaction func")
 		}
 
-		trxResponse := saveTrsFunc(store, from, prepHandler.Path(), prepHandler.Params(), res.Data(), req.Signature())
+		trxResponse, trxResponseErr := saveTrsFunc(from, prepHandler.Path(), prepHandler.Params(), res.Data(), req.Signature())
+		if trxResponseErr != nil {
+			str := fmt.Sprintf("there was an error while executing the save transaction func: %s", trxResponseErr.Error())
+			return outputErrorFn(InvalidRequest, str)
+		}
+
 		return trxResponse
 	}
 
@@ -169,6 +196,11 @@ func (app *application) execTrx(store datastore.DataStore, req TransactionReques
 		return outputErrorFn(InvalidRoute, "the router found a route for the given transaction, but its handler had no delete transaction func")
 	}
 
-	trsResponse := delTrsFunc(store, from, prepHandler.Path(), prepHandler.Params(), req.Signature())
+	trsResponse, trsResponseErr := delTrsFunc(from, prepHandler.Path(), prepHandler.Params(), req.Signature())
+	if trsResponseErr != nil {
+		str := fmt.Sprintf("there was an error while executing the delete transaction func: %s", trsResponseErr.Error())
+		return outputErrorFn(InvalidRequest, str)
+	}
+
 	return trsResponse
 }

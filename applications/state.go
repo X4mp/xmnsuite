@@ -1,6 +1,7 @@
 package applications
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -21,6 +22,7 @@ type state struct {
 func createEmptyState() (*state, error) {
 	//generate an app hash:
 	appHash := make([]byte, 8)
+	binary.PutVarint(appHash, 0)
 
 	//create the state:
 	out := createState(appHash, 0, 0)

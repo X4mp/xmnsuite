@@ -3,7 +3,7 @@ package tendermint
 import (
 	"time"
 
-	router "github.com/XMNBlockchain/datamint/router"
+	applications "github.com/XMNBlockchain/datamint/applications"
 	uuid "github.com/satori/go.uuid"
 	crypto "github.com/tendermint/tendermint/crypto"
 )
@@ -63,10 +63,10 @@ type BlockchainService interface {
  * Application
  */
 
-// RouterService represents an application service
-type RouterService interface {
-	Spawn() (router.Router, error)
-	Connect(ipAddress string) (router.Router, error)
+// ApplicationService represents an application service
+type ApplicationService interface {
+	Spawn() (applications.Node, error)
+	Connect(ipAddress string) (applications.Client, error)
 }
 
 /*
@@ -93,21 +93,21 @@ type CreateBlockchainServiceParams struct {
 	RootDirPath string
 }
 
-// CreateRouterServiceParams represents the params of the CreateRouterService SDK func
-type CreateRouterServiceParams struct {
+// CreateApplicationServiceParams represents the params of the CreateApplicationService SDK func
+type CreateApplicationServiceParams struct {
 	RootDir  string
 	BlkChain Blockchain
-	Router   router.Router
+	Apps     applications.Applications
 }
 
 // SDKFunc represents the tendermint interval blockchains SDK functions
 var SDKFunc = struct {
-	CreatePath              func(params CreatePathParams) Path
-	CreateBlockchain        func(params CreateBlockchainParams) Blockchain
-	CreateBlockchainService func(params CreateBlockchainServiceParams) BlockchainService
-	CreateRouterService     func(params CreateRouterServiceParams) RouterService
+	CreatePath               func(params CreatePathParams) Path
+	CreateBlockchain         func(params CreateBlockchainParams) Blockchain
+	CreateBlockchainService  func(params CreateBlockchainServiceParams) BlockchainService
+	CreateApplicationService func(params CreateApplicationServiceParams) ApplicationService
 }{
-	/*CreatePath: func(params CreatePathParams) Path {
+	CreatePath: func(params CreatePathParams) Path {
 		return createPath(params.Namespace, params.Name, params.ID)
 	},
 	CreateBlockchain: func(params CreateBlockchainParams) Blockchain {
@@ -130,7 +130,12 @@ var SDKFunc = struct {
 	CreateBlockchainService: func(params CreateBlockchainServiceParams) BlockchainService {
 		return createBlockchainService(params.RootDirPath)
 	},
-	CreateRouterService: func(params CreateRouterServiceParams) RouterService {
-		return createRouterService(params.RootDir, params.BlkChain, params.Router)
-	},*/
+	CreateApplicationService: func(params CreateApplicationServiceParams) ApplicationService {
+		serv, servErr := createApplicationService(params.RootDir, params.BlkChain, params.Apps)
+		if servErr != nil {
+			panic(servErr)
+		}
+
+		return serv
+	},
 }

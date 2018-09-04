@@ -23,11 +23,23 @@ func createResourceHash(res interface{}) []byte {
 }
 
 func isCodeValid(code int) bool {
-	if (code != IsSuccessful) && (code != IsUnAuthorized) && (code != IsUnAuthenticated) && (code != RouteNotFound) {
-		return false
+
+	validCodes := []int{
+		IsSuccessful,
+		IsUnAuthorized,
+		IsUnAuthenticated,
+		RouteNotFound,
+		InvalidRoute,
+		InvalidRequest,
 	}
 
-	return true
+	for _, oneValidCode := range validCodes {
+		if code == oneValidCode {
+			return true
+		}
+	}
+
+	return false
 }
 
 func createPattern(patternAsString string) (*regexp.Regexp, error) {

@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"testing"
 
-	datastore "github.com/XMNBlockchain/datamint/datastore"
 	roles "github.com/XMNBlockchain/datamint/roles"
 	users "github.com/XMNBlockchain/datamint/users"
 	crypto "github.com/tendermint/tendermint/crypto"
@@ -14,8 +13,8 @@ import (
 
 func TestCreateHandler_withSaveTrxFn_Success(t *testing.T) {
 	//variables:
-	fn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) TransactionResponse {
-		return nil
+	fn := func(from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) (TransactionResponse, error) {
+		return nil, nil
 	}
 
 	//execute:
@@ -48,8 +47,8 @@ func TestCreateHandler_withSaveTrxFn_Success(t *testing.T) {
 
 func TestCreateHandler_withDeleteTrxFn_Success(t *testing.T) {
 	//variables:
-	fn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) TransactionResponse {
-		return nil
+	fn := func(from crypto.PubKey, path string, params map[string]string, sig []byte) (TransactionResponse, error) {
+		return nil, nil
 	}
 
 	//execute:
@@ -82,8 +81,8 @@ func TestCreateHandler_withDeleteTrxFn_Success(t *testing.T) {
 
 func TestCreateHandler_withQueryFn_Success(t *testing.T) {
 	//variables:
-	fn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) QueryResponse {
-		return nil
+	fn := func(from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error) {
+		return nil, nil
 	}
 
 	//execute:
@@ -116,8 +115,8 @@ func TestCreateHandler_withQueryFn_Success(t *testing.T) {
 
 func TestCreatePreparedHandler_Success(t *testing.T) {
 	//variables:
-	queryFn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) QueryResponse {
-		return nil
+	queryFn := func(from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error) {
+		return nil, nil
 	}
 
 	path := "/this/is/a/path"
@@ -147,8 +146,8 @@ func TestCreatePreparedHandler_Success(t *testing.T) {
 
 func TestCreatePreparedHandler_withParams_Success(t *testing.T) {
 	//variables:
-	queryFn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) QueryResponse {
-		return nil
+	queryFn := func(from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error) {
+		return nil, nil
 	}
 
 	path := "/this/is/a/path"
@@ -181,8 +180,8 @@ func TestCreatePreparedHandler_withParams_Success(t *testing.T) {
 
 func TestCreateRoute_withReadRoute_matches_Success(t *testing.T) {
 	//variables:
-	queryFn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) QueryResponse {
-		return nil
+	queryFn := func(from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error) {
+		return nil, nil
 	}
 
 	rols := roles.SDKFunc.Create()
@@ -214,8 +213,8 @@ func TestCreateRoute_withReadRoute_matches_Success(t *testing.T) {
 
 func TestCreateRoute_withReadRoute_doesNotMatch_Success(t *testing.T) {
 	//variables:
-	queryFn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) QueryResponse {
-		return nil
+	queryFn := func(from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error) {
+		return nil, nil
 	}
 
 	rols := roles.SDKFunc.Create()
@@ -247,8 +246,8 @@ func TestCreateRoute_withReadRoute_doesNotMatch_Success(t *testing.T) {
 
 func TestCreateRoute_withWriteRoute_userDoesNotHaveWriteAccess_Success(t *testing.T) {
 	//variables:
-	saveTrxFn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) TransactionResponse {
-		return nil
+	saveTrxFn := func(from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) (TransactionResponse, error) {
+		return nil, nil
 	}
 
 	//execute:
@@ -282,8 +281,8 @@ func TestCreateRoute_withWriteRoute_userDoesNotHaveWriteAccess_Success(t *testin
 
 func TestCreateRoute_withWriteRoute_userHasWriteAccess_Success(t *testing.T) {
 	//variables:
-	saveTrxFn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) TransactionResponse {
-		return nil
+	saveTrxFn := func(from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) (TransactionResponse, error) {
+		return nil, nil
 	}
 
 	//execute:
@@ -333,9 +332,9 @@ func TestCreateRouter_Success(t *testing.T) {
 	roleKey := "video-update-role-01"
 
 	// first route:
-	firstQueryFn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) QueryResponse {
-		qr, _ := createEmptyQueryResponse(IsSuccessful, "first")
-		return qr
+	firstQueryFn := func(from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error) {
+		qr, qrErr := createEmptyQueryResponse(IsSuccessful, "first")
+		return qr, qrErr
 	}
 
 	firstPatternAsString := "/videos/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>"
@@ -347,9 +346,9 @@ func TestCreateRouter_Success(t *testing.T) {
 	}
 
 	// second route:
-	secondQueryFn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) QueryResponse {
-		qr, _ := createEmptyQueryResponse(IsSuccessful, "second")
-		return qr
+	secondQueryFn := func(from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error) {
+		qr, qrErr := createEmptyQueryResponse(IsSuccessful, "second")
+		return qr, qrErr
 	}
 
 	secondPatternAsString := "/profiles/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>"
@@ -395,13 +394,15 @@ func TestCreateRouter_Success(t *testing.T) {
 	}
 
 	firstFn := firstPreparedHandler.Handler().Query()
-	firstLog := firstFn(nil, nil, "", nil, nil).Log()
+	firstResult, _ := firstFn(nil, "", nil, nil)
+	firstLog := firstResult.Log()
 	if firstLog != "first" {
 		t.Errorf("the returned log was invalid.  Expected: %s, Returned: %s", "first", firstLog)
 	}
 
 	secondFn := secondPrepatedHanlder.Handler().Query()
-	secondLog := secondFn(nil, nil, "", nil, nil).Log()
+	secondResult, _ := secondFn(nil, "", nil, nil)
+	secondLog := secondResult.Log()
 	if secondLog != "second" {
 		t.Errorf("the returned log was invalid.  Expected: %s, Returned: %s", "first", secondLog)
 	}
