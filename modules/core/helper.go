@@ -11,6 +11,10 @@ import (
 )
 
 func convertHashMapToLTable(hashmap map[string]interface{}) *lua.LTable {
+	if len(hashmap) <= 0 {
+		return nil
+	}
+
 	out := lua.LTable{}
 	for keyname, value := range hashmap {
 		if subHashMap, ok := value.(map[string]interface{}); ok {

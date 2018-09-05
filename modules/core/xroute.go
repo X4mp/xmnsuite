@@ -18,15 +18,13 @@ type routeParams struct {
 type XRoute struct {
 	l           *lua.LState
 	typeMapping map[string]int
-	rtes        []*routeParams
 }
 
 // CreateXRoute creates a new XRoute instance:
 func CreateXRoute(l *lua.LState) *XRoute {
 	// create the instance:
 	out := XRoute{
-		l:    l,
-		rtes: []*routeParams{},
+		l: l,
 		typeMapping: map[string]int{
 			"retrieve": applications.Retrieve,
 			"save":     applications.Save,

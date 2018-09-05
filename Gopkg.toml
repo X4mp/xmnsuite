@@ -7,6 +7,10 @@
   branch = "master"
 
 [[override]]
+  name = "layeh.com/gopher-json"
+  branch = "master"
+
+[[override]]
   name = "github.com/gorilla/mux"
   version = "1.6.2"
 

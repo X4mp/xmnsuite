@@ -12,6 +12,7 @@ import (
 // DataStore represents the datastore
 type DataStore interface {
 	Head() hashtree.HashTree
+	Copy() DataStore
 	Keys() keys.Keys
 	Lists() lists.Lists
 	Sets() lists.Lists

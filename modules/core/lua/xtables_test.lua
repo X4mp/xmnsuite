@@ -14,17 +14,20 @@ TestTables = {} --class
 
         -- execute:
         x = xtables.load()
+        reload = xtables.load()
         retAmountSaved = x:save(firstParam, secondParam)
         retFirstObj = x:retrieve(firstKey)
         retSecondObj = x:retrieve(secondKey)
+        retInvalidObj = x:retrieve("invalidkey")
         retLen = x:len()
         retAmountExists = x:exists(firstKey, "invalid-key", secondKey)
-        retAmountDel = x:delete(firstKey, "invalid")
+        retAmountDel = reload:delete(firstKey, "invalid")
 
         -- verify:
         assertEquals(retAmountSaved, 2)
         assertEquals(retFirstObj, firstTable)
         assertEquals(retSecondObj, secondTable)
+        assertEquals(retInvalidObj, null)
         assertEquals(retLen, 2)
         assertEquals(retAmountExists, 2)
         assertEquals(retAmountDel, 1)

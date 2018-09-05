@@ -2,6 +2,8 @@ package core
 
 import (
 	"testing"
+
+	"github.com/XMNBlockchain/datamint/datastore"
 )
 
 func TestXRoles_Success(t *testing.T) {
@@ -11,7 +13,7 @@ func TestXRoles_Success(t *testing.T) {
 	defer l.Close()
 
 	//create the module:
-	Register(l)
+	createCore(l, datastore.SDKFunc.Create())
 
 	//execute the chunk:
 	executeChunkForTests(l, "lua/xroles_test.lua")

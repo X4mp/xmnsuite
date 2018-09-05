@@ -9,17 +9,23 @@ import (
 )
 
 // SaveTransactionFn represents a save transaction func
-type SaveTransactionFn func(from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) (TransactionResponse, error)
+type SaveTransactionFn func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) (TransactionResponse, error)
 
 // DeleteTransactionFn represents a delete transaction func
-type DeleteTransactionFn func(from crypto.PubKey, path string, params map[string]string, sig []byte) (TransactionResponse, error)
+type DeleteTransactionFn func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (TransactionResponse, error)
 
 // QueryFn represents a query func.  The return values are: code, key, value, log
-type QueryFn func(from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error)
+type QueryFn func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error)
 
 const (
 	// IsSuccessful represents a successful query and/or transaction
 	IsSuccessful = iota
+
+	// NotFound represents a resource not found
+	NotFound
+
+	// ServerError represents a server error
+	ServerError
 
 	// IsUnAuthorized represents an un-authorized query and/or transaction
 	IsUnAuthorized

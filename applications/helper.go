@@ -26,6 +26,8 @@ func isCodeValid(code int) bool {
 
 	validCodes := []int{
 		IsSuccessful,
+		NotFound,
+		ServerError,
 		IsUnAuthorized,
 		IsUnAuthenticated,
 		RouteNotFound,

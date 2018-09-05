@@ -1,6 +1,10 @@
 package core
 
 import (
+	"errors"
+	"fmt"
+	"strconv"
+
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -33,15 +37,36 @@ func CreateXApp(l *lua.LState) *XApp {
 }
 
 func (app *XApp) register() {
-	//verifies that the given type is a Route instance:
-	checkRouterFn := func(l *lua.LState, index int) *routerParams {
-		ud := l.CheckUserData(index)
-		if v, ok := ud.Value.(*routerParams); ok {
-			return v
+	// convert the table argument to an application:
+	fromTableToAppFn := func(l *lua.LState) (*appParams, error) {
+		tb := l.ToTable(1)
+		version := tb.RawGet(lua.LString("version"))
+		beginIndex := tb.RawGet(lua.LString("beginBlockIndex"))
+		endIndex := tb.RawGet(lua.LString("endBlockIndex"))
+		rterTable := tb.RawGet(lua.LString("router")).(*lua.LUserData)
+		if router, ok := rterTable.Value.(*routerParams); ok {
+
+			beginIndexAsInt, beginIndexAsIntErr := strconv.Atoi(beginIndex.String())
+			if beginIndexAsIntErr != nil {
+				str := fmt.Sprintf("the given beginIndex (%d) is not a valid integer", beginIndex)
+				return nil, errors.New(str)
+			}
+
+			endIndexAsInt, endIndexAsIntErr := strconv.Atoi(endIndex.String())
+			if endIndexAsIntErr != nil {
+				str := fmt.Sprintf("the given beginIndex (%d) is not a valid integer", beginIndex)
+				return nil, errors.New(str)
+			}
+
+			return &appParams{
+				version:      version.String(),
+				beginIndex:   beginIndexAsInt,
+				endIndex:     endIndexAsInt,
+				routerParams: router,
+			}, nil
 		}
 
-		l.ArgError(1, "router expected")
-		return nil
+		return nil, errors.New("the router param is invalid")
 	}
 
 	// create a new app instance:
@@ -49,26 +74,20 @@ func (app *XApp) register() {
 		ud := l.NewUserData()
 
 		amount := l.GetTop()
-		if amount != 4 {
-			l.ArgError(1, "the new function was expected to have 4 parameters")
+		if amount != 1 {
+			l.ArgError(1, "the new function was expected to have 1 parameter")
 			return 1
 		}
 
-		version := l.CheckString(1)
-		beginIndex := l.CheckInt(2)
-		endIndex := l.CheckInt(3)
-		rter := checkRouterFn(l, 4)
-		if rter == nil {
+		app, appErr := fromTableToAppFn(l)
+		if appErr != nil {
+			str := fmt.Sprintf("the passed table argument is invalid: %s", appErr.Error())
+			l.ArgError(1, str)
 			return 1
 		}
 
 		// set the value:
-		ud.Value = &appParams{
-			version:      version,
-			beginIndex:   beginIndex,
-			endIndex:     endIndex,
-			routerParams: rter,
-		}
+		ud.Value = app
 
 		l.SetMetatable(ud, l.GetTypeMetatable(luaApplication))
 		l.Push(ud)

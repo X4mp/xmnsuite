@@ -1,6 +1,8 @@
 package core
 
-import lua "github.com/yuin/gopher-lua"
+import (
+	lua "github.com/yuin/gopher-lua"
+)
 
 func createLuaState() *lua.LState {
 	l := lua.NewState(lua.Options{

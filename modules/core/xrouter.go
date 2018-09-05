@@ -7,6 +7,7 @@ import (
 const luaRouter = "xrouter"
 
 type routerParams struct {
+	key  string
 	rtes []*routeParams
 }
 
@@ -30,37 +31,47 @@ func CreateXRouter(l *lua.LState) *XRouter {
 }
 
 func (app *XRouter) register() {
-	//verifies that the given type is a Route instance:
-	checkRouteFn := func(l *lua.LState, index int) *routeParams {
-		ud := l.CheckUserData(index)
-		if v, ok := ud.Value.(*routeParams); ok {
-			return v
+	// convert the table argument to a router:
+	fromTableToRouterFn := func(l *lua.LState) *routerParams {
+		tb := l.ToTable(1)
+
+		routes := []*routeParams{}
+		key := tb.RawGet(lua.LString("key"))
+		if rawRoutes, ok := tb.RawGet(lua.LString("routes")).(*lua.LTable); ok {
+			rawRoutes.ForEach(func(key lua.LValue, rawRoute lua.LValue) {
+				if oneRouteUD, ok := rawRoute.(*lua.LUserData); ok {
+					if oneRoute, ok := oneRouteUD.Value.(*routeParams); ok {
+						routes = append(routes, oneRoute)
+					}
+
+				}
+			})
+
 		}
 
-		l.ArgError(1, "route expected")
-		return nil
+		return &routerParams{
+			key:  key.String(),
+			rtes: routes,
+		}
 	}
 
 	// create a new router instance:
 	newRouter := func(l *lua.LState) int {
-		ud := l.NewUserData()
-
 		amount := l.GetTop()
-		if amount < 1 {
-			l.ArgError(1, "the new function was expected to have at least 1 parameter")
+		if amount != 1 {
+			l.ArgError(1, "the new function was expected to have 1 parameter")
 			return 1
 		}
 
-		rtes := []*routeParams{}
-		for i := 1; i < amount; i++ {
-			oneRte := checkRouteFn(l, i)
-			rtes = append(rtes, oneRte)
+		router := fromTableToRouterFn(l)
+		if router == nil {
+			l.ArgError(1, "the passed table argument is invalid")
+			return 1
 		}
 
 		// set the value:
-		ud.Value = &routerParams{
-			rtes,
-		}
+		ud := l.NewUserData()
+		ud.Value = router
 
 		l.SetMetatable(ud, l.GetTypeMetatable(luaRouter))
 		l.Push(ud)

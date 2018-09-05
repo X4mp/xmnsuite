@@ -52,6 +52,22 @@ func (app *concreteDataStore) Head() hashtree.HashTree {
 	return head
 }
 
+// Copy copies the datastore
+func (app *concreteDataStore) Copy() DataStore {
+	ck := app.k.Copy()
+	cobjs := app.objs.Copy()
+	out := concreteDataStore{
+		k:    ck,
+		l:    app.Lists(),
+		s:    app.Sets(),
+		objs: cobjs,
+		usrs: app.Users(),
+		rols: app.Roles(),
+	}
+
+	return &out
+}
+
 // Keys returns the keys datastore
 func (app *concreteDataStore) Keys() keys.Keys {
 	return app.k

@@ -64,6 +64,23 @@ func (app *concreteKeys) Head() hashtree.HashTree {
 	return app.head
 }
 
+// Copy copies the Keys instance
+func (app *concreteKeys) Copy() Keys {
+
+	data := map[string]*storedInstance{}
+	for keyname, oneData := range app.data {
+		data[keyname] = createStoredInstance(oneData.Data)
+	}
+
+	out := concreteKeys{
+		head: nil,
+		data: data,
+	}
+
+	out.rebuildHead()
+	return &out
+}
+
 // HashTree returns the hashtree of the object at key
 func (app *concreteKeys) HashTree(key string) hashtree.HashTree {
 	if app.Exists(key) == 1 {

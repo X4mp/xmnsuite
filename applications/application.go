@@ -77,7 +77,7 @@ func (app *application) Transact(req TransactionRequest) TransactionResponse {
 // CheckTransact verifies if a transaction can be executed and return its response
 func (app *application) CheckTransact(req TransactionRequest) TransactionResponse {
 	//copy the store:
-	store := app.store
+	store := app.store.Copy()
 
 	//execute the transaction without incrementing the state size, then return the response:
 	return app.execTrx(store, req)
@@ -138,7 +138,7 @@ func (app *application) Query(req QueryRequest) QueryResponse {
 	}
 
 	// retrieve the query response:
-	queryResponse, queryResponseErr := retrieveFunc(from, prepHandler.Path(), prepHandler.Params(), req.Signature())
+	queryResponse, queryResponseErr := retrieveFunc(app.store, from, prepHandler.Path(), prepHandler.Params(), req.Signature())
 	if queryResponseErr != nil {
 		str := fmt.Sprintf("there was an error while executing the query func: %s", queryResponseErr.Error())
 		return outputErrorFn(InvalidRequest, str)
@@ -174,7 +174,7 @@ func (app *application) execTrx(store datastore.DataStore, req TransactionReques
 			return outputErrorFn(InvalidRoute, "the router found a route for the given transaction, but its handler had no save transaction func")
 		}
 
-		trxResponse, trxResponseErr := saveTrsFunc(from, prepHandler.Path(), prepHandler.Params(), res.Data(), req.Signature())
+		trxResponse, trxResponseErr := saveTrsFunc(store, from, prepHandler.Path(), prepHandler.Params(), res.Data(), req.Signature())
 		if trxResponseErr != nil {
 			str := fmt.Sprintf("there was an error while executing the save transaction func: %s", trxResponseErr.Error())
 			return outputErrorFn(InvalidRequest, str)
@@ -196,7 +196,7 @@ func (app *application) execTrx(store datastore.DataStore, req TransactionReques
 		return outputErrorFn(InvalidRoute, "the router found a route for the given transaction, but its handler had no delete transaction func")
 	}
 
-	trsResponse, trsResponseErr := delTrsFunc(from, prepHandler.Path(), prepHandler.Params(), req.Signature())
+	trsResponse, trsResponseErr := delTrsFunc(store, from, prepHandler.Path(), prepHandler.Params(), req.Signature())
 	if trsResponseErr != nil {
 		str := fmt.Sprintf("there was an error while executing the delete transaction func: %s", trsResponseErr.Error())
 		return outputErrorFn(InvalidRequest, str)

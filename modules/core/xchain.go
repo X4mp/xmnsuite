@@ -7,7 +7,9 @@ import (
 const luaChain = "xchain"
 
 type chainParams struct {
-	apps []*appParams
+	namespace string
+	name      string
+	apps      []*appParams
 }
 
 // XChain represents the xchain instance
@@ -32,15 +34,29 @@ func CreateXChain(l *lua.LState) *XChain {
 }
 
 func (app *XChain) register() {
-	//verifies that the given type is a App instance:
-	checkAppFn := func(l *lua.LState, index int) *appParams {
-		ud := l.CheckUserData(index)
-		if v, ok := ud.Value.(*appParams); ok {
-			return v
+	// convert the table argument to a chain:
+	fromTableToChainFn := func(l *lua.LState) (*chainParams, error) {
+		tb := l.ToTable(1)
+		apps := []*appParams{}
+		namespace := tb.RawGet(lua.LString("namespace"))
+		name := tb.RawGet(lua.LString("name"))
+		if rawApps, ok := tb.RawGet(lua.LString("apps")).(*lua.LTable); ok {
+			rawApps.ForEach(func(key lua.LValue, rawApp lua.LValue) {
+				if oneAppUD, ok := rawApp.(*lua.LUserData); ok {
+					if oneApp, ok := oneAppUD.Value.(*appParams); ok {
+						apps = append(apps, oneApp)
+					}
+
+				}
+			})
+
 		}
 
-		l.ArgError(1, "app expected")
-		return nil
+		return &chainParams{
+			namespace: namespace.String(),
+			name:      name.String(),
+			apps:      apps,
+		}, nil
 	}
 
 	// loadChain a loads apps into the chain:
@@ -59,23 +75,17 @@ func (app *XChain) register() {
 			return 1
 		}
 
-		apps := []*appParams{}
-		for i := 1; i <= amount; i++ {
-			app := checkAppFn(l, i)
-			if app == nil {
-				return 1
-			}
-
-			apps = append(apps, app)
+		chain, chainErr := fromTableToChainFn(l)
+		if chainErr != nil {
+			l.ArgError(1, "the passed table argument is invalid")
+			return 1
 		}
 
 		// add the chain params to the XChain:
-		app.chain = &chainParams{
-			apps: apps,
-		}
+		app.chain = chain
 
 		// set the value:
-		ud.Value = app.chain
+		ud.Value = chain
 
 		l.SetMetatable(ud, l.GetTypeMetatable(luaChain))
 		l.Push(ud)

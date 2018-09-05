@@ -29,6 +29,15 @@ func (app *concreteObjects) Keys() keys.Keys {
 	return app.keys
 }
 
+// Copy copies the objects instance
+func (app *concreteObjects) Copy() Objects {
+	out := concreteObjects{
+		keys: app.Keys().Copy(),
+	}
+
+	return &out
+}
+
 // Retrieve populates the Obj pointers in the passed ObjInKey instances.  Returns the amount of instances retrieved
 func (app *concreteObjects) Retrieve(objs ...*ObjInKey) int {
 	cpt := 0

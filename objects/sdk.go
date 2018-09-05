@@ -13,6 +13,7 @@ type ObjInKey struct {
 // Objects represents the object data store
 type Objects interface {
 	Keys() keys.Keys
+	Copy() Objects
 	Retrieve(objs ...*ObjInKey) int
 	Save(objs ...*ObjInKey) int
 }

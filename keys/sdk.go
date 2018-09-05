@@ -5,6 +5,7 @@ import "github.com/XMNBlockchain/datamint/hashtree"
 // Keys represents the keys datastore
 type Keys interface {
 	Head() hashtree.HashTree
+	Copy() Keys
 	HashTree(key string) hashtree.HashTree
 	HashTrees(keys ...string) []hashtree.HashTree
 	Len() int

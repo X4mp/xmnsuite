@@ -1,36 +1,94 @@
 -- Unit testing starts
 require('luaunit')
+local json = require("json")
 
 TestCore = {} --class
     function TestCore:testCreate_Success()
         -- func handlers:
-        function saveVideo(from, path, params, data, sig)
-            return {code = 0, log="video saved"}
-        end
+        function saveMessage(from, path, params, data, sig)
+            local newMsg = json.decode(data)
+            local msgPath = path .. "/" .. newMsg.id
 
-        function saveProfile(from, path, params, data, sig)
-            keyname = "profile-path:"..path
+            -- save the msg:
+            local x = xtables.load()
+            local retAmountSaved = x:save({key=msgPath, table=newMsg})
+            if retAmountSaved ~= 1 then
+                return {
+                    code = 2,
+                    log="there was an error while saving the message",
+                }
+            end
 
             return {
                 code = 0,
-                log="profile saved",
-                gazUsed=0.675,
+                log="success",
+                gazUsed=1205,
                 tags={
-                    keyname = "someValue"
+                    {
+                        key=msgPath,
+                        value=json.encode(newMsg)
+                    }
                 }
             }
         end
 
-        -- create the application
-        first = xapp.new("17.03.09", 0, -1, xrouter.new(
-            xroute.new("save", "/videos", saveVideo),
-            xroute.new("save", "/profiles", saveProfile)
-        ))
+        function retrieveMessageByID(from, path, params, sig)
+            local x = xtables.load()
+            local msg = x:retrieve(path)
+            if msg == null then
+                return {
+                    code = 1,
+                    log="not found",
+                    key=path,
+                    value=null
+                }
+            end
 
-        xchain.load(first)
+            return {
+                code = 0,
+                log="success",
+                key=path,
+                value=json.encode(msg)
+            }
+        end
 
-        -- verify:
-        -- assertEquals(type(firstRte), "xroute")
+        function deleteMessageByID(from, path, params, sig)
+            local x = xtables.load()
+            local retAmountDeleted = x:delete(path)
+            if retAmountDeleted ~= 1 then
+                return {
+                    code = 1,
+                    log="the message (path: ".. path ..") was not found",
+                }
+            end
+
+            return {
+                code = 0,
+                log="success",
+            }
+        end
+
+        xchain.load({
+            namespace = "xmn",
+            name = "messages",
+            apps = {
+                xapp.new({
+                    version = "17.03.09",
+                    beginBlockIndex = 0,
+                    endBlockIndex = -1,
+                    router = xrouter.new({
+                        key = "this-is-the-router-key",
+                        routes = {
+                            xroute.new("save", "/messages", saveMessage),
+                            xroute.new("delete", "/messages/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", deleteMessageByID),
+                            xroute.new("retrieve", "/messages/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", retrieveMessageByID),
+                        }
+                    })
+                })
+            }
+        })
+
+
     end
 
 -- class TestCore

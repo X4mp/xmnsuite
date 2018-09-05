@@ -16,11 +16,11 @@ type XTables struct {
 }
 
 // CreateXTables creates a new XTables instance:
-func CreateXTables(l *lua.LState) *XTables {
+func CreateXTables(l *lua.LState, objs objects.Objects) *XTables {
 	// create the instance:
 	out := XTables{
 		l:    l,
-		objs: objects.SDKFunc.Create(),
+		objs: objs,
 	}
 
 	//registers the xtables module on the current lua state:
@@ -28,6 +28,10 @@ func CreateXTables(l *lua.LState) *XTables {
 
 	//returns:
 	return &out
+}
+
+func (app *XTables) replaceObjects(objs objects.Objects) {
+	app.objs = objs
 }
 
 func (app *XTables) register() {
@@ -103,6 +107,11 @@ func (app *XTables) register() {
 		p.Retrieve(&objInKey)
 		mapResult := objInKey.Obj.(*map[string]interface{})
 		ltable := convertHashMapToLTable(*mapResult)
+		if ltable == nil {
+			l.Push(lua.LNil)
+			return 1
+		}
+
 		l.Push(ltable)
 		return 1
 	}

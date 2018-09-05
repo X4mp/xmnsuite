@@ -4,14 +4,15 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strconv"
 
 	applications "github.com/XMNBlockchain/datamint/applications"
 	datastore "github.com/XMNBlockchain/datamint/datastore"
 	tendermint "github.com/XMNBlockchain/datamint/tendermint"
 	uuid "github.com/satori/go.uuid"
 	crypto "github.com/tendermint/tendermint/crypto"
-	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 	lua "github.com/yuin/gopher-lua"
+	luajson "layeh.com/gopher-json"
 )
 
 type core struct {
@@ -26,10 +27,10 @@ type core struct {
 	chain  *XChain
 }
 
-func execute(dbPath string, nodePK crypto.PrivKey, store datastore.DataStore, context *lua.LState, scriptPath string) (applications.Node, error) {
+func execute(dbPath string, instanceID *uuid.UUID, rootPubKeys []crypto.PubKey, nodePK crypto.PrivKey, store datastore.DataStore, context *lua.LState, scriptPath string) (applications.Node, error) {
 
 	// create the core:
-	core := createCore(context)
+	core := createCore(context, store)
 
 	//execute the script:
 	doFileErr := context.DoFile(scriptPath)
@@ -42,21 +43,21 @@ func execute(dbPath string, nodePK crypto.PrivKey, store datastore.DataStore, co
 		return nil, errors.New("the chain has not been loaded")
 	}
 
+	// create the router data store:
+	routerDS := datastore.SDKFunc.Create()
+
 	appsSlice := []applications.Application{}
 	for _, oneApp := range core.chain.chain.apps {
 		// create the route params:
 		rteParams := []applications.CreateRouteParams{}
 		for _, oneRte := range oneApp.routerParams.rtes {
-
 			var saveTrx applications.SaveTransactionFn
 			if oneRte.saveTrx != nil {
-				saveTrx = func(from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) (applications.TransactionResponse, error) {
+				luaSaveTrxFn := oneRte.saveTrx
+				saveTrx = func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) (applications.TransactionResponse, error) {
 
-					luaP := lua.P{
-						Fn:      oneRte.saveTrx,
-						NRet:    5,
-						Protect: true,
-					}
+					//replace the datastore:
+					core.replaceDS(store)
 
 					// from:
 					fromAsBytes, fromAsBytesErr := cdc.MarshalBinary(from)
@@ -78,36 +79,88 @@ func execute(dbPath string, nodePK crypto.PrivKey, store datastore.DataStore, co
 					// sig:
 					sigAsString := hex.EncodeToString(sig)
 
-					// call the func:
-					callErr := context.CallByParam(luaP, lua.LString(pubKeyAsString), lua.LString(path), &luaParams, lua.LString(dataAsString), lua.LString(sigAsString))
-					if callErr != nil {
-						return nil, callErr
-					}
-
-					// retrieve the returned value:
-					luaRespTable := context.Get(-1)
-
-					// remove the receives value:
-					context.Pop(1)
-
-					//create the transaction response:
-					fmt.Printf("\n\n %v\n\n", luaRespTable)
-
-					return nil, nil
+					// call the func and return the value:
+					return callLuaTrxFunc(
+						luaSaveTrxFn,
+						context,
+						lua.LString(pubKeyAsString),
+						lua.LString(path),
+						&luaParams,
+						lua.LString(dataAsString),
+						lua.LString(sigAsString),
+					)
 				}
 			}
 
 			var delTrx applications.DeleteTransactionFn
 			if oneRte.delTrx != nil {
-				delTrx = func(from crypto.PubKey, path string, params map[string]string, sig []byte) (applications.TransactionResponse, error) {
-					return nil, nil
+				luaDelTrxFn := oneRte.delTrx
+				delTrx = func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (applications.TransactionResponse, error) {
+					//replace the datastore:
+					core.replaceDS(store)
+
+					// from:
+					fromAsBytes, fromAsBytesErr := cdc.MarshalBinary(from)
+					if fromAsBytesErr != nil {
+						return nil, fromAsBytesErr
+					}
+
+					pubKeyAsString := hex.EncodeToString(fromAsBytes)
+
+					// params:
+					luaParams := lua.LTable{}
+					for keyname, value := range params {
+						luaParams.RawSet(lua.LString(keyname), lua.LString(value))
+					}
+
+					// sig:
+					sigAsString := hex.EncodeToString(sig)
+
+					// call the func and return the value:
+					return callLuaTrxFunc(
+						luaDelTrxFn,
+						context,
+						lua.LString(pubKeyAsString),
+						lua.LString(path),
+						&luaParams,
+						lua.LString(sigAsString),
+					)
 				}
 			}
 
 			var queryTrx applications.QueryFn
 			if oneRte.queryTrx != nil {
-				queryTrx = func(from crypto.PubKey, path string, params map[string]string, sig []byte) (applications.QueryResponse, error) {
-					return nil, nil
+				luaQueryFn := oneRte.queryTrx
+				queryTrx = func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (applications.QueryResponse, error) {
+					//replace the datastore:
+					core.replaceDS(store)
+
+					// from:
+					fromAsBytes, fromAsBytesErr := cdc.MarshalBinary(from)
+					if fromAsBytesErr != nil {
+						return nil, fromAsBytesErr
+					}
+
+					pubKeyAsString := hex.EncodeToString(fromAsBytes)
+
+					// params:
+					luaParams := lua.LTable{}
+					for keyname, value := range params {
+						luaParams.RawSet(lua.LString(keyname), lua.LString(value))
+					}
+
+					// sig:
+					sigAsString := hex.EncodeToString(sig)
+
+					// call the func and return the value:
+					return callLuaQueryFunc(
+						luaQueryFn,
+						context,
+						lua.LString(pubKeyAsString),
+						lua.LString(path),
+						&luaParams,
+						lua.LString(sigAsString),
+					)
 				}
 			}
 
@@ -119,6 +172,17 @@ func execute(dbPath string, nodePK crypto.PrivKey, store datastore.DataStore, co
 			})
 		}
 
+		// setup the router role key:
+		routerRoleKey := fmt.Sprintf("router-version-%s", oneApp.version)
+
+		// add the root users on the routes:
+		for _, onePubKey := range rootPubKeys {
+			routerDS.Users().Insert(onePubKey)
+			routerDS.Roles().Add(routerRoleKey, onePubKey)
+			routerDS.Roles().EnableWriteAccess(routerRoleKey, "/messages")
+			routerDS.Roles().EnableWriteAccess(routerRoleKey, "/messages/[a-z0-9-]+")
+		}
+
 		// create one application and put it in the list:
 		appsSlice = append(appsSlice, applications.SDKFunc.CreateApplication(applications.CreateApplicationParams{
 			FromBlockIndex: int64(oneApp.beginIndex),
@@ -126,29 +190,13 @@ func execute(dbPath string, nodePK crypto.PrivKey, store datastore.DataStore, co
 			Version:        oneApp.version,
 			DataStore:      store,
 			RouterParams: applications.CreateRouterParams{
-				DataStore:  store,
-				RoleKey:    fmt.Sprintf("router-version-%s", oneApp.version),
+				DataStore:  routerDS,
+				RoleKey:    routerRoleKey,
 				RtesParams: rteParams,
 			},
 		}))
 
 	}
-
-	// create the router data store:
-	routerRoleKey := "router-role-key"
-	routerDS := datastore.SDKFunc.Create()
-
-	// variables - These should be in the lua script:
-	namespace := "testapp"
-	name := "MyTestApp"
-	id := uuid.NewV4()
-	fromPrivKey := ed25519.GenPrivKey()
-	fromPubKey := fromPrivKey.PubKey()
-
-	// add the users on the routes.  This should be in the lua script:
-	routerDS.Users().Insert(fromPubKey)
-	routerDS.Roles().Add(routerRoleKey, fromPubKey)
-	routerDS.Roles().EnableWriteAccess(routerRoleKey, "/messages")
 
 	// create the applications:
 	apps := applications.SDKFunc.CreateApplications(applications.CreateApplicationsParams{
@@ -157,9 +205,9 @@ func execute(dbPath string, nodePK crypto.PrivKey, store datastore.DataStore, co
 
 	// create the blockchain:
 	blkChain := tendermint.SDKFunc.CreateBlockchain(tendermint.CreateBlockchainParams{
-		Namespace: namespace,
-		Name:      name,
-		ID:        &id,
+		Namespace: core.chain.chain.namespace,
+		Name:      core.chain.chain.name,
+		ID:        instanceID,
 		PrivKey:   nodePK,
 	})
 
@@ -186,7 +234,6 @@ func execute(dbPath string, nodePK crypto.PrivKey, store datastore.DataStore, co
 	if nodeErr != nil {
 		return nil, nodeErr
 	}
-	defer node.Stop()
 
 	// start the node:
 	startNodeErr := node.Start()
@@ -197,13 +244,132 @@ func execute(dbPath string, nodePK crypto.PrivKey, store datastore.DataStore, co
 	return node, nil
 }
 
-func createCore(l *lua.LState) *core {
+func callLuaQueryFunc(fn *lua.LFunction, context *lua.LState, args ...lua.LValue) (applications.QueryResponse, error) {
+	luaP := lua.P{
+		Fn:      fn,
+		NRet:    1,
+		Protect: true,
+	}
+
+	// call the func:
+	callErr := context.CallByParam(luaP, args...)
+	if callErr != nil {
+		return nil, callErr
+	}
+
+	// retrieve the returned value:
+	value := context.Get(-1)
+	context.Pop(1)
+	if luaRespTable, ok := value.(*lua.LTable); ok {
+		// fetch the data:
+		codeAsLua := luaRespTable.RawGetString("code")
+		log := luaRespTable.RawGetString("log")
+		key := luaRespTable.RawGetString("key")
+		value := luaRespTable.RawGetString("value")
+
+		code, codeErr := strconv.Atoi(codeAsLua.String())
+		if codeErr != nil {
+			str := fmt.Sprintf("the code (%s) in the return table is not a valid integer", codeAsLua.String())
+			return nil, errors.New(str)
+		}
+
+		valueAsBytes := []byte(value.String())
+		if value.Type() == lua.LNil.Type() {
+			valueAsBytes = nil
+		}
+
+		return applications.SDKFunc.CreateQueryResponse(applications.CreateQueryResponseParams{
+			Code:  code,
+			Log:   log.String(),
+			Key:   key.String(),
+			Value: valueAsBytes,
+		}), nil
+	}
+
+	return nil, errors.New("the query response is not a valid table")
+}
+
+func callLuaTrxFunc(fn *lua.LFunction, context *lua.LState, args ...lua.LValue) (applications.TransactionResponse, error) {
+	luaP := lua.P{
+		Fn:      fn,
+		NRet:    1,
+		Protect: true,
+	}
+
+	// call the func:
+	callErr := context.CallByParam(luaP, args...)
+	if callErr != nil {
+		return nil, callErr
+	}
+
+	// retrieve the returned value:
+	value := context.Get(-1)
+	context.Pop(1)
+	if luaRespTable, ok := value.(*lua.LTable); ok {
+		// fetch the data:
+		codeAsLua := luaRespTable.RawGetString("code")
+		log := luaRespTable.RawGetString("log")
+		gazUsedAsLua := luaRespTable.RawGetString("gazUsed")
+		luaTags := luaRespTable.RawGetString("tags")
+
+		code, codeErr := strconv.Atoi(codeAsLua.String())
+		if codeErr != nil {
+			str := fmt.Sprintf("the code (%s) in the return table is not a valid integer", codeAsLua.String())
+			return nil, errors.New(str)
+		}
+
+		if gazUsedAsLua != lua.LNil && luaTags != lua.LNil {
+			tags := map[string][]byte{}
+			if rawTags, ok := luaTags.(*lua.LTable); ok {
+				rawTags.ForEach(func(key lua.LValue, luaKeyValueTable lua.LValue) {
+					if rawKeyValueTable, ok := luaKeyValueTable.(*lua.LTable); ok {
+						tagKey := rawKeyValueTable.RawGetString("key")
+						tagValue := rawKeyValueTable.RawGetString("value")
+						tags[tagKey.String()] = []byte(tagValue.String())
+					}
+				})
+
+			}
+
+			gazUsed, gazUsedErr := strconv.Atoi(gazUsedAsLua.String())
+			if gazUsedErr != nil {
+				str := fmt.Sprintf("the gazUsed (%s) in the return table is not a valid integer", gazUsedAsLua.String())
+				return nil, errors.New(str)
+			}
+
+			return applications.SDKFunc.CreateTransactionResponse(applications.CreateTransactionResponseParams{
+				Code:    code,
+				Log:     log.String(),
+				GazUsed: int64(gazUsed),
+				Tags:    tags,
+			}), nil
+		}
+
+		return applications.SDKFunc.CreateTransactionResponse(applications.CreateTransactionResponseParams{
+			Code: code,
+			Log:  log.String(),
+		}), nil
+	}
+
+	return nil, errors.New("the transaction response is not a valid table")
+}
+
+func (app *core) replaceDS(store datastore.DataStore) *core {
+	app.tables.replaceObjects(store.Objects())
+	return app
+}
+
+func createCore(l *lua.LState, store datastore.DataStore) *core {
+
+	// preload JSON:
+	luajson.Preload(l)
+
 	// crypto:
 	crypto := CreateXCrypto(l)
 
 	// datastore:
 	keys := CreateXKeys(l)
-	tables := CreateXTables(l)
+	tables := CreateXTables(l, store.Objects())
 
 	// roles and users:
 	users := CreateXUsers(l)

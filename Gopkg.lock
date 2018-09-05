@@ -23,7 +23,7 @@
   name = "github.com/btcsuite/btcd"
   packages = ["btcec"]
   pruneopts = "UT"
-  revision = "79e00513b1011888b1e675157ab89f527f901cae"
+  revision = "cff30e1d23fc9e800b2b5b4b41ef1817dda07e9f"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -150,14 +150,6 @@
   version = "v0.8.0"
 
 [[projects]]
-  digest = "1:0028cb19b2e4c3112225cd871870f2d9cf49b9b4276531f03438a88e94be86fe"
-  name = "github.com/pmezard/go-difflib"
-  packages = ["difflib"]
-  pruneopts = "UT"
-  revision = "792786c7400a136282c1664665ae0a8db921c6c2"
-  version = "v1.0.0"
-
-[[projects]]
   digest = "1:c1a04665f9613e082e1209cf288bf64f4068dcd6c87a64bf1c4ff006ad422ba0"
   name = "github.com/prometheus/client_golang"
   packages = [
@@ -216,17 +208,6 @@
   version = "v1.2.0"
 
 [[projects]]
-  digest = "1:c40d65817cdd41fac9aa7af8bed56927bb2d6d47e4fea566a74880f5c2b1c41e"
-  name = "github.com/stretchr/testify"
-  packages = [
-    "assert",
-    "require",
-  ]
-  pruneopts = "UT"
-  revision = "f35b8ab0b5a2cef36673838d662e249dd9c94686"
-  version = "v1.2.2"
-
-[[projects]]
   branch = "master"
   digest = "1:f2ffd421680b0a3f7887501b3c6974bcf19217ecd301d0e2c9b681940ec363d5"
   name = "github.com/syndtr/goleveldb"
@@ -268,7 +249,7 @@
   version = "0.10.1"
 
 [[projects]]
-  digest = "1:b8796c8694fe1bb2641bf87fb36789d813635499be88e82f0cba39c550c72a3b"
+  digest = "1:2eb05197ca12e75ffcc884d669c8a26ef7eae57c28a0746f15cab94c3b842ae0"
   name = "github.com/tendermint/tendermint"
   packages = [
     "abci/client",
@@ -310,7 +291,6 @@
     "rpc/lib/client",
     "rpc/lib/server",
     "rpc/lib/types",
-    "rpc/test",
     "state",
     "state/txindex",
     "state/txindex/kv",
@@ -319,8 +299,8 @@
     "version",
   ]
   pruneopts = "UT"
-  revision = "013b9cef642f875634c614019ab13b17570778ad"
-  version = "v0.23.0"
+  revision = "9e940b95ad4d27efab60d0d49278db5acb2a3b7e"
+  version = "v0.23.1"
 
 [[projects]]
   branch = "master"
@@ -352,7 +332,7 @@
     "salsa20/salsa",
   ]
   pruneopts = "UT"
-  revision = "614d502a4dac94afa3a6ce146bd1736da82514c6"
+  revision = "0709b304e793a5edb4a2c0145f281ecdc20838a4"
 
 [[projects]]
   digest = "1:d36f55a999540d29b6ea3c2ea29d71c76b1d9853fdcd3e5c5cb4836f2ba118f1"
@@ -376,7 +356,7 @@
   name = "golang.org/x/sys"
   packages = ["cpu"]
   pruneopts = "UT"
-  revision = "4910a1d54f876d7b22162a85f4d066d3ee649450"
+  revision = "2b024373dcd9800f0cae693839fac6ede8d64a8c"
 
 [[projects]]
   digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"
@@ -407,7 +387,7 @@
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
   pruneopts = "UT"
-  revision = "c66870c02cf823ceb633bcd05be3c7cda29976f4"
+  revision = "11092d34479b07829b72e10713b159248caf5dad"
 
 [[projects]]
   digest = "1:2dab32a43451e320e49608ff4542fdfc653c95dcc35d0065ec9c6c3dd540ed74"
@@ -443,16 +423,21 @@
   revision = "168a6198bcb0ef175f7dacec0b8691fc141dc9b8"
   version = "v1.13.0"
 
+[[projects]]
+  branch = "master"
+  digest = "1:8d3242044f959b6a5d566ff39f7834cd557c300cebbc20211c417fb20fa38fd1"
+  name = "layeh.com/gopher-json"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "d0a7d8b4c69aea3341d0131a64b59a6df9759be2"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
     "github.com/XMNBlockchain/xmnsuite/tools/tests",
     "github.com/satori/go.uuid",
-    "github.com/stretchr/testify/require",
     "github.com/tendermint/go-amino",
-    "github.com/tendermint/tendermint/abci/example/code",
-    "github.com/tendermint/tendermint/abci/example/kvstore",
     "github.com/tendermint/tendermint/abci/types",
     "github.com/tendermint/tendermint/config",
     "github.com/tendermint/tendermint/crypto",
@@ -463,10 +448,9 @@
     "github.com/tendermint/tendermint/privval",
     "github.com/tendermint/tendermint/proxy",
     "github.com/tendermint/tendermint/rpc/core/types",
-    "github.com/tendermint/tendermint/rpc/grpc",
     "github.com/tendermint/tendermint/rpc/lib/client",
-    "github.com/tendermint/tendermint/rpc/test",
     "github.com/yuin/gopher-lua",
+    "layeh.com/gopher-json",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1
