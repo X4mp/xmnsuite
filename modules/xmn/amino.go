@@ -1,4 +1,4 @@
-package core
+package xmn
 
 import (
 	amino "github.com/tendermint/go-amino"

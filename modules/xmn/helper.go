@@ -1,4 +1,4 @@
-package core
+package xmn
 
 import (
 	"encoding/hex"

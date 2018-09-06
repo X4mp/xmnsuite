@@ -1,4 +1,4 @@
-package core
+package xmn
 
 import (
 	"encoding/gob"
@@ -65,6 +65,7 @@ type privKey struct {
 
 type xmn struct {
 	ch     *chain
+	ds     datastore.DataStore
 	tables objects.Objects
 	usrs   users.Users
 	rols   roles.Roles
@@ -74,6 +75,7 @@ type xmn struct {
 func createXMN(ds datastore.DataStore) *xmn {
 	out := xmn{
 		ch:     nil,
+		ds:     ds,
 		tables: ds.Objects(),
 		usrs:   ds.Users(),
 		rols:   ds.Roles(),
@@ -955,7 +957,6 @@ func (app *xmn) registerPrivKey(context *lua.LState) {
 
 func (app *xmn) execute(
 	context *lua.LState,
-	store datastore.DataStore,
 	dbPath string,
 	instanceID *uuid.UUID,
 	rootPubKeys []crypto.PubKey,
@@ -1119,7 +1120,7 @@ func (app *xmn) execute(
 			FromBlockIndex: int64(oneApp.beginIndex),
 			ToBlockIndex:   int64(oneApp.endIndex),
 			Version:        oneApp.version,
-			DataStore:      store,
+			DataStore:      app.ds,
 			RouterParams: applications.CreateRouterParams{
 				DataStore:  routerDS,
 				RoleKey:    routerRoleKey,

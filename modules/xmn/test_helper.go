@@ -1,4 +1,4 @@
-package core
+package xmn
 
 import (
 	lua "github.com/yuin/gopher-lua"

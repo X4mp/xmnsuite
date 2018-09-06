@@ -1,4 +1,4 @@
-package core
+package xmn
 
 import (
 	applications "github.com/XMNBlockchain/datamint/applications"
@@ -24,12 +24,19 @@ var SDKFunc = struct {
 	Execute func(params ExecuteParams) applications.Node
 }{
 	Execute: func(params ExecuteParams) applications.Node {
-		/*node, nodeErr := execute(params.DBPath, params.InstanceID, params.RootPubKeys, params.NodePK, params.Store, params.Context, params.ScriptPath)
+
+		// create XMN:
+		xmn := createXMN(params.Store)
+
+		// register:
+		xmn.register(params.Context)
+
+		// execute:
+		node, nodeErr := xmn.execute(params.Context, params.DBPath, params.InstanceID, params.RootPubKeys, params.NodePK, params.ScriptPath)
 		if nodeErr != nil {
 			panic(nodeErr)
 		}
 
-		return node*/
-		return nil
+		return node
 	},
 }
