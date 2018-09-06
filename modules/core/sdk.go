@@ -24,11 +24,12 @@ var SDKFunc = struct {
 	Execute func(params ExecuteParams) applications.Node
 }{
 	Execute: func(params ExecuteParams) applications.Node {
-		node, nodeErr := execute(params.DBPath, params.InstanceID, params.RootPubKeys, params.NodePK, params.Store, params.Context, params.ScriptPath)
+		/*node, nodeErr := execute(params.DBPath, params.InstanceID, params.RootPubKeys, params.NodePK, params.Store, params.Context, params.ScriptPath)
 		if nodeErr != nil {
 			panic(nodeErr)
 		}
 
-		return node
+		return node*/
+		return nil
 	},
 }

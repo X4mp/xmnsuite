@@ -1,16 +1,17 @@
 -- Unit testing starts
 require('luaunit')
+local xmn = require("xmn")
 
-TestCrypto = {} --class
-    function TestCrypto:testGeneratePK_pubKey_Success()
+TestPrivKey = {} --class
+    function TestPrivKey:testGeneratePK_pubKey_Success()
         -- execute:
-        x = xcrypto.new()
+        x = privkey.new()
         pubKey = x:pubKey()
 
         -- verify:
         assertEquals(type(pubKey), "string")
     end
 
--- class TestCrypto
+-- class TestPrivKey
 
 LuaUnit:run()

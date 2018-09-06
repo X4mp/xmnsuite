@@ -1,5 +1,6 @@
 -- Unit testing starts
 require('luaunit')
+local xmn = require("xmn")
 
 TestKeys = {} --class
     function TestKeys:testSaveThenRetrieve_Success()
@@ -8,7 +9,7 @@ TestKeys = {} --class
         value = "this is some value"
 
         -- execute:
-        x = xkeys.load()
+        x = keys.load()
         x:save(key, value)
         retValue = x:retrieve(key)
         retLen = x:len()

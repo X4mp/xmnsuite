@@ -1,19 +1,20 @@
 -- Unit testing starts
 require('luaunit')
+local xmn = require("xmn")
 
 TestRoles = {} --class
     function TestRoles:testAdd_Success()
         -- variables:
         key = "this-is-my-role-key"
         onKey = "this-is-a-key-to-enable-write-access-on"
-        firstPK = xcrypto.new()
-        secondPK = xcrypto.new()
-        thirdPK = xcrypto.new()
+        firstPK = privkey.new()
+        secondPK = privkey.new()
+        thirdPK = privkey.new()
 
         -- execute:
-        usrs = xusers.load()
+        usrs = users.load()
 
-        rols = xroles.load()
+        rols = roles.load()
         amountAdded = rols:add(key, firstPK:pubKey(), secondPK:pubKey(), thirdPK:pubKey())
         amountDel = rols:del(key, secondPK:pubKey())
 

@@ -256,7 +256,7 @@ func deleteMessage(t *testing.T, client applications.Client, fromPrivKey crypto.
 	}
 }
 
-func TestCore_Success(t *testing.T) {
+func TestXMN_Success(t *testing.T) {
 
 	// variables:
 	instanceID := uuid.NewV4()
@@ -287,8 +287,14 @@ func TestCore_Success(t *testing.T) {
 	// create the datastore:
 	ds := datastore.SDKFunc.Create()
 
+	// create XMN:
+	xmn := createXMN(ds)
+
+	// register:
+	xmn.register(l)
+
 	// execute:
-	node, nodeErr := execute(dbPath, &instanceID, rootPubKeys, nodePK, ds, l, "lua/core_test.lua")
+	node, nodeErr := xmn.execute(l, ds, dbPath, &instanceID, rootPubKeys, nodePK, "lua/core_test.lua")
 	if nodeErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", nodeErr.Error())
 		return
@@ -328,4 +334,100 @@ func TestCore_Success(t *testing.T) {
 	// retrieve the message, not found:
 	retrieveMessageNotFound(t, client, fromPrivKey, &firstMsg)
 
+}
+
+func TestChain_Success(t *testing.T) {
+
+	//create lua state:
+	l := createLuaState()
+	defer l.Close()
+
+	// create XMN:
+	xmn := createXMN(datastore.SDKFunc.Create())
+
+	// register:
+	xmn.register(l)
+
+	//execute the chunk:
+	executeChunkForTests(l, "lua/chain_test.lua")
+}
+
+func TestPrivKey_Success(t *testing.T) {
+
+	//create lua state:
+	l := createLuaState()
+	defer l.Close()
+
+	// create XMN:
+	xmn := createXMN(datastore.SDKFunc.Create())
+
+	// register:
+	xmn.register(l)
+
+	//execute the chunk:
+	executeChunkForTests(l, "lua/privkey_test.lua")
+}
+
+func TestKeys_Success(t *testing.T) {
+
+	//create lua state:
+	l := createLuaState()
+	defer l.Close()
+
+	// create XMN:
+	xmn := createXMN(datastore.SDKFunc.Create())
+
+	// register:
+	xmn.register(l)
+
+	//execute the chunk:
+	executeChunkForTests(l, "lua/keys_test.lua")
+}
+
+func TestRoles_Success(t *testing.T) {
+
+	//create lua state:
+	l := createLuaState()
+	defer l.Close()
+
+	// create XMN:
+	xmn := createXMN(datastore.SDKFunc.Create())
+
+	// register:
+	xmn.register(l)
+
+	//execute the chunk:
+	executeChunkForTests(l, "lua/roles_test.lua")
+}
+
+func TestTables_Success(t *testing.T) {
+
+	//create lua state:
+	l := createLuaState()
+	defer l.Close()
+
+	// create XMN:
+	xmn := createXMN(datastore.SDKFunc.Create())
+
+	// register:
+	xmn.register(l)
+
+	//execute the chunk:
+	executeChunkForTests(l, "lua/tables_test.lua")
+}
+
+func TestUsers_Success(t *testing.T) {
+
+	//create lua state:
+	l := createLuaState()
+	defer l.Close()
+
+	// create XMN:
+	xmn := createXMN(datastore.SDKFunc.Create())
+
+	// register:
+	xmn.register(l)
+
+	//execute the chunk:
+	executeChunkForTests(l, "lua/users_test.lua")
 }

@@ -1,5 +1,6 @@
 -- Unit testing starts
 require('luaunit')
+local xmn = require("xmn")
 
 TestTables = {} --class
     function TestTables:testSaveThenRetrieve_Success()
@@ -13,8 +14,8 @@ TestTables = {} --class
         secondParam = {key=secondKey, table=secondTable}
 
         -- execute:
-        x = xtables.load()
-        reload = xtables.load()
+        x = tables.load()
+        reload = tables.load()
         retAmountSaved = x:save(firstParam, secondParam)
         retFirstObj = x:retrieve(firstKey)
         retSecondObj = x:retrieve(secondKey)

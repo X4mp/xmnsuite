@@ -1,5 +1,6 @@
 -- Unit testing starts
 require('luaunit')
+local xmn = require("xmn")
 
 TestChain = {} --class
     function TestChain:testCreate_Success()
@@ -17,35 +18,35 @@ TestChain = {} --class
         end
 
         -- create the application
-        first = xapp.new({
+        first = xmn.app().new({
             version = "16.02.01",
             beginBlockIndex = 0,
             endBlockIndex = 200,
-            router = xrouter.new({
+            router = xmn.router().new({
                 key = "this-is-the-router-key:16.02.01",
                 routes = {
-                    xroute.new("retrieve", "/videos/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", retrieveVideosByID),
-                    xroute.new("delete", "/videos/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", deleteVideoByID),
-                    xroute.new("save", "/videos", saveVideo),
+                    xmn.route().new("retrieve", "/videos/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", retrieveVideosByID),
+                    xmn.route().new("delete", "/videos/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", deleteVideoByID),
+                    xmn.route().new("save", "/videos", saveVideo),
                 }
             })
         })
 
-        second = xapp.new({
+        second = xmn.app().new({
             version = "17.03.09",
             beginBlockIndex = 200,
             endBlockIndex = -1,
-            router = xrouter.new({
+            router = xmn.router().new({
                 key = "this-is-the-router-key:16.02.01",
                 routes = {
-                    xroute.new("retrieve", "/videos/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", retrieveVideosByID),
-                    xroute.new("delete", "/videos/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", deleteVideoByID),
-                    xroute.new("save", "/videos", saveVideo),
+                    xmn.route().new("retrieve", "/videos/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", retrieveVideosByID),
+                    xmn.route().new("delete", "/videos/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", deleteVideoByID),
+                    xmn.route().new("save", "/videos", saveVideo),
                 }
             })
         })
 
-        xchain.load({
+        xmn.chain().load({
             namespace = "xmn",
             name = "messages",
             apps = {

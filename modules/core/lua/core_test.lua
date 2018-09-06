@@ -1,4 +1,5 @@
 local json = require("json")
+local xmn = require("xmn")
 
 -- func handlers:
 function saveMessage(from, path, params, data, sig)
@@ -6,7 +7,7 @@ function saveMessage(from, path, params, data, sig)
     local msgPath = path .. "/" .. newMsg.id
 
     -- save the msg:
-    local x = xtables.load()
+    local x = tables.load()
     local retAmountSaved = x:save({key=msgPath, table=newMsg})
     if retAmountSaved ~= 1 then
         return {
@@ -29,7 +30,7 @@ function saveMessage(from, path, params, data, sig)
 end
 
 function retrieveMessageByID(from, path, params, sig)
-    local x = xtables.load()
+    local x = tables.load()
     local msg = x:retrieve(path)
     if msg == null then
         return {
@@ -49,7 +50,7 @@ function retrieveMessageByID(from, path, params, sig)
 end
 
 function deleteMessageByID(from, path, params, sig)
-    local x = xtables.load()
+    local x = tables.load()
     local retAmountDeleted = x:delete(path)
     if retAmountDeleted ~= 1 then
         return {
@@ -64,20 +65,20 @@ function deleteMessageByID(from, path, params, sig)
     }
 end
 
-xchain.load({
+xmn.chain().load({
     namespace = "xmn",
     name = "messages",
     apps = {
-        xapp.new({
+        xmn.app().new({
             version = "17.03.09",
             beginBlockIndex = 0,
             endBlockIndex = -1,
-            router = xrouter.new({
+            router = xmn.router().new({
                 key = "this-is-the-router-key",
                 routes = {
-                    xroute.new("save", "/messages", saveMessage),
-                    xroute.new("delete", "/messages/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", deleteMessageByID),
-                    xroute.new("retrieve", "/messages/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", retrieveMessageByID),
+                    xmn.route().new("save", "/messages", saveMessage),
+                    xmn.route().new("delete", "/messages/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", deleteMessageByID),
+                    xmn.route().new("retrieve", "/messages/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", retrieveMessageByID),
                 }
             })
         })

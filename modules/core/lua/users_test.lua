@@ -1,14 +1,15 @@
 -- Unit testing starts
 require('luaunit')
+local xmn = require("xmn")
 
 TestUsers = {} --class
     function TestUsers:testSave_Keys_Success()
         -- variables:
-        x = xcrypto.new()
+        x = privkey.new()
         pubKey = x:pubKey()
 
         -- execute:
-        usrs = xusers.load()
+        usrs = users.load()
         invalidUsrKey = usrs:key(pubKey)
         firstExists = usrs:exists(pubKey)
         isInserted = usrs:insert(pubKey)
