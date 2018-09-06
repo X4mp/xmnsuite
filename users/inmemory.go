@@ -19,9 +19,18 @@ func createConcreteUsers() Users {
 	return &out
 }
 
-// Head returns the head
+// Objects returns the objects
 func (app *concreteUsers) Objects() objects.Objects {
 	return app.store
+}
+
+// Copy copues the Users instance
+func (app *concreteUsers) Copy() Users {
+	out := concreteUsers{
+		store: app.store.Copy(),
+	}
+
+	return &out
 }
 
 // Key returns the key where the user is stored

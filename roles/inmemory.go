@@ -33,6 +33,15 @@ func (app *concreteRoles) Lists() lists.Lists {
 	return app.lst
 }
 
+// Copy copies the roles instance
+func (app *concreteRoles) Copy() Roles {
+	out := concreteRoles{
+		lst: app.lst.Copy(),
+	}
+
+	return &out
+}
+
 // Add adds users to a role key and returns the amount of users in that role
 func (app *concreteRoles) Add(key string, usrs ...crypto.PubKey) int {
 	lst := app.convertUsers(usrs)

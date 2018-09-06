@@ -8,6 +8,7 @@ import (
 // Users represents the users access control
 type Users interface {
 	Objects() objects.Objects
+	Copy() Users
 	Key(pubKey crypto.PubKey) string
 	Exists(pubKey crypto.PubKey) bool
 	Insert(pubKey crypto.PubKey) bool

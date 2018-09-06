@@ -8,6 +8,7 @@ import (
 // Roles represents a role
 type Roles interface {
 	Lists() lists.Lists
+	Copy() Roles
 	Add(key string, usrs ...crypto.PubKey) int
 	Del(key string, usrs ...crypto.PubKey) int
 	EnableWriteAccess(key string, keyPatterns ...string) int

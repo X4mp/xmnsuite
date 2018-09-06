@@ -30,6 +30,16 @@ func (app *concreteLists) Objects() objects.Objects {
 	return app.objs
 }
 
+// Copy copies the lists object
+func (app *concreteLists) Copy() Lists {
+	out := concreteLists{
+		isUnique: app.isUnique,
+		objs:     app.objs.Copy(),
+	}
+
+	return &out
+}
+
 // Add add values to a key, and returns the amount of elements added
 func (app *concreteLists) Add(key string, values ...interface{}) int {
 	//if the key is new:

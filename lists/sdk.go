@@ -8,6 +8,7 @@ type WalkFn func(index int, value interface{}) (interface{}, error)
 // Lists represents the lists data store
 type Lists interface {
 	Objects() objects.Objects
+	Copy() Lists
 	Add(key string, values ...interface{}) int
 	Del(key string, values ...interface{}) int
 	Retrieve(key string, index int, amount int) []interface{}
