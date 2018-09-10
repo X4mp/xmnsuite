@@ -55,7 +55,7 @@ function deleteMessageByID(from, path, params, sig)
     if retAmountDeleted ~= 1 then
         return {
             code = 1,
-            log="the message (path: ".. path ..") was not found",
+            log="not found",
         }
     end
 

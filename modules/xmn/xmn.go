@@ -32,7 +32,15 @@ const luaTables = "tables"
 const luaUsers = "users"
 const luaRoles = "roles"
 const luaKey = "keys"
+
+// crypto:
 const luaPrivKey = "privkey"
+
+// sdk:
+const luaResourcePointer = "rpointer"
+const luaResource = "resource"
+const luaTrxResponse = "trxresponse"
+const luaQueryResponse = "queryresponse"
 
 type chain struct {
 	namespace string
@@ -63,6 +71,14 @@ type privKey struct {
 	pk crypto.PrivKey
 }
 
+type resourcePointer struct {
+	ptr applications.ResourcePointer
+}
+
+type resource struct {
+	ptr applications.Resource
+}
+
 type xmn struct {
 	ch     *chain
 	ds     datastore.DataStore
@@ -70,6 +86,7 @@ type xmn struct {
 	usrs   users.Users
 	rols   roles.Roles
 	k      keys.Keys
+	cl     applications.Client
 }
 
 func createXMN(ds datastore.DataStore) *xmn {
@@ -80,6 +97,21 @@ func createXMN(ds datastore.DataStore) *xmn {
 		usrs:   ds.Users(),
 		rols:   ds.Roles(),
 		k:      ds.Keys(),
+		cl:     nil,
+	}
+
+	return &out
+}
+
+func createXMNWithClient(ds datastore.DataStore, client applications.Client) *xmn {
+	out := xmn{
+		ch:     nil,
+		ds:     ds,
+		tables: ds.Objects(),
+		usrs:   ds.Users(),
+		rols:   ds.Roles(),
+		k:      ds.Keys(),
+		cl:     client,
 	}
 
 	return &out
@@ -105,6 +137,9 @@ func (app *xmn) register(context *lua.LState) {
 			"route": func(context *lua.LState) int {
 				return app.registerRoute(context)
 			},
+			"service": func(context *lua.LState) int {
+				return app.registerService(context)
+			},
 		}
 
 		ntable := context.NewTable()
@@ -117,7 +152,15 @@ func (app *xmn) register(context *lua.LState) {
 		app.registerUsers(context)
 		app.registerRoles(context)
 		app.registerKeys(context)
+
+		// crypto:
 		app.registerPrivKey(context)
+
+		// sdk:
+		app.registerResourcePointer(context)
+		app.registerResource(context)
+		app.registerQueryResponse(context)
+		app.registerClientTrxResponse(context)
 
 		return 1
 	})
@@ -406,6 +449,256 @@ func (app *xmn) registerRoute(context *lua.LState) int {
 	ntable := context.NewTable()
 	context.SetFuncs(ntable, methods)
 	context.Push(ntable)
+
+	// return:
+	return 1
+}
+
+func (app *xmn) registerService(context *lua.LState) int {
+	// transactFn executes a transaction on the service
+	transactFn := func(l *lua.LState) int {
+		amount := l.GetTop()
+		if amount != 1 {
+			l.ArgError(1, "the transact func expected 1 parameter")
+			return 1
+		}
+
+		if app.cl == nil {
+			l.RaiseError("the client must be set in the engine in order to use the service")
+			return 1
+		}
+
+		tb := l.ToTable(1)
+		luaSig := tb.RawGetString("sig")
+		sig, sigErr := hex.DecodeString(luaSig.String())
+		if sigErr != nil {
+			l.ArgError(1, "the sig could not be decoded")
+			return 1
+		}
+
+		params := applications.CreateTransactionRequestParams{
+			Sig: sig,
+		}
+
+		luaRes := tb.RawGetString("resource")
+		if luaRes.Type().String() != lua.LTNil.String() {
+			if restUD, ok := luaRes.(*lua.LUserData); ok {
+				if res, ok := restUD.Value.(*resource); ok {
+					params.Res = res.ptr
+				}
+			}
+		}
+
+		luaResPtr := tb.RawGetString("rpointer")
+		if luaResPtr.Type().String() != lua.LTNil.String() {
+			if restPtrUD, ok := luaResPtr.(*lua.LUserData); ok {
+				if resPtr, ok := restPtrUD.Value.(*resourcePointer); ok {
+					params.Ptr = resPtr.ptr
+				}
+			}
+		}
+
+		// create the request:
+		req := applications.SDKFunc.CreateTransactionRequest(params)
+
+		// execte the request:
+		resp, respErr := app.cl.Transact(req)
+		if respErr != nil {
+			str := fmt.Sprintf("there was an error while execting the transaction request: %s", respErr.Error())
+			l.ArgError(1, str)
+			return 1
+		}
+
+		// set the response:
+		ud := l.NewUserData()
+		ud.Value = resp
+
+		l.SetMetatable(ud, l.GetTypeMetatable(luaTrxResponse))
+		l.Push(ud)
+		return 1
+	}
+
+	// queryFn executes a query on the service
+	queryFn := func(l *lua.LState) int {
+		amount := l.GetTop()
+		if amount != 1 {
+			l.ArgError(1, "the transact func expected 1 parameter")
+			return 1
+		}
+
+		if app.cl == nil {
+			l.RaiseError("the client must be set in the engine in order to use the service")
+			return 1
+		}
+
+		tb := l.ToTable(1)
+		luaSig := tb.RawGetString("sig")
+		sig, sigErr := hex.DecodeString(luaSig.String())
+		if sigErr != nil {
+			l.ArgError(1, "the sig could not be decoded")
+			return 1
+		}
+
+		params := applications.CreateQueryRequestParams{
+			Sig: sig,
+		}
+
+		luaResPtr := tb.RawGetString("rpointer")
+		if luaResPtr.Type().String() != lua.LTNil.String() {
+			if restPtrUD, ok := luaResPtr.(*lua.LUserData); ok {
+				if resPtr, ok := restPtrUD.Value.(*resourcePointer); ok {
+					params.Ptr = resPtr.ptr
+				}
+			}
+		}
+
+		// create the request:
+		req := applications.SDKFunc.CreateQueryRequest(params)
+
+		// execte the request:
+		resp, respErr := app.cl.Query(req)
+		if respErr != nil {
+			str := fmt.Sprintf("there was an error while execting the query request: %s", respErr.Error())
+			l.ArgError(1, str)
+			return 1
+		}
+
+		// set the response:
+		ud := l.NewUserData()
+		ud.Value = resp
+
+		l.SetMetatable(ud, l.GetTypeMetatable(luaQueryResponse))
+		l.Push(ud)
+		return 1
+	}
+
+	// the users methods:
+	var methods = map[string]lua.LGFunction{
+		"transact": transactFn,
+		"query":    queryFn,
+	}
+
+	ntable := context.NewTable()
+	context.SetFuncs(ntable, methods)
+	context.Push(ntable)
+
+	// return:
+	return 1
+}
+
+func (app *xmn) registerQueryResponse(context *lua.LState) int {
+	checkFn := func(l *lua.LState) applications.QueryResponse {
+		ud := l.CheckUserData(1)
+		if v, ok := ud.Value.(applications.QueryResponse); ok {
+			return v
+		}
+
+		l.ArgError(1, "QueryResponse expected")
+		return nil
+	}
+
+	// codeFn returns the query response code
+	codeFn := func(l *lua.LState) int {
+		resp := checkFn(l)
+		l.Push(lua.LNumber(resp.Code()))
+		return 1
+	}
+
+	// logFn returns the query response log
+	logFn := func(l *lua.LState) int {
+		resp := checkFn(l)
+		l.Push(lua.LString(resp.Log()))
+		return 1
+	}
+
+	// keyFn returns the query response key
+	keyFn := func(l *lua.LState) int {
+		resp := checkFn(l)
+		l.Push(lua.LString(resp.Key()))
+		return 1
+	}
+
+	// ValueFn returns the query response value
+	ValueFn := func(l *lua.LState) int {
+		resp := checkFn(l)
+		l.Push(lua.LString(string(resp.Value())))
+		return 1
+	}
+
+	// the objects methods:
+	var methods = map[string]lua.LGFunction{
+		"code":  codeFn,
+		"log":   logFn,
+		"key":   keyFn,
+		"value": ValueFn,
+	}
+
+	mt := context.NewTypeMetatable(luaQueryResponse)
+
+	// methods
+	context.SetField(mt, "__index", context.SetFuncs(context.NewTable(), methods))
+
+	// return:
+	return 1
+}
+
+func (app *xmn) registerClientTrxResponse(context *lua.LState) int {
+	checkFn := func(l *lua.LState) applications.ClientTransactionResponse {
+		ud := l.CheckUserData(1)
+		if v, ok := ud.Value.(applications.ClientTransactionResponse); ok {
+			return v
+		}
+
+		l.ArgError(1, "ClientTransactionResponse expected")
+		return nil
+	}
+
+	// codeFn returns the query response code
+	codeFn := func(l *lua.LState) int {
+		resp := checkFn(l)
+
+		chk := resp.Check()
+		if chk.Code() != applications.IsSuccessful {
+			l.Push(lua.LNumber(chk.Code()))
+			return 1
+		}
+
+		l.Push(lua.LNumber(resp.Transaction().Code()))
+		return 1
+	}
+
+	// logFn returns the query response log
+	logFn := func(l *lua.LState) int {
+		resp := checkFn(l)
+
+		chk := resp.Check()
+		if chk.Code() != applications.IsSuccessful {
+			l.Push(lua.LString(chk.Log()))
+			return 1
+		}
+
+		l.Push(lua.LString(resp.Transaction().Log()))
+		return 1
+	}
+
+	// gazUsedFn returns the amont of gaz used
+	gazUsedFn := func(l *lua.LState) int {
+		resp := checkFn(l)
+		l.Push(lua.LNumber(resp.Transaction().GazUsed()))
+		return 1
+	}
+
+	// the objects methods:
+	var methods = map[string]lua.LGFunction{
+		"code":    codeFn,
+		"log":     logFn,
+		"gazUsed": gazUsedFn,
+	}
+
+	mt := context.NewTypeMetatable(luaTrxResponse)
+
+	// methods
+	context.SetField(mt, "__index", context.SetFuncs(context.NewTable(), methods))
 
 	// return:
 	return 1
@@ -897,6 +1190,163 @@ func (app *xmn) registerKeys(context *lua.LState) {
 	context.SetField(mt, "__index", context.SetFuncs(context.NewTable(), methods))
 }
 
+func (app *xmn) registerResource(context *lua.LState) {
+
+	//verifies that the given type is a Resource instance:
+	checkFn := func(l *lua.LState) *resource {
+		ud := l.CheckUserData(1)
+		if v, ok := ud.Value.(*resource); ok {
+			return v
+		}
+
+		l.ArgError(1, "resource expected")
+		return nil
+	}
+
+	// create a new resource instance:
+	newResource := func(l *lua.LState) int {
+		ud := l.NewUserData()
+		if l.GetTop() == 1 {
+			dataTable := l.CheckTable(1)
+			ptr := dataTable.RawGetString("pointer")
+			data := dataTable.RawGetString("data")
+
+			if ptrUD, ok := ptr.(*lua.LUserData); ok {
+				if pointer, ok := ptrUD.Value.(*resourcePointer); ok {
+
+					res := applications.SDKFunc.CreateResource(applications.CreateResourceParams{
+						ResPtr: pointer.ptr,
+						Data:   []byte(data.String()),
+					})
+
+					ud.Value = &resource{
+						ptr: res,
+					}
+
+					l.SetMetatable(ud, l.GetTypeMetatable(luaResource))
+					l.Push(ud)
+					return 1
+				}
+			}
+
+			l.ArgError(1, "the new func expected its parameter to be a table that contains a pointer keyname, that reference a resource pointer instance")
+			return 1
+
+		}
+
+		l.ArgError(1, "the new func expected 1 parameter")
+		return 1
+	}
+
+	// hashFn executes the hash fnc on the resource instance
+	hashFn := func(l *lua.LState) int {
+		res := checkFn(l)
+		if res == nil {
+			return 1
+		}
+
+		hashAsString := hex.EncodeToString(res.ptr.Hash())
+		l.Push(lua.LString(hashAsString))
+		return 1
+	}
+
+	// the users methods:
+	var methods = map[string]lua.LGFunction{
+		"hash": hashFn,
+	}
+
+	mt := context.NewTypeMetatable(luaResource)
+	context.SetGlobal(luaResource, mt)
+
+	// static attributes
+	context.SetField(mt, "new", context.NewFunction(newResource))
+
+	// methods
+	context.SetField(mt, "__index", context.SetFuncs(context.NewTable(), methods))
+}
+
+func (app *xmn) registerResourcePointer(context *lua.LState) {
+
+	//verifies that the given type is a ResourcePointer instance:
+	checkFn := func(l *lua.LState) *resourcePointer {
+		ud := l.CheckUserData(1)
+		if v, ok := ud.Value.(*resourcePointer); ok {
+			return v
+		}
+
+		l.ArgError(1, "resource pointer expected")
+		return nil
+	}
+
+	// create a new resource pointer instance:
+	newResourcePointer := func(l *lua.LState) int {
+		ud := l.NewUserData()
+		if l.GetTop() == 1 {
+			dataTable := l.CheckTable(1)
+			from := dataTable.RawGetString("from")
+			path := dataTable.RawGetString("path")
+
+			// decode the pubkey:
+			pubKeyAsBytes, pubKeyAsBytesErr := hex.DecodeString(from.String())
+			if pubKeyAsBytesErr != nil {
+				l.ArgError(1, "the from pubKey cold not be decoded is invalid")
+				return 1
+			}
+
+			// unmarshal the bytes:
+			newPubKey := new(ed25519.PubKeyEd25519)
+			pubKerr := cdc.UnmarshalBinary(pubKeyAsBytes, newPubKey)
+			if pubKerr != nil {
+				l.ArgError(1, "the from pubKey bytes cannot be converted to a pubKey instance")
+				return 1
+			}
+
+			// create the resource pointer:
+			ptr := applications.SDKFunc.CreateResourcePointer(applications.CreateResourcePointerParams{
+				From: newPubKey,
+				Path: path.String(),
+			})
+
+			ud.Value = &resourcePointer{
+				ptr: ptr,
+			}
+
+			l.SetMetatable(ud, l.GetTypeMetatable(luaResourcePointer))
+			l.Push(ud)
+			return 1
+		}
+
+		l.ArgError(1, "the new func expected 1 parameter")
+		return 1
+	}
+
+	// hashFn executes the hash fnc on the resource pointer instance
+	hashFn := func(l *lua.LState) int {
+		presource := checkFn(l)
+		if presource == nil {
+			return 1
+		}
+
+		hashAsString := hex.EncodeToString(presource.ptr.Hash())
+		l.Push(lua.LString(hashAsString))
+		return 1
+	}
+
+	// the users methods:
+	var methods = map[string]lua.LGFunction{
+		"hash": hashFn,
+	}
+
+	mt := context.NewTypeMetatable(luaResourcePointer)
+	context.SetGlobal(luaResourcePointer, mt)
+
+	// static attributes
+	context.SetField(mt, "new", context.NewFunction(newResourcePointer))
+
+	// methods
+	context.SetField(mt, "__index", context.SetFuncs(context.NewTable(), methods))
+}
+
 func (app *xmn) registerPrivKey(context *lua.LState) {
 	//verifies that the given type is a Crypto instance:
 	checkFn := func(l *lua.LState) *privKey {
@@ -905,7 +1355,7 @@ func (app *xmn) registerPrivKey(context *lua.LState) {
 			return v
 		}
 
-		l.ArgError(1, "users expected")
+		l.ArgError(1, "private key expected")
 		return nil
 	}
 
@@ -921,28 +1371,56 @@ func (app *xmn) registerPrivKey(context *lua.LState) {
 		return 1
 	}
 
-	//execute the pubKey command on the objects instance:
+	//execute the pubKey command on the privkey instance:
 	pubKeyFn := func(l *lua.LState) int {
 		p := checkFn(l)
-		if l.GetTop() == 1 {
-			pubKeyAsBytes, pubKeyAsBytesErr := cdc.MarshalBinary(p.pk.PubKey())
-			if pubKeyAsBytesErr != nil {
-				l.ArgError(1, "the public key of the private key is invalid")
-				return 1
-			}
-
-			pubKey := hex.EncodeToString(pubKeyAsBytes)
-			l.Push(lua.LString(pubKey))
+		if p == nil {
 			return 1
 		}
 
-		l.ArgError(1, "the save func expected 0 parameter")
+		pubKeyAsBytes, pubKeyAsBytesErr := cdc.MarshalBinary(p.pk.PubKey())
+		if pubKeyAsBytesErr != nil {
+			l.ArgError(1, "the public key of the private key is invalid")
+			return 1
+		}
+
+		pubKey := hex.EncodeToString(pubKeyAsBytes)
+		l.Push(lua.LString(pubKey))
+		return 1
+	}
+
+	//execute the signFn command on the privkey instance:
+	signFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		if l.GetTop() == 2 {
+			encodedHash := l.CheckString(2)
+			msg, msgErr := hex.DecodeString(encodedHash)
+			if msgErr != nil {
+				str := fmt.Sprintf("the hash could not be decoded: %s", msgErr.Error())
+				l.ArgError(1, str)
+				return 1
+			}
+
+			sig, sigErr := p.pk.Sign(msg)
+			if sigErr != nil {
+				str := fmt.Sprintf("there was an error while signing the given message: %s", sigErr.Error())
+				l.ArgError(1, str)
+				return 1
+			}
+
+			encocedSig := hex.EncodeToString(sig)
+			l.Push(lua.LString(encocedSig))
+			return 1
+		}
+
+		l.ArgError(1, "the save func expected 1 parameter")
 		return 1
 	}
 
 	// the users methods:
 	var methods = map[string]lua.LGFunction{
 		"pubKey": pubKeyFn,
+		"sign":   signFn,
 	}
 
 	mt := context.NewTypeMetatable(luaPrivKey)

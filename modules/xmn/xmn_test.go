@@ -196,6 +196,77 @@ func TestUsers_Success(t *testing.T) {
 	executeChunkForTests(l, "lua/users_test.lua")
 }
 
+func TestSDK_Success(t *testing.T) {
+	// variables:
+	instanceID := uuid.NewV4()
+	dbPath := "./test_files"
+	defer func() {
+		os.RemoveAll(dbPath)
+	}()
+
+	nodePK := ed25519.GenPrivKey()
+	fromPrivKey := ed25519.GenPrivKey()
+	fromPubKey := fromPrivKey.PubKey()
+
+	// create the initial write keys:
+	firstPrivKey := ed25519.GenPrivKey()
+	secondPrivKey := ed25519.GenPrivKey()
+	thirdPrivKey := ed25519.GenPrivKey()
+	rootPubKeys := []crypto.PubKey{
+		firstPrivKey.PubKey(),
+		secondPrivKey.PubKey(),
+		thirdPrivKey.PubKey(),
+		fromPubKey,
+	}
+
+	//create lua state:
+	l := createLuaState()
+	defer l.Close()
+
+	// create the datastore:
+	ds := datastore.SDKFunc.Create()
+
+	// create XMN:
+	xmn := createXMN(ds)
+
+	// register:
+	xmn.register(l)
+
+	// execute:
+	node, nodeErr := xmn.execute(l, dbPath, &instanceID, rootPubKeys, nodePK, "lua/core_test.lua")
+	if nodeErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", nodeErr.Error())
+		return
+	}
+	defer node.Stop()
+
+	// retrieve the client:
+	client, clientErr := node.GetClient()
+	if clientErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", clientErr.Error())
+		return
+	}
+
+	startClientErr := client.Start()
+	if startClientErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", startClientErr.Error())
+		return
+	}
+
+	//create another lua state:
+	anotherL := createLuaState()
+	defer anotherL.Close()
+
+	// create XMN:
+	xmnWithClient := createXMNWithClient(datastore.SDKFunc.Create(), client)
+
+	// register:
+	xmnWithClient.register(anotherL)
+
+	//execute the chunk:
+	executeChunkForTests(anotherL, "lua/sdk_test.lua")
+}
+
 func saveMessage(t *testing.T, client applications.Client, fromPrivKey crypto.PrivKey, firstMsg *messageForTest) {
 	jsFirstMsg, jsFirstMsgErr := json.Marshal(firstMsg)
 	if jsFirstMsgErr != nil {
