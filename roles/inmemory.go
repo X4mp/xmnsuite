@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/XMNBlockchain/xmnsuite/helpers"
-	"github.com/XMNBlockchain/xmnsuite/lists"
 	crypto "github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/xmnservices/xmnsuite/helpers"
+	"github.com/xmnservices/xmnsuite/lists"
 )
 
 func init() {

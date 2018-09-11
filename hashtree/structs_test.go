@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	convert "github.com/XMNBlockchain/xmnsuite/tools/tests"
+	convert "github.com/xmnservices/xmnsuite/tests"
 )
 
 // we must also split data, create a tree, create a compact tree, and pass the shuffled data to it, to get it back in order

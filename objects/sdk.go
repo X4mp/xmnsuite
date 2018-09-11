@@ -1,7 +1,7 @@
 package objects
 
 import (
-	"github.com/XMNBlockchain/xmnsuite/keys"
+	"github.com/xmnservices/xmnsuite/keys"
 )
 
 // ObjInKey represents an object in key

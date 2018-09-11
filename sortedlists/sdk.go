@@ -1,6 +1,6 @@
 package sortedlists
 
-import "github.com/XMNBlockchain/xmnsuite/hashtree"
+import "github.com/xmnservices/xmnsuite/hashtree"
 
 // WalkFn represents the func called by walk
 type WalkFn func(index int, score int, value []byte) (interface{}, error)

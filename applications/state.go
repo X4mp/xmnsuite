@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	objects "github.com/XMNBlockchain/xmnsuite/objects"
+	objects "github.com/xmnservices/xmnsuite/objects"
 )
 
 /*

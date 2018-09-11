@@ -8,14 +8,14 @@ import (
 	"os"
 	"strconv"
 
-	datastore "github.com/XMNBlockchain/xmnsuite/datastore"
-	xmnmodule "github.com/XMNBlockchain/xmnsuite/modules/xmn"
 	term "github.com/nsf/termbox-go"
 	uuid "github.com/satori/go.uuid"
 	amino "github.com/tendermint/go-amino"
 	crypto "github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 	cli "github.com/urfave/cli"
+	datastore "github.com/xmnservices/xmnsuite/datastore"
+	xmnmodule "github.com/xmnservices/xmnsuite/modules/xmn"
 	lua "github.com/yuin/gopher-lua"
 )
 

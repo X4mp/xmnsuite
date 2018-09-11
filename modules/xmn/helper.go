@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 
-	"github.com/XMNBlockchain/xmnsuite/keys"
+	"github.com/xmnservices/xmnsuite/keys"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	lua "github.com/yuin/gopher-lua"

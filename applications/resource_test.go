@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	tests "github.com/XMNBlockchain/xmnsuite/tests"
+	tests "github.com/xmnservices/xmnsuite/tests"
 	"github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 )

@@ -1,10 +1,10 @@
 package tendermint
 
 import (
-	applications "github.com/XMNBlockchain/xmnsuite/applications"
 	amino "github.com/tendermint/go-amino"
 	crypto "github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
+	applications "github.com/xmnservices/xmnsuite/applications"
 )
 
 var cdc = amino.NewCodec()

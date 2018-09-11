@@ -3,7 +3,7 @@ package tendermint
 import (
 	"fmt"
 
-	applications "github.com/XMNBlockchain/xmnsuite/applications"
+	applications "github.com/xmnservices/xmnsuite/applications"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	rpcclient "github.com/tendermint/tendermint/rpc/lib/client"
 )

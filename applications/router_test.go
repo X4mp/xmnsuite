@@ -5,9 +5,9 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/XMNBlockchain/xmnsuite/datastore"
-	roles "github.com/XMNBlockchain/xmnsuite/roles"
-	users "github.com/XMNBlockchain/xmnsuite/users"
+	"github.com/xmnservices/xmnsuite/datastore"
+	roles "github.com/xmnservices/xmnsuite/roles"
+	users "github.com/xmnservices/xmnsuite/users"
 	crypto "github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 )

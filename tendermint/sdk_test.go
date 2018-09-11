@@ -8,12 +8,12 @@ import (
 	"reflect"
 	"testing"
 
-	applications "github.com/XMNBlockchain/xmnsuite/applications"
-	datastore "github.com/XMNBlockchain/xmnsuite/datastore"
-	objects "github.com/XMNBlockchain/xmnsuite/objects"
 	uuid "github.com/satori/go.uuid"
 	crypto "github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
+	applications "github.com/xmnservices/xmnsuite/applications"
+	datastore "github.com/xmnservices/xmnsuite/datastore"
+	objects "github.com/xmnservices/xmnsuite/objects"
 )
 
 type messageForTest struct {
@@ -57,7 +57,7 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 			RtesParams: []applications.CreateRouteParams{
 				applications.CreateRouteParams{
 					Pattern: "/messages",
-					SaveTrx: func(from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) (applications.TransactionResponse, error) {
+					SaveTrx: func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) (applications.TransactionResponse, error) {
 
 						// unmarshal data:
 						msg := new(messageForTest)
@@ -94,7 +94,7 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 				},
 				applications.CreateRouteParams{
 					Pattern: "/messages/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
-					QueryTrx: func(from crypto.PubKey, path string, params map[string]string, sig []byte) (applications.QueryResponse, error) {
+					QueryTrx: func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (applications.QueryResponse, error) {
 						obj := objects.ObjInKey{
 							Key: path,
 							Obj: new(messageForTest),

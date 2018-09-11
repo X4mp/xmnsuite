@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	tests "github.com/XMNBlockchain/xmnsuite/tests"
+	tests "github.com/xmnservices/xmnsuite/tests"
 	uuid "github.com/satori/go.uuid"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 )

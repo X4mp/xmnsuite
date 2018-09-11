@@ -4,12 +4,12 @@ import (
 	"os"
 	"path/filepath"
 
-	applications "github.com/XMNBlockchain/xmnsuite/applications"
 	config "github.com/tendermint/tendermint/config"
 	log "github.com/tendermint/tendermint/libs/log"
 	nm "github.com/tendermint/tendermint/node"
 	"github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/proxy"
+	applications "github.com/xmnservices/xmnsuite/applications"
 )
 
 type applicationService struct {

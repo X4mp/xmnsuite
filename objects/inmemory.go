@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/XMNBlockchain/xmnsuite/helpers"
-	"github.com/XMNBlockchain/xmnsuite/keys"
+	"github.com/xmnservices/xmnsuite/helpers"
+	"github.com/xmnservices/xmnsuite/keys"
 )
 
 /*

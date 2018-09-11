@@ -4,22 +4,17 @@ import (
 	"reflect"
 	"testing"
 
-	hashtree "github.com/XMNBlockchain/xmnsuite/hashtree"
+	hashtree "github.com/xmnservices/xmnsuite/hashtree"
 )
 
 func TestAll_Success(t *testing.T) {
-	ht, htErr := hashtree.SDKFunc.CreateHashTree(hashtree.CreateHashTreeParams{
+	ht := hashtree.SDKFunc.CreateHashTree(hashtree.CreateHashTreeParams{
 		Blocks: [][]byte{
 			[]byte("this"),
 			[]byte("is"),
 			[]byte("some"),
 		},
 	})
-
-	if htErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", htErr.Error())
-		return
-	}
 
 	jsCompact := hashtree.SDKFunc.CreateJSONCompact(ht.Compact())
 	retCompact, retCompactErr := hashtree.SDKFunc.CreateCompactFromJSON(jsCompact)

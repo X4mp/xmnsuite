@@ -1,7 +1,7 @@
 package users
 
 import (
-	"github.com/XMNBlockchain/xmnsuite/objects"
+	"github.com/xmnservices/xmnsuite/objects"
 	crypto "github.com/tendermint/tendermint/crypto"
 )
 

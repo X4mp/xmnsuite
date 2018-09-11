@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/XMNBlockchain/xmnsuite/lists"
-	"github.com/XMNBlockchain/xmnsuite/users"
+	"github.com/xmnservices/xmnsuite/lists"
+	"github.com/xmnservices/xmnsuite/users"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 )
 

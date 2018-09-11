@@ -4,8 +4,8 @@ import (
 	"errors"
 	"regexp"
 
-	roles "github.com/XMNBlockchain/xmnsuite/roles"
-	users "github.com/XMNBlockchain/xmnsuite/users"
+	roles "github.com/xmnservices/xmnsuite/roles"
+	users "github.com/xmnservices/xmnsuite/users"
 	crypto "github.com/tendermint/tendermint/crypto"
 )
 

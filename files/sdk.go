@@ -3,7 +3,7 @@ package files
 import (
 	"net/url"
 
-	"github.com/XMNBlockchain/xmnsuite/hashtree"
+	"github.com/xmnservices/xmnsuite/hashtree"
 )
 
 // Files represents the files data store

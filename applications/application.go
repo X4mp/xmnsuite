@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	datastore "github.com/XMNBlockchain/xmnsuite/datastore"
+	datastore "github.com/xmnservices/xmnsuite/datastore"
 )
 
 /*

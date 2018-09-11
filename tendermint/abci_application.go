@@ -1,7 +1,7 @@
 package tendermint
 
 import (
-	applications "github.com/XMNBlockchain/xmnsuite/applications"
+	applications "github.com/xmnservices/xmnsuite/applications"
 	types "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 )
