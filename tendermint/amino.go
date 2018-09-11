@@ -1,7 +1,7 @@
 package tendermint
 
 import (
-	applications "github.com/XMNBlockchain/datamint/applications"
+	applications "github.com/XMNBlockchain/xmnsuite/applications"
 	amino "github.com/tendermint/go-amino"
 	crypto "github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"

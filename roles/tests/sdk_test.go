@@ -3,7 +3,7 @@ package tests
 import (
 	"testing"
 
-	"github.com/XMNBlockchain/datamint/roles"
+	"github.com/XMNBlockchain/xmnsuite/roles"
 )
 
 func TestCreate_Success(t *testing.T) {

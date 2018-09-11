@@ -1,6 +1,6 @@
 package keys
 
-import "github.com/XMNBlockchain/datamint/hashtree"
+import "github.com/XMNBlockchain/xmnsuite/hashtree"
 
 // Keys represents the keys datastore
 type Keys interface {

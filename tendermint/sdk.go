@@ -3,7 +3,7 @@ package tendermint
 import (
 	"time"
 
-	applications "github.com/XMNBlockchain/datamint/applications"
+	applications "github.com/XMNBlockchain/xmnsuite/applications"
 	uuid "github.com/satori/go.uuid"
 	crypto "github.com/tendermint/tendermint/crypto"
 )

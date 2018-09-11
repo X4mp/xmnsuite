@@ -8,8 +8,8 @@ import (
 	"os"
 	"strconv"
 
-	datastore "github.com/XMNBlockchain/datamint/datastore"
-	xmnmodule "github.com/XMNBlockchain/datamint/modules/xmn"
+	datastore "github.com/XMNBlockchain/xmnsuite/datastore"
+	xmnmodule "github.com/XMNBlockchain/xmnsuite/modules/xmn"
 	term "github.com/nsf/termbox-go"
 	uuid "github.com/satori/go.uuid"
 	amino "github.com/tendermint/go-amino"

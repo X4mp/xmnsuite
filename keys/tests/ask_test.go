@@ -3,7 +3,7 @@ package tests
 import (
 	"testing"
 
-	"github.com/XMNBlockchain/datamint/keys"
+	"github.com/XMNBlockchain/xmnsuite/keys"
 )
 
 func TestCreate_Success(t *testing.T) {

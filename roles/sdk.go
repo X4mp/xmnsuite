@@ -1,7 +1,7 @@
 package roles
 
 import (
-	"github.com/XMNBlockchain/datamint/lists"
+	"github.com/XMNBlockchain/xmnsuite/lists"
 	crypto "github.com/tendermint/tendermint/crypto"
 )
 

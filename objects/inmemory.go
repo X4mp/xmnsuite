@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/XMNBlockchain/datamint/helpers"
-	"github.com/XMNBlockchain/datamint/keys"
+	"github.com/XMNBlockchain/xmnsuite/helpers"
+	"github.com/XMNBlockchain/xmnsuite/keys"
 )
 
 /*

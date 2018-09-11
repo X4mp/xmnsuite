@@ -3,7 +3,7 @@ package files
 import (
 	"net/url"
 
-	"github.com/XMNBlockchain/datamint/hashtree"
+	"github.com/XMNBlockchain/xmnsuite/hashtree"
 )
 
 // Files represents the files data store

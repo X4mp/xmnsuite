@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	applications "github.com/XMNBlockchain/datamint/applications"
+	applications "github.com/XMNBlockchain/xmnsuite/applications"
 	nm "github.com/tendermint/tendermint/node"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	rpcclient "github.com/tendermint/tendermint/rpc/lib/client"

@@ -3,8 +3,8 @@ package applications
 import (
 	"errors"
 
-	datastore "github.com/XMNBlockchain/datamint/datastore"
-	objects "github.com/XMNBlockchain/datamint/objects"
+	datastore "github.com/XMNBlockchain/xmnsuite/datastore"
+	objects "github.com/XMNBlockchain/xmnsuite/objects"
 	crypto "github.com/tendermint/tendermint/crypto"
 )
 

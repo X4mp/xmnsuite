@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/XMNBlockchain/datamint/helpers"
-	"github.com/XMNBlockchain/datamint/objects"
+	"github.com/XMNBlockchain/xmnsuite/helpers"
+	"github.com/XMNBlockchain/xmnsuite/objects"
 )
 
 type concreteLists struct {

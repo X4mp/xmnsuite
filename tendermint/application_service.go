@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	applications "github.com/XMNBlockchain/datamint/applications"
+	applications "github.com/XMNBlockchain/xmnsuite/applications"
 	config "github.com/tendermint/tendermint/config"
 	log "github.com/tendermint/tendermint/libs/log"
 	nm "github.com/tendermint/tendermint/node"

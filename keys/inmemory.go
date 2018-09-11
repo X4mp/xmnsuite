@@ -6,8 +6,8 @@ import (
 	"regexp"
 	"sort"
 
-	"github.com/XMNBlockchain/datamint/hashtree"
-	"github.com/XMNBlockchain/datamint/helpers"
+	"github.com/XMNBlockchain/xmnsuite/hashtree"
+	"github.com/XMNBlockchain/xmnsuite/helpers"
 )
 
 /*

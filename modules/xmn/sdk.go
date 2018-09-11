@@ -1,8 +1,8 @@
 package xmn
 
 import (
-	applications "github.com/XMNBlockchain/datamint/applications"
-	datastore "github.com/XMNBlockchain/datamint/datastore"
+	applications "github.com/XMNBlockchain/xmnsuite/applications"
+	datastore "github.com/XMNBlockchain/xmnsuite/datastore"
 	uuid "github.com/satori/go.uuid"
 	crypto "github.com/tendermint/tendermint/crypto"
 	lua "github.com/yuin/gopher-lua"

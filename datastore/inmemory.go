@@ -1,12 +1,12 @@
 package datastore
 
 import (
-	"github.com/XMNBlockchain/datamint/hashtree"
-	"github.com/XMNBlockchain/datamint/keys"
-	"github.com/XMNBlockchain/datamint/lists"
-	"github.com/XMNBlockchain/datamint/objects"
-	"github.com/XMNBlockchain/datamint/roles"
-	"github.com/XMNBlockchain/datamint/users"
+	"github.com/XMNBlockchain/xmnsuite/hashtree"
+	"github.com/XMNBlockchain/xmnsuite/keys"
+	"github.com/XMNBlockchain/xmnsuite/lists"
+	"github.com/XMNBlockchain/xmnsuite/objects"
+	"github.com/XMNBlockchain/xmnsuite/roles"
+	"github.com/XMNBlockchain/xmnsuite/users"
 )
 
 /*

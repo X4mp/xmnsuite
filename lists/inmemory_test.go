@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/XMNBlockchain/datamint"
+	"github.com/XMNBlockchain/xmnsuite"
 )
 
 func TestAdd_thenDelete_Success(t *testing.T) {
@@ -50,7 +50,7 @@ func TestAdd_thenRetrieve_notUnique_Success(t *testing.T) {
 	app := createConcreteLists(false)
 
 	//create an empty key:
-	emptyData, _ := datamint.GetBytes([]interface{}{})
+	emptyData, _ := xmnsuite.GetBytes([]interface{}{})
 	app.Objects().Keys().Save(emptyKey, emptyData)
 
 	//verify the length:
@@ -184,7 +184,7 @@ func TestAdd_thenRetrieve_isUnique_Success(t *testing.T) {
 	}
 
 	//create an empty key:
-	emptyData, _ := datamint.GetBytes([]interface{}{})
+	emptyData, _ := xmnsuite.GetBytes([]interface{}{})
 	app.Objects().Keys().Save(emptyKey, emptyData)
 
 	//add the list:

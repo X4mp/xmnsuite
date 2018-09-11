@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/XMNBlockchain/datamint/applications"
-	datastore "github.com/XMNBlockchain/datamint/datastore"
+	"github.com/XMNBlockchain/xmnsuite/applications"
+	datastore "github.com/XMNBlockchain/xmnsuite/datastore"
 	uuid "github.com/satori/go.uuid"
 	"github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"

@@ -1,2 +1,2 @@
-# DataMint
- DataMint is a decentralized datastore built on top of Tendermint.
+# XMNSuite
+XMNSuite is a CLI application that enables the creation and deployment of independent blockchain applications.  It uses [lua](http://www.lua.org/) as its scripting engine and [Tendermint](https://tendermint.com/) as its byzantine fault tolerant consensus algorithm.

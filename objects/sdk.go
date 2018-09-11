@@ -1,7 +1,7 @@
 package objects
 
 import (
-	"github.com/XMNBlockchain/datamint/keys"
+	"github.com/XMNBlockchain/xmnsuite/keys"
 )
 
 // ObjInKey represents an object in key
