@@ -142,14 +142,6 @@ func main() {
 				},
 			},
 			Action: func(c *cliapp.Context) error {
-
-				termErr := term.Init()
-				if termErr != nil {
-					str := fmt.Sprintf("there was an error while enabling the keyboard listening: %s", termErr.Error())
-					return errors.New(str)
-				}
-				defer term.Close()
-
 				// retrieve the script path:
 				scriptPath := c.Args().First()
 				if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
@@ -172,6 +164,14 @@ func main() {
 				// if there is a chain module, spawn:
 				chainModule := cli.getModuleByName("chain")
 				if chainModule != nil {
+
+					termErr := term.Init()
+					if termErr != nil {
+						str := fmt.Sprintf("there was an error while enabling the keyboard listening: %s", termErr.Error())
+						return errors.New(str)
+					}
+					defer term.Close()
+
 					node, nodeErr := chainModule.(module_chain.Chain).Spawn()
 					if nodeErr != nil {
 						// output error:

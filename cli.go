@@ -253,6 +253,8 @@ func (app *cli) loadSDKModule() error {
 			Context: app.luaContext,
 			Client:  client,
 		})
+
+		return nil
 	}
 
 	return errors.New("the connector param is mandatory in order to load the sdk module")
