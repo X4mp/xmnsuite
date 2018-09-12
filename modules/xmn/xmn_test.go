@@ -7,11 +7,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/xmnservices/xmnsuite/applications"
-	datastore "github.com/xmnservices/xmnsuite/datastore"
 	uuid "github.com/satori/go.uuid"
 	"github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/xmnservices/xmnsuite/applications"
+	datastore "github.com/xmnservices/xmnsuite/datastore"
 )
 
 type messageForTest struct {
@@ -69,12 +69,6 @@ func TestXMN_Success(t *testing.T) {
 	client, clientErr := node.GetClient()
 	if clientErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", clientErr.Error())
-		return
-	}
-
-	startClientErr := client.Start()
-	if startClientErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", startClientErr.Error())
 		return
 	}
 
@@ -244,12 +238,6 @@ func TestSDK_Success(t *testing.T) {
 	client, clientErr := node.GetClient()
 	if clientErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", clientErr.Error())
-		return
-	}
-
-	startClientErr := client.Start()
-	if startClientErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", startClientErr.Error())
 		return
 	}
 

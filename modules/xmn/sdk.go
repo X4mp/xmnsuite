@@ -17,6 +17,7 @@ type ExecuteParams struct {
 	Store       datastore.DataStore
 	Context     *lua.LState
 	ScriptPath  string
+	Client      applications.Client
 }
 
 // SDKFunc represents the public SDK func of the base module
@@ -25,8 +26,18 @@ var SDKFunc = struct {
 }{
 	Execute: func(params ExecuteParams) applications.Node {
 
+		createXMNFn := func(ds datastore.DataStore, cl applications.Client) *xmn {
+			if cl != nil {
+				out := createXMNWithClient(ds, cl)
+				return out
+			}
+
+			out := createXMN(params.Store)
+			return out
+		}
+
 		// create XMN:
-		xmn := createXMN(params.Store)
+		xmn := createXMNFn(params.Store, params.Client)
 
 		// register:
 		xmn.register(params.Context)

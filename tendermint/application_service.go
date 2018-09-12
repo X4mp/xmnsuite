@@ -13,35 +13,27 @@ import (
 )
 
 type applicationService struct {
-	rootDir  string
-	blkChain Blockchain
-	apps     applications.Applications
 }
 
-func createApplicationService(rootDir string, blkChain Blockchain, apps applications.Applications) (ApplicationService, error) {
-	out := applicationService{
-		rootDir:  rootDir,
-		blkChain: blkChain,
-		apps:     apps,
-	}
-
-	return &out, nil
+func createApplicationService() ApplicationService {
+	out := applicationService{}
+	return &out
 }
 
 // Spawn spawns a new blockchain application
-func (obj *applicationService) Spawn() (applications.Node, error) {
+func (obj *applicationService) Spawn(rootDir string, blkChain Blockchain, apps applications.Applications) (applications.Node, error) {
 
 	// retrieve the genesis block:
-	gen := obj.blkChain.GetGenesis()
+	gen := blkChain.GetGenesis()
 
 	//create the abci application:
-	abciApp, abciAppErr := createABCIApplication(obj.apps)
+	abciApp, abciAppErr := createABCIApplication(apps)
 	if abciAppErr != nil {
 		return nil, abciAppErr
 	}
 
 	//create the config:
-	dirPath := filepath.Join(obj.rootDir, gen.GetPath().String())
+	dirPath := filepath.Join(rootDir, gen.GetPath().String())
 	conf := config.DefaultConfig().SetRoot(dirPath)
 
 	// create the node:

@@ -3,9 +3,9 @@ package applications
 import (
 	"errors"
 
+	crypto "github.com/tendermint/tendermint/crypto"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
 	objects "github.com/xmnservices/xmnsuite/objects"
-	crypto "github.com/tendermint/tendermint/crypto"
 )
 
 // SaveTransactionFn represents a save transaction func
@@ -170,7 +170,6 @@ type ClientTransactionResponse interface {
 
 // Client represents an application client
 type Client interface {
-	Start() error
 	Query(req QueryRequest) (QueryResponse, error)
 	Transact(req TransactionRequest) (ClientTransactionResponse, error)
 }

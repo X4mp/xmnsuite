@@ -1662,14 +1662,10 @@ func (app *xmn) execute(
 	}
 
 	// create the application service:
-	appService := tendermint.SDKFunc.CreateApplicationService(tendermint.CreateApplicationServiceParams{
-		RootDir:  dbPath,
-		BlkChain: blkChain,
-		Apps:     apps,
-	})
+	appService := tendermint.SDKFunc.CreateApplicationService()
 
 	// spawn the node:
-	node, nodeErr := appService.Spawn()
+	node, nodeErr := appService.Spawn(dbPath, blkChain, apps)
 	if nodeErr != nil {
 		return nil, nodeErr
 	}

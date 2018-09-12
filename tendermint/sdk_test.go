@@ -153,14 +153,10 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 	}
 
 	// create the application service:
-	appService := SDKFunc.CreateApplicationService(CreateApplicationServiceParams{
-		RootDir:  rootDir,
-		BlkChain: blkChain,
-		Apps:     apps,
-	})
+	appService := SDKFunc.CreateApplicationService()
 
 	// spawn the node:
-	node, nodeErr := appService.Spawn()
+	node, nodeErr := appService.Spawn(rootDir, blkChain, apps)
 	if nodeErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", nodeErr.Error())
 		return
@@ -178,13 +174,6 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 	startNodeErr := node.Start()
 	if startNodeErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", startNodeErr.Error())
-		return
-	}
-
-	// start the client:
-	startErr := client.Start()
-	if startErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", startErr.Error())
 		return
 	}
 

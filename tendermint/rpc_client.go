@@ -3,9 +3,9 @@ package tendermint
 import (
 	"fmt"
 
-	applications "github.com/xmnservices/xmnsuite/applications"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	rpcclient "github.com/tendermint/tendermint/rpc/lib/client"
+	applications "github.com/xmnservices/xmnsuite/applications"
 )
 
 /*
@@ -18,23 +18,16 @@ type rpcClient struct {
 }
 
 func createRPCClient(ipAddress string) (applications.Client, error) {
+	//create the client set the codec:
+	client := rpcclient.NewJSONRPCClient(ipAddress)
+	client.SetCodec(cdc)
+
 	out := rpcClient{
 		ipAddress: ipAddress,
-		cl:        nil,
+		cl:        client,
 	}
 
 	return &out, nil
-}
-
-// Start starts the router
-func (app *rpcClient) Start() error {
-	//create the client set the codec:
-	client := rpcclient.NewJSONRPCClient(app.ipAddress)
-	client.SetCodec(cdc)
-
-	//keep the instance:
-	app.cl = client
-	return nil
 }
 
 // Query executes a query and returns its response:

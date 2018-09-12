@@ -3,9 +3,9 @@ package tendermint
 import (
 	"time"
 
-	applications "github.com/xmnservices/xmnsuite/applications"
 	uuid "github.com/satori/go.uuid"
 	crypto "github.com/tendermint/tendermint/crypto"
+	applications "github.com/xmnservices/xmnsuite/applications"
 )
 
 /*
@@ -65,7 +65,7 @@ type BlockchainService interface {
 
 // ApplicationService represents an application service
 type ApplicationService interface {
-	Spawn() (applications.Node, error)
+	Spawn(rootDir string, blkChain Blockchain, apps applications.Applications) (applications.Node, error)
 	Connect(ipAddress string) (applications.Client, error)
 }
 
@@ -93,19 +93,12 @@ type CreateBlockchainServiceParams struct {
 	RootDirPath string
 }
 
-// CreateApplicationServiceParams represents the params of the CreateApplicationService SDK func
-type CreateApplicationServiceParams struct {
-	RootDir  string
-	BlkChain Blockchain
-	Apps     applications.Applications
-}
-
 // SDKFunc represents the tendermint interval blockchains SDK functions
 var SDKFunc = struct {
 	CreatePath               func(params CreatePathParams) Path
 	CreateBlockchain         func(params CreateBlockchainParams) Blockchain
 	CreateBlockchainService  func(params CreateBlockchainServiceParams) BlockchainService
-	CreateApplicationService func(params CreateApplicationServiceParams) ApplicationService
+	CreateApplicationService func() ApplicationService
 }{
 	CreatePath: func(params CreatePathParams) Path {
 		return createPath(params.Namespace, params.Name, params.ID)
@@ -130,12 +123,8 @@ var SDKFunc = struct {
 	CreateBlockchainService: func(params CreateBlockchainServiceParams) BlockchainService {
 		return createBlockchainService(params.RootDirPath)
 	},
-	CreateApplicationService: func(params CreateApplicationServiceParams) ApplicationService {
-		serv, servErr := createApplicationService(params.RootDir, params.BlkChain, params.Apps)
-		if servErr != nil {
-			panic(servErr)
-		}
-
+	CreateApplicationService: func() ApplicationService {
+		serv := createApplicationService()
 		return serv
 	},
 }

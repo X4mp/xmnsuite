@@ -16,6 +16,7 @@ import (
 	cli "github.com/urfave/cli"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
 	xmnmodule "github.com/xmnservices/xmnsuite/modules/xmn"
+	"github.com/xmnservices/xmnsuite/tendermint"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -66,6 +67,11 @@ func main() {
 			Name:  "rpubkeys",
 			Value: "",
 			Usage: "these are the comma seperated root pub keys (that can write to every route on the blockchain)",
+		},
+		cli.StringFlag{
+			Name:  "connector",
+			Value: "",
+			Usage: "this is the other blockchain that our blockchain will be able to connect to",
 		},
 	}
 
@@ -121,6 +127,11 @@ func main() {
 					Name:  "rpubkeys",
 					Value: "",
 					Usage: "these are the comma seperated root pub keys (that can write to every route on the blockchain)",
+				},
+				cli.StringFlag{
+					Name:  "connector",
+					Value: "",
+					Usage: "this is the other blockchain that our blockchain will be able to connect to",
 				},
 			},
 			Action: func(c *cli.Context) error {
@@ -212,15 +223,36 @@ func main() {
 				// create the datastore:
 				ds := datastore.SDKFunc.Create()
 
-				// create XMN:
-				xmnNode := xmnmodule.SDKFunc.Execute(xmnmodule.ExecuteParams{
+				// create the params:
+				xmnParams := xmnmodule.ExecuteParams{
 					DBPath:     dbPath,
 					NodePK:     nodePK,
 					InstanceID: &id,
 					Store:      ds,
 					Context:    context,
 					ScriptPath: scriptPath,
-				})
+					Client:     nil,
+				}
+
+				// connect to:
+				connectorAsString := c.String("connector")
+				if connectorAsString != "" {
+					appService := tendermint.SDKFunc.CreateApplicationService()
+					client, clientErr := appService.Connect(connectorAsString)
+					if clientErr != nil {
+						// log:
+						log.Printf("there was an error while connecting to the given host: %s", clientErr.Error())
+
+						// output error:
+						str := fmt.Sprintf("the given connector (%s) is not a valid blockchain host", connectorAsString)
+						return errors.New(str)
+					}
+
+					xmnParams.Client = client
+				}
+
+				// create XMN:
+				xmnNode := xmnmodule.SDKFunc.Execute(xmnParams)
 				defer xmnNode.Stop()
 
 				print("Started... \nPress Esc to stop...")
