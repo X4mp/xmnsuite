@@ -4,9 +4,9 @@ import (
 	"encoding/hex"
 	"errors"
 
-	"github.com/xmnservices/xmnsuite/keys"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/xmnservices/xmnsuite/keys"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -132,7 +132,7 @@ func fromStringToPubKey(pubKeyAsString string) (crypto.PubKey, error) {
 	}
 
 	pubKey := new(ed25519.PubKeyEd25519)
-	pubKeyErr := cdc.UnmarshalBinary(pubKeyAsBytes, pubKey)
+	pubKeyErr := cdc.UnmarshalBinaryBare(pubKeyAsBytes, pubKey)
 	if pubKeyErr != nil {
 		return nil, errors.New("the public key []byte is invalid")
 	}

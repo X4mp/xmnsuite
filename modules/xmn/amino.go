@@ -21,4 +21,13 @@ func registerAmino(codec *amino.Codec) {
 		codec.RegisterInterface((*crypto.PubKey)(nil), nil)
 		codec.RegisterConcrete(ed25519.PubKeyEd25519{}, ed25519.Ed25519PubKeyAminoRoute, nil)
 	}()
+
+	// crypto.PrivKey
+	func() {
+		defer func() {
+			recover()
+		}()
+		codec.RegisterInterface((*crypto.PrivKey)(nil), nil)
+		codec.RegisterConcrete(ed25519.PrivKeyEd25519{}, ed25519.Ed25519PrivKeyAminoRoute, nil)
+	}()
 }

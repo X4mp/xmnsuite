@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"strconv"
 
+	uuid "github.com/satori/go.uuid"
+	crypto "github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	applications "github.com/xmnservices/xmnsuite/applications"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
 	"github.com/xmnservices/xmnsuite/keys"
@@ -14,9 +17,6 @@ import (
 	"github.com/xmnservices/xmnsuite/roles"
 	tendermint "github.com/xmnservices/xmnsuite/tendermint"
 	"github.com/xmnservices/xmnsuite/users"
-	uuid "github.com/satori/go.uuid"
-	crypto "github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	lua "github.com/yuin/gopher-lua"
 	luajson "layeh.com/gopher-json"
 )
@@ -1295,7 +1295,7 @@ func (app *xmn) registerResourcePointer(context *lua.LState) {
 
 			// unmarshal the bytes:
 			newPubKey := new(ed25519.PubKeyEd25519)
-			pubKerr := cdc.UnmarshalBinary(pubKeyAsBytes, newPubKey)
+			pubKerr := cdc.UnmarshalBinaryBare(pubKeyAsBytes, newPubKey)
 			if pubKerr != nil {
 				l.ArgError(1, "the from pubKey bytes cannot be converted to a pubKey instance")
 				return 1
@@ -1361,6 +1361,35 @@ func (app *xmn) registerPrivKey(context *lua.LState) {
 
 	// create a new crypto instance:
 	newPrivKey := func(l *lua.LState) int {
+
+		if l.GetTop() == 1 {
+			privKeyAsString := l.CheckString(1)
+			privKeyAsBytes, privKeyAsBytesErr := hex.DecodeString(privKeyAsString)
+			if privKeyAsBytesErr != nil {
+				str := fmt.Sprintf("the given private key could not be converted from hex to []byte: %s", privKeyAsBytesErr.Error())
+				l.ArgError(1, str)
+				return 1
+			}
+
+			newPrivKey := new(ed25519.PrivKeyEd25519)
+			unmarshalErr := cdc.UnmarshalBinaryBare(privKeyAsBytes, newPrivKey)
+			if unmarshalErr != nil {
+				str := fmt.Sprintf("the given private key could not be converted from []byte to PrivateKey:  %s", unmarshalErr.Error())
+				l.ArgError(1, str)
+				return 1
+			}
+
+			ud := l.NewUserData()
+			ud.Value = &privKey{
+				pk: newPrivKey,
+			}
+
+			l.SetMetatable(ud, l.GetTypeMetatable(luaPrivKey))
+			l.Push(ud)
+			return 1
+
+		}
+
 		ud := l.NewUserData()
 		ud.Value = &privKey{
 			pk: ed25519.GenPrivKey(),
@@ -1378,7 +1407,7 @@ func (app *xmn) registerPrivKey(context *lua.LState) {
 			return 1
 		}
 
-		pubKeyAsBytes, pubKeyAsBytesErr := cdc.MarshalBinary(p.pk.PubKey())
+		pubKeyAsBytes, pubKeyAsBytesErr := cdc.MarshalBinaryBare(p.pk.PubKey())
 		if pubKeyAsBytesErr != nil {
 			l.ArgError(1, "the public key of the private key is invalid")
 			return 1
@@ -1470,7 +1499,7 @@ func (app *xmn) execute(
 					app.replaceDS(store)
 
 					// from:
-					fromAsBytes, fromAsBytesErr := cdc.MarshalBinary(from)
+					fromAsBytes, fromAsBytesErr := cdc.MarshalBinaryBare(from)
 					if fromAsBytesErr != nil {
 						return nil, fromAsBytesErr
 					}
@@ -1510,7 +1539,7 @@ func (app *xmn) execute(
 					app.replaceDS(store)
 
 					// from:
-					fromAsBytes, fromAsBytesErr := cdc.MarshalBinary(from)
+					fromAsBytes, fromAsBytesErr := cdc.MarshalBinaryBare(from)
 					if fromAsBytesErr != nil {
 						return nil, fromAsBytesErr
 					}
@@ -1546,7 +1575,7 @@ func (app *xmn) execute(
 					app.replaceDS(store)
 
 					// from:
-					fromAsBytes, fromAsBytesErr := cdc.MarshalBinary(from)
+					fromAsBytes, fromAsBytesErr := cdc.MarshalBinaryBare(from)
 					if fromAsBytesErr != nil {
 						return nil, fromAsBytesErr
 					}
