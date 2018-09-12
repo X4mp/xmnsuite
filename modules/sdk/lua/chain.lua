@@ -1,5 +1,7 @@
+-- load the modules:
+require("datastore")
 local json = require("json")
-local xmn = require("xmn")
+local chain = require("chain")
 
 -- func handlers:
 function saveMessage(from, path, params, data, sig)
@@ -65,20 +67,20 @@ function deleteMessageByID(from, path, params, sig)
     }
 end
 
-xmn.chain().load({
+chain.chain().load({
     namespace = "xmn",
     name = "messages",
     apps = {
-        xmn.app().new({
+        chain.app().new({
             version = "17.03.09",
             beginBlockIndex = 0,
             endBlockIndex = -1,
-            router = xmn.router().new({
+            router = chain.router().new({
                 key = "this-is-the-router-key",
                 routes = {
-                    xmn.route().new("save", "/messages", saveMessage),
-                    xmn.route().new("delete", "/messages/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", deleteMessageByID),
-                    xmn.route().new("retrieve", "/messages/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", retrieveMessageByID),
+                    chain.route().new("save", "/messages", saveMessage),
+                    chain.route().new("delete", "/messages/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", deleteMessageByID),
+                    chain.route().new("retrieve", "/messages/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", retrieveMessageByID),
                 }
             })
         })

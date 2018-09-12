@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	applications "github.com/xmnservices/xmnsuite/applications"
 	nm "github.com/tendermint/tendermint/node"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	rpcclient "github.com/tendermint/tendermint/rpc/lib/client"
+	applications "github.com/xmnservices/xmnsuite/applications"
 )
 
 type rpcNode struct {

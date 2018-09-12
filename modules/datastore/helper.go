@@ -1,4 +1,4 @@
-package xmn
+package datastore
 
 import (
 	"encoding/hex"

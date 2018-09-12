@@ -13,11 +13,8 @@ import (
 	amino "github.com/tendermint/go-amino"
 	crypto "github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
-	cli "github.com/urfave/cli"
-	datastore "github.com/xmnservices/xmnsuite/datastore"
-	xmnmodule "github.com/xmnservices/xmnsuite/modules/xmn"
-	"github.com/xmnservices/xmnsuite/tendermint"
-	lua "github.com/yuin/gopher-lua"
+	cliapp "github.com/urfave/cli"
+	module_chain "github.com/xmnservices/xmnsuite/modules/chain"
 )
 
 var cdc = amino.NewCodec()
@@ -34,57 +31,62 @@ func reset() {
 
 func main() {
 
-	app := cli.NewApp()
+	app := cliapp.NewApp()
 	app.Name = "xmnsuite"
 	app.Usage = "Builds standalone blockchain applications using lua scripting"
-	app.Flags = []cli.Flag{
-		cli.StringFlag{
+	app.Flags = []cliapp.Flag{
+		cliapp.StringFlag{
 			Name:  "ccsize",
 			Value: strconv.Itoa(120),
 			Usage: "this is the lua call stack size",
 		},
-		cli.StringFlag{
+		cliapp.StringFlag{
 			Name:  "rsize",
 			Value: strconv.Itoa(120 * 20),
 			Usage: "this is the lua registry size",
 		},
-		cli.StringFlag{
+		cliapp.StringFlag{
 			Name:  "dbpath",
 			Value: "./db",
 			Usage: "this is the blockchain database path",
 		},
-		cli.StringFlag{
+		cliapp.StringFlag{
 			Name:  "nodepk",
 			Value: "",
 			Usage: "this is the first blockchain node private key",
 		},
-		cli.StringFlag{
+		cliapp.StringFlag{
 			Name:  "id",
 			Value: uuid.NewV4().String(),
 			Usage: "this is the blockchain instance id (UUID v.4)",
 		},
-		cli.StringFlag{
+		cliapp.StringFlag{
 			Name:  "rpubkeys",
 			Value: "",
 			Usage: "these are the comma seperated root pub keys (that can write to every route on the blockchain)",
 		},
-		cli.StringFlag{
+		cliapp.StringFlag{
 			Name:  "connector",
 			Value: "",
 			Usage: "this is the other blockchain that our blockchain will be able to connect to",
 		},
+		cliapp.StringFlag{
+			Name:  "modules",
+			Value: "",
+			Usage: "these are the modules that are mandatory in order to run the given lua script",
+		},
 	}
 
-	app.Commands = []cli.Command{
+	app.Commands = []cliapp.Command{
 		{
 			Name:    "generate",
 			Aliases: []string{"g"},
 			Usage:   "generate elements used in blockchain development",
-			Subcommands: []cli.Command{
+			Subcommands: []cliapp.Command{
 				{
 					Name:  "pair",
 					Usage: "generate a new PrivateKey/PublicKey pair",
-					Action: func(c *cli.Context) error {
+					Action: func(c *cliapp.Context) error {
 						pk := ed25519.GenPrivKey()
 						str := fmt.Sprintf("Private Key: %s\nPublic Key:  %s", hex.EncodeToString(pk.Bytes()), hex.EncodeToString(pk.PubKey().Bytes()))
 						print(str)
@@ -97,44 +99,49 @@ func main() {
 			Name:    "run",
 			Aliases: []string{"r"},
 			Usage:   "runs a blockchain application",
-			Flags: []cli.Flag{
-				cli.StringFlag{
+			Flags: []cliapp.Flag{
+				cliapp.StringFlag{
 					Name:  "ccsize",
 					Value: strconv.Itoa(120),
 					Usage: "this is the lua call stack size",
 				},
-				cli.StringFlag{
+				cliapp.StringFlag{
 					Name:  "rsize",
 					Value: strconv.Itoa(120 * 20),
 					Usage: "this is the lua registry size",
 				},
-				cli.StringFlag{
+				cliapp.StringFlag{
 					Name:  "dbpath",
 					Value: "./db",
 					Usage: "this is the blockchain database path",
 				},
-				cli.StringFlag{
+				cliapp.StringFlag{
 					Name:  "nodepk",
 					Value: "",
 					Usage: "this is the first blockchain node private key",
 				},
-				cli.StringFlag{
+				cliapp.StringFlag{
 					Name:  "id",
 					Value: uuid.NewV4().String(),
 					Usage: "this is the blockchain instance id (UUID v.4)",
 				},
-				cli.StringFlag{
+				cliapp.StringFlag{
 					Name:  "rpubkeys",
 					Value: "",
 					Usage: "these are the comma seperated root pub keys (that can write to every route on the blockchain)",
 				},
-				cli.StringFlag{
+				cliapp.StringFlag{
 					Name:  "connector",
 					Value: "",
 					Usage: "this is the other blockchain that our blockchain will be able to connect to",
 				},
+				cliapp.StringFlag{
+					Name:  "modules",
+					Value: "",
+					Usage: "these are the modules that are mandatory in order to run the given lua script",
+				},
 			},
-			Action: func(c *cli.Context) error {
+			Action: func(c *cliapp.Context) error {
 
 				termErr := term.Init()
 				if termErr != nil {
@@ -143,132 +150,54 @@ func main() {
 				}
 				defer term.Close()
 
+				// retrieve the script path:
 				scriptPath := c.Args().First()
 				if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
 					str := fmt.Sprintf("the given lua script path (%s) is invalid", scriptPath)
 					return errors.New(str)
 				}
 
-				// ccsize:
-				ccSizeAsString := c.String("ccsize")
-				ccSize, ccSizeErr := strconv.Atoi(ccSizeAsString)
-				if ccSizeErr != nil {
-					// log:
-					log.Printf("there was an error while converting a string to an int: %s", ccSizeErr.Error())
-
-					// output error:
-					str := fmt.Sprintf("the ccsize param (%s) must be an int", ccSizeAsString)
-					return errors.New(str)
+				// create the cli instance:
+				cli, cliErr := createCLI(c)
+				if cliErr != nil {
+					return cliErr
 				}
 
-				// rsize:
-				rSizeAsString := c.String("rsize")
-				rSize, rSizeErr := strconv.Atoi(rSizeAsString)
-				if rSizeErr != nil {
-					// log:
-					log.Printf("there was an error while converting a string to an int: %s", rSizeErr.Error())
-
-					// output error:
-					str := fmt.Sprintf("the rsize param (%s) must be an int", rSizeAsString)
-					return errors.New(str)
+				// execute the script:
+				execErr := cli.execute(scriptPath)
+				if execErr != nil {
+					return execErr
 				}
 
-				// dbpath:
-				dbPath := c.String("dbpath")
-
-				// nodepk:
-				nodePkAsString := c.String("nodepk")
-				nodePKAsBytes, nodePKAsBytesErr := hex.DecodeString(nodePkAsString)
-				if nodePKAsBytesErr != nil {
-					// log:
-					log.Printf("there was an error while decoding a string to hex: %s", nodePKAsBytesErr.Error())
-
-					// output error:
-					str := fmt.Sprintf("the given nodepk (%s) is not a valid private key", nodePkAsString)
-					return errors.New(str)
-				}
-
-				nodePK := new(ed25519.PrivKeyEd25519)
-				nodePKErr := cdc.UnmarshalBinaryBare(nodePKAsBytes, nodePK)
-				if nodePKErr != nil {
-					// log:
-					log.Printf("there was an error while Unmarshalling []byte to PrivateKey instance: %s", nodePKErr.Error())
-
-					// output error:
-					str := fmt.Sprintf("the given nodepk (%s) is not a valid private key", nodePkAsString)
-					return errors.New(str)
-				}
-
-				// id:
-				idAsString := c.String("id")
-				id, idErr := uuid.FromString(idAsString)
-				if idErr != nil {
-					// log:
-					log.Printf("there was an error while converting a string to an ID: %s", idErr.Error())
-
-					// output error:
-					str := fmt.Sprintf("the given id (%s) is not a valid ID", idAsString)
-					return errors.New(str)
-				}
-
-				// rpubkeys:
-
-				// create the lua context:
-				context := lua.NewState(lua.Options{
-					CallStackSize: ccSize,
-					RegistrySize:  rSize,
-				})
-				defer context.Close()
-
-				// create the datastore:
-				ds := datastore.SDKFunc.Create()
-
-				// create the params:
-				xmnParams := xmnmodule.ExecuteParams{
-					DBPath:     dbPath,
-					NodePK:     nodePK,
-					InstanceID: &id,
-					Store:      ds,
-					Context:    context,
-					ScriptPath: scriptPath,
-					Client:     nil,
-				}
-
-				// connect to:
-				connectorAsString := c.String("connector")
-				if connectorAsString != "" {
-					appService := tendermint.SDKFunc.CreateApplicationService()
-					client, clientErr := appService.Connect(connectorAsString)
-					if clientErr != nil {
-						// log:
-						log.Printf("there was an error while connecting to the given host: %s", clientErr.Error())
-
+				// if there is a chain module, spawn:
+				chainModule := cli.getModuleByName("chain")
+				if chainModule != nil {
+					node, nodeErr := chainModule.(module_chain.Chain).Spawn()
+					if nodeErr != nil {
 						// output error:
-						str := fmt.Sprintf("the given connector (%s) is not a valid blockchain host", connectorAsString)
+						str := fmt.Sprintf("there was an error while spawning a blockchain node: %s", nodeErr.Error())
 						return errors.New(str)
 					}
+					defer node.Stop()
+					node.Start()
 
-					xmnParams.Client = client
-				}
-
-				// create XMN:
-				xmnNode := xmnmodule.SDKFunc.Execute(xmnParams)
-				defer xmnNode.Stop()
-
-				print("Started... \nPress Esc to stop...")
-			keyPressListenerLoop:
-				for {
-					switch ev := term.PollEvent(); ev.Type {
-					case term.EventKey:
-						switch ev.Key {
-						case term.KeyEsc:
-							break keyPressListenerLoop
+					// blockchain started, loop until we stop:
+					print("Started... \nPress Esc to stop...")
+				keyPressListenerLoop:
+					for {
+						switch ev := term.PollEvent(); ev.Type {
+						case term.EventKey:
+							switch ev.Key {
+							case term.KeyEsc:
+								break keyPressListenerLoop
+							}
+							break
 						}
-						break
 					}
 				}
 
 				return nil
+
 			},
 		},
 	}
