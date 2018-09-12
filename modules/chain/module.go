@@ -535,8 +535,7 @@ func (app *module) Spawn() (applications.Node, error) {
 		for _, onePubKey := range app.rootPubKeys {
 			routerDS.Users().Insert(onePubKey)
 			routerDS.Roles().Add(routerRoleKey, onePubKey)
-			routerDS.Roles().EnableWriteAccess(routerRoleKey, "/messages")
-			routerDS.Roles().EnableWriteAccess(routerRoleKey, "/messages/[a-z0-9-]+")
+			routerDS.Roles().EnableWriteAccess(routerRoleKey, ".*")
 		}
 
 		// create one application and put it in the list:

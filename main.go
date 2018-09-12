@@ -10,20 +10,10 @@ import (
 
 	term "github.com/nsf/termbox-go"
 	uuid "github.com/satori/go.uuid"
-	amino "github.com/tendermint/go-amino"
-	crypto "github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 	cliapp "github.com/urfave/cli"
 	module_chain "github.com/xmnservices/xmnsuite/modules/chain"
 )
-
-var cdc = amino.NewCodec()
-
-func init() {
-	// crypto.PrivKey
-	cdc.RegisterInterface((*crypto.PrivKey)(nil), nil)
-	cdc.RegisterConcrete(ed25519.PrivKeyEd25519{}, ed25519.Ed25519PrivKeyAminoRoute, nil)
-}
 
 func reset() {
 	term.Sync()
