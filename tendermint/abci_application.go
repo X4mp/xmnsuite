@@ -1,9 +1,9 @@
 package tendermint
 
 import (
-	applications "github.com/xmnservices/xmnsuite/applications"
 	types "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
+	applications "github.com/xmnservices/xmnsuite/applications"
 )
 
 /*
@@ -52,11 +52,7 @@ func (app *abciApplication) Info(req types.RequestInfo) types.ResponseInfo {
 	return types.ResponseInfo{
 		Data:    string(js),
 		Version: resp.Version(),
-		//LastBlockHeight:  resp.LastBlockHeight(),
-		//LastBlockAppHash: resp.LastBlockAppHash(),
 	}
-
-	//return types.ResponseInfo{Data: fmt.Sprintf("{\"size\":%v}", app.state.Size)}
 }
 
 // DeliverTx delivers a transaction to the abciApplication

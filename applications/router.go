@@ -4,9 +4,9 @@ import (
 	"errors"
 	"regexp"
 
+	crypto "github.com/tendermint/tendermint/crypto"
 	roles "github.com/xmnservices/xmnsuite/roles"
 	users "github.com/xmnservices/xmnsuite/users"
-	crypto "github.com/tendermint/tendermint/crypto"
 )
 
 /*
@@ -192,6 +192,10 @@ func (obj *route) Handler(from crypto.PubKey, path string) PreparedHandler {
 	}
 
 	valuesWithURL := obj.pattern.FindStringSubmatch(path)
+	if len(valuesWithURL) < 1 {
+		return nil
+	}
+
 	values := valuesWithURL[1:]
 	if len(values) != len(obj.variableNames) {
 		return nil

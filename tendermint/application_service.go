@@ -42,11 +42,15 @@ func (obj *applicationService) Spawn(rootDir string, blkChain Blockchain, apps a
 	pvFile := conf.PrivValidatorFile()
 	pv := privval.LoadFilePV(pvFile)
 	papp := proxy.NewLocalClientCreator(abciApp)
-	node, nodeErr := nm.NewNode(conf, pv, papp,
+	node, nodeErr := nm.NewNode(
+		conf,
+		pv,
+		papp,
 		nm.DefaultGenesisDocProviderFunc(conf),
 		nm.DefaultDBProvider,
 		nm.DefaultMetricsProvider(conf.Instrumentation),
-		logger)
+		logger,
+	)
 
 	if nodeErr != nil {
 		return nil, nodeErr

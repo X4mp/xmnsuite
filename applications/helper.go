@@ -91,7 +91,6 @@ func fromURLPatternToRegex(urlPattern string) (*regexp.Regexp, []string, error) 
 
 		split := strings.Split(oneVariableInBracket, delimiters)
 		if len(split) != 2 {
-			fmt.Printf("\n\n%s\n\n", oneVariableInBracket)
 			str := fmt.Sprintf("there should only be 1 delimiter (%s) per bracket pair", delimiters)
 			return nil, nil, errors.New(str)
 		}

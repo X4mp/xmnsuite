@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"time"
 
 	term "github.com/nsf/termbox-go"
 	uuid "github.com/satori/go.uuid"
@@ -20,7 +21,6 @@ func reset() {
 }
 
 func main() {
-
 	app := cliapp.NewApp()
 	app.Name = "xmnsuite"
 	app.Usage = "Builds standalone blockchain applications using lua scripting"
@@ -154,14 +154,6 @@ func main() {
 				// if there is a chain module, spawn:
 				chainModule := cli.getModuleByName("chain")
 				if chainModule != nil {
-
-					termErr := term.Init()
-					if termErr != nil {
-						str := fmt.Sprintf("there was an error while enabling the keyboard listening: %s", termErr.Error())
-						return errors.New(str)
-					}
-					defer term.Close()
-
 					node, nodeErr := chainModule.(module_chain.Chain).Spawn()
 					if nodeErr != nil {
 						// output error:
@@ -171,8 +163,18 @@ func main() {
 					defer node.Stop()
 					node.Start()
 
+					// sleep 5 seconds before listening to keyboard:
+					time.Sleep(time.Second * 1)
+					termErr := term.Init()
+					if termErr != nil {
+						str := fmt.Sprintf("there was an error while enabling the keyboard listening: %s", termErr.Error())
+						return errors.New(str)
+					}
+					defer term.Close()
+
 					// blockchain started, loop until we stop:
 					print("Started... \nPress Esc to stop...")
+
 				keyPressListenerLoop:
 					for {
 						switch ev := term.PollEvent(); ev.Type {
