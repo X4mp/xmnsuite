@@ -19,6 +19,7 @@ import (
 	module_datastore "github.com/xmnservices/xmnsuite/modules/datastore"
 	json_module "github.com/xmnservices/xmnsuite/modules/json"
 	module_sdk "github.com/xmnservices/xmnsuite/modules/sdk"
+	uuid_module "github.com/xmnservices/xmnsuite/modules/uuid"
 	tendermint "github.com/xmnservices/xmnsuite/tendermint"
 	lua "github.com/yuin/gopher-lua"
 )
@@ -75,6 +76,7 @@ func createCLI(context *cliapp.Context) (*cli, error) {
 		"datastore": out.loadDatastoreModule,
 		"sdk":       out.loadSDKModule,
 		"json":      out.loadJSONModule,
+		"uuid":      out.loadUUIDModule,
 	}
 
 	for _, oneModuleName := range moduleNames {
@@ -113,6 +115,18 @@ func (app *cli) loadModuleByName(moduleName string) {
 	}
 
 	log.Printf("the module name (%s) is invalid, skip...", moduleName)
+}
+
+func (app *cli) loadUUIDModule() error {
+	if _, ok := app.loadedModules["uuid"]; ok {
+		return nil
+	}
+
+	app.loadedModules["uuid"] = uuid_module.SDKFunc.Create(uuid_module.CreateParams{
+		Context: app.luaContext,
+	})
+
+	return nil
 }
 
 func (app *cli) loadJSONModule() error {
