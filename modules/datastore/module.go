@@ -20,6 +20,7 @@ const luaUsers = "users"
 const luaRoles = "roles"
 const luaKey = "keys"
 const luaList = "lists"
+const luaSet = "sets"
 
 type module struct {
 	context *lua.LState
@@ -29,6 +30,7 @@ type module struct {
 	rols    roles.Roles
 	k       keys.Keys
 	lst     lists.Lists
+	sts     lists.Lists
 }
 
 func createModule(context *lua.LState, ds datastore.DataStore) Datastore {
@@ -40,6 +42,7 @@ func createModule(context *lua.LState, ds datastore.DataStore) Datastore {
 		rols:    ds.Roles(),
 		k:       ds.Keys(),
 		lst:     ds.Lists(),
+		sts:     ds.Sets(),
 	}
 
 	out.register()
@@ -55,6 +58,7 @@ func (app *module) register() {
 		app.registerRoles(context)
 		app.registerKeys(context)
 		app.registerLists(context)
+		app.registerSets(context)
 		return 1
 	})
 }
@@ -545,7 +549,15 @@ func (app *module) registerKeys(context *lua.LState) {
 	context.SetField(mt, "__index", context.SetFuncs(context.NewTable(), methods))
 }
 
+func (app *module) registerSets(context *lua.LState) {
+	app.registerListsOrSets(context, luaSet, app.sts)
+}
+
 func (app *module) registerLists(context *lua.LState) {
+	app.registerListsOrSets(context, luaList, app.lst)
+}
+
+func (app *module) registerListsOrSets(context *lua.LState, labelName string, lst lists.Lists) {
 	//verifies that the given type is a lists instance:
 	checkFn := func(l *lua.LState) lists.Lists {
 		ud := l.CheckUserData(1)
@@ -558,13 +570,15 @@ func (app *module) registerLists(context *lua.LState) {
 	}
 
 	// load the Lists instance:
-	loadLists := func(l *lua.LState) int {
-		ud := l.NewUserData()
-		ud.Value = app.lst
-		l.SetMetatable(ud, l.GetTypeMetatable(luaList))
-		l.Push(ud)
-		return 1
-	}
+	loadLists := func(context *lua.LState, label string, lst lists.Lists) func(l *lua.LState) int {
+		return func(l *lua.LState) int {
+			ud := l.NewUserData()
+			ud.Value = lst
+			l.SetMetatable(ud, l.GetTypeMetatable(label))
+			l.Push(ud)
+			return 1
+		}
+	}(context, labelName, lst)
 
 	//execute the add command on the lists instance:
 	addFn := func(l *lua.LState) int {
@@ -866,8 +880,8 @@ func (app *module) registerLists(context *lua.LState) {
 		"walkstore":  walkStoreFn,
 	}
 
-	mt := context.NewTypeMetatable(luaList)
-	context.SetGlobal(luaList, mt)
+	mt := context.NewTypeMetatable(labelName)
+	context.SetGlobal(labelName, mt)
 
 	// static attributes
 	context.SetField(mt, "load", context.NewFunction(loadLists))
