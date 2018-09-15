@@ -25,6 +25,10 @@ func TestUsers_Success(t *testing.T) {
 	execute(t, "lua/users_test.lua")
 }
 
+func TestLists_Success(t *testing.T) {
+	execute(t, "lua/lists_test.lua")
+}
+
 func execute(t *testing.T, scriptPath string) {
 	// variables:
 	ds := datastore.SDKFunc.Create()

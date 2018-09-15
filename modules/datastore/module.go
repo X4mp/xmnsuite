@@ -2,10 +2,13 @@ package datastore
 
 import (
 	"encoding/gob"
+	"errors"
+	"strconv"
 
 	crypto "github.com/tendermint/tendermint/crypto"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
 	"github.com/xmnservices/xmnsuite/keys"
+	"github.com/xmnservices/xmnsuite/lists"
 	"github.com/xmnservices/xmnsuite/objects"
 	"github.com/xmnservices/xmnsuite/roles"
 	"github.com/xmnservices/xmnsuite/users"
@@ -16,6 +19,7 @@ const luaTables = "tables"
 const luaUsers = "users"
 const luaRoles = "roles"
 const luaKey = "keys"
+const luaList = "lists"
 
 type module struct {
 	context *lua.LState
@@ -24,6 +28,7 @@ type module struct {
 	usrs    users.Users
 	rols    roles.Roles
 	k       keys.Keys
+	lst     lists.Lists
 }
 
 func createModule(context *lua.LState, ds datastore.DataStore) Datastore {
@@ -34,6 +39,7 @@ func createModule(context *lua.LState, ds datastore.DataStore) Datastore {
 		usrs:    ds.Users(),
 		rols:    ds.Roles(),
 		k:       ds.Keys(),
+		lst:     ds.Lists(),
 	}
 
 	out.register()
@@ -48,6 +54,7 @@ func (app *module) register() {
 		app.registerUsers(context)
 		app.registerRoles(context)
 		app.registerKeys(context)
+		app.registerLists(context)
 		return 1
 	})
 }
@@ -533,6 +540,337 @@ func (app *module) registerKeys(context *lua.LState) {
 
 	// static attributes
 	context.SetField(mt, "load", context.NewFunction(loadKeys))
+
+	// methods
+	context.SetField(mt, "__index", context.SetFuncs(context.NewTable(), methods))
+}
+
+func (app *module) registerLists(context *lua.LState) {
+	//verifies that the given type is a lists instance:
+	checkFn := func(l *lua.LState) lists.Lists {
+		ud := l.CheckUserData(1)
+		if v, ok := ud.Value.(lists.Lists); ok {
+			return v
+		}
+
+		l.ArgError(1, "lists expected")
+		return nil
+	}
+
+	// load the Lists instance:
+	loadLists := func(l *lua.LState) int {
+		ud := l.NewUserData()
+		ud.Value = app.lst
+		l.SetMetatable(ud, l.GetTypeMetatable(luaList))
+		l.Push(ud)
+		return 1
+	}
+
+	//execute the add command on the lists instance:
+	addFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		amount := l.GetTop()
+		if amount < 2 {
+			l.ArgError(1, "the add func expected at least 2 parameters")
+			return 1
+		}
+
+		values := []interface{}{}
+		key := l.CheckString(2)
+		for i := 2; i < amount; i++ {
+			oneValue := l.CheckString(i + 1)
+			values = append(values, oneValue)
+		}
+
+		amountAdded := p.Add(key, values...)
+		l.Push(lua.LNumber(amountAdded))
+		return 1
+	}
+
+	//execute the del command on the lists instance:
+	delFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		amount := l.GetTop()
+		if amount < 2 {
+			l.ArgError(1, "the del func expected at least 2 parameters")
+			return 1
+		}
+
+		values := []interface{}{}
+		key := l.CheckString(2)
+		for i := 2; i < amount; i++ {
+			oneValue := l.CheckString(i + 1)
+			values = append(values, oneValue)
+		}
+
+		amountDeleted := p.Del(key, values...)
+		l.Push(lua.LNumber(amountDeleted))
+		return 1
+	}
+
+	//execute the retrieve command on the lists instance:
+	retrieveFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		if l.GetTop() != 4 {
+			l.ArgError(1, "the retrieve func expected 3 parameters")
+			return 1
+		}
+
+		key := l.CheckString(2)
+		index, indexErr := strconv.Atoi(l.CheckNumber(3).String())
+		if indexErr != nil {
+			l.ArgError(3, "the index must be a number")
+			return 1
+		}
+
+		amount, amountErr := strconv.Atoi(l.CheckNumber(4).String())
+		if amountErr != nil {
+			l.ArgError(4, "the amount must be a number")
+			return 1
+		}
+
+		elements := p.Retrieve(key, index, amount)
+		tab := l.NewTable()
+		for index, oneElement := range elements {
+			tab.Insert(index+1, lua.LString(oneElement.(string)))
+		}
+
+		l.Push(tab)
+		return 1
+	}
+
+	//execute the len command on the lists instance:
+	lenFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		if l.GetTop() != 2 {
+			l.ArgError(1, "the len func expected 1 parameter")
+			return 1
+		}
+
+		key := l.CheckString(2)
+		length := p.Len(key)
+
+		l.Push(lua.LNumber(length))
+		return 1
+	}
+
+	//execute the union command on the lists instance:
+	unionFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		amount := l.GetTop()
+		if amount < 2 {
+			l.ArgError(1, "the union func expected at least 1 parameter")
+			return 1
+		}
+
+		keys := []string{}
+		for i := 0; i < amount-1; i++ {
+			keys = append(keys, l.CheckString(i+2))
+		}
+
+		tab := l.NewTable()
+		elements := p.Union(keys...)
+		for index, oneElement := range elements {
+			tab.Insert(index+1, lua.LString(oneElement.(string)))
+		}
+
+		l.Push(tab)
+		return 1
+	}
+
+	//execute the unionstore command on the lists instance:
+	unionStoreFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		amount := l.GetTop()
+		if amount < 3 {
+			l.ArgError(1, "the unionstore func expected at least 2 parameters")
+			return 1
+		}
+
+		destinationKey := l.CheckString(2)
+		keys := []string{}
+		for i := 1; i < amount-1; i++ {
+			keys = append(keys, l.CheckString(i+2))
+		}
+
+		unionStoreKey := p.UnionStore(destinationKey, keys...)
+		l.Push(lua.LNumber(unionStoreKey))
+		return 1
+	}
+
+	//execute the inter command on the lists instance:
+	interFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		amount := l.GetTop()
+		if amount < 2 {
+			l.ArgError(1, "the inter func expected at least 1 parameter")
+			return 1
+		}
+
+		keys := []string{}
+		for i := 0; i < amount-1; i++ {
+			keys = append(keys, l.CheckString(i+2))
+		}
+
+		tab := l.NewTable()
+		elements := p.Inter(keys...)
+		for index, oneElement := range elements {
+			tab.Insert(index+1, lua.LString(oneElement.(string)))
+		}
+
+		l.Push(tab)
+		return 1
+	}
+
+	//execute the interstore command on the lists instance:
+	interStoreFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		amount := l.GetTop()
+		if amount < 3 {
+			l.ArgError(1, "the inter func expected at least 2 parameters")
+			return 1
+		}
+
+		destinationKey := l.CheckString(2)
+		keys := []string{}
+		for i := 1; i < amount-1; i++ {
+			keys = append(keys, l.CheckString(i+2))
+		}
+
+		retAmount := p.InterStore(destinationKey, keys...)
+		l.Push(lua.LNumber(retAmount))
+		return 1
+	}
+
+	//execute the trim command on the lists instance:
+	trimFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		if l.GetTop() != 4 {
+			l.ArgError(1, "the trim func expected 3 parameters")
+			return 1
+		}
+
+		key := l.CheckString(2)
+		index, indexErr := strconv.Atoi(l.CheckNumber(3).String())
+		if indexErr != nil {
+			l.ArgError(3, "the index must be a number")
+			return 1
+		}
+
+		amount, amountErr := strconv.Atoi(l.CheckNumber(4).String())
+		if amountErr != nil {
+			l.ArgError(4, "the amount must be a number")
+			return 1
+		}
+
+		remainingAmount := p.Trim(key, index, amount)
+		l.Push(lua.LNumber(remainingAmount))
+		return 1
+	}
+
+	// this is the exec go func for walk:
+	goFunc := func(luaFunc *lua.LFunction, context *lua.LState) lists.WalkFn {
+		return func(index int, value interface{}) (interface{}, error) {
+
+			if valueAsString, ok := value.(string); ok {
+				// params:
+				luaParams := lua.LTable{}
+				luaParams.RawSet(lua.LString("index"), lua.LNumber(index))
+				luaParams.RawSet(lua.LString("value"), lua.LString(valueAsString))
+
+				luaP := lua.P{
+					Fn:      luaFunc,
+					NRet:    1,
+					Protect: true,
+				}
+
+				// call the func:
+				callErr := context.CallByParam(luaP, &luaParams)
+				if callErr != nil {
+					return nil, callErr
+				}
+
+				//retrieve the returned values:
+				retValue := context.Get(-1)
+				context.Pop(1)
+
+				// return:
+				return retValue.String(), nil
+			}
+
+			return nil, errors.New("the value must contain strings in order to be executed in lua")
+		}
+	}
+
+	//execute the walk command on the lists instance:
+	walkFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		if l.GetTop() != 3 {
+			l.ArgError(1, "the trim func expected 2 parameters")
+			return 1
+		}
+
+		key := l.CheckString(2)
+		customFunc := l.CheckFunction(3)
+		if customFunc.Proto.NumParameters != 2 {
+			l.RaiseError("the walk func was expected to have 2 parameters: an index, and a value")
+			return 1
+		}
+
+		execGoFunc := goFunc(customFunc, l)
+
+		tab := l.NewTable()
+		elements := p.Walk(key, execGoFunc)
+		for index, oneElement := range elements {
+			tab.Insert(index+1, lua.LString(oneElement.(string)))
+		}
+
+		l.Push(tab)
+		return 1
+	}
+
+	//execute the walkstore command on the lists instance:
+	walkStoreFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		if l.GetTop() != 4 {
+			l.ArgError(1, "the trim func expected 3 parameters")
+			return 1
+		}
+
+		destinationKey := l.CheckString(2)
+		key := l.CheckString(3)
+		customFunc := l.CheckFunction(4)
+		if customFunc.Proto.NumParameters != 2 {
+			l.RaiseError("the walk func was expected to have 2 parameters: an index, and a value")
+			return 1
+		}
+
+		execGoFunc := goFunc(customFunc, l)
+		retAmount := p.WalkStore(destinationKey, key, execGoFunc)
+		l.Push(lua.LNumber(retAmount))
+		return 1
+	}
+
+	// the keys methods:
+	var methods = map[string]lua.LGFunction{
+		"add":        addFn,
+		"del":        delFn,
+		"retrieve":   retrieveFn,
+		"len":        lenFn,
+		"union":      unionFn,
+		"unionstore": unionStoreFn,
+		"inter":      interFn,
+		"interstore": interStoreFn,
+		"trim":       trimFn,
+		"walk":       walkFn,
+		"walkstore":  walkStoreFn,
+	}
+
+	mt := context.NewTypeMetatable(luaList)
+	context.SetGlobal(luaList, mt)
+
+	// static attributes
+	context.SetField(mt, "load", context.NewFunction(loadLists))
 
 	// methods
 	context.SetField(mt, "__index", context.SetFuncs(context.NewTable(), methods))
