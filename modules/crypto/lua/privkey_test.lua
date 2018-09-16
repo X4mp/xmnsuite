@@ -11,4 +11,4 @@ local anotherPubKey = anotherPrivKey:pubKey()
 -- verify:
 assert(type(pubKey) == "string")
 assert(type(anotherPubKey) == "string")
-assert(anotherPubKey == "1624de6420b07c81a0cf215c86ea46a697d6dff85b98335733038f2d3a64388306e8603951")
+assert(anotherPubKey == "aab735bdbbe6f03fd37f020738a76c4c92a5f00ec82d69f6c129f97b46112a59")

@@ -10,7 +10,7 @@ type ringSignature struct {
 	e    kyber.Scalar
 }
 
-func createRingSignature(ring []kyber.Point, s []kyber.Scalar, e kyber.Scalar) *ringSignature {
+func createRingSignature(ring []kyber.Point, s []kyber.Scalar, e kyber.Scalar) RingSignature {
 	out := ringSignature{
 		ring: ring,
 		s:    s,

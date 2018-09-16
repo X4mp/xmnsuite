@@ -1,6 +1,8 @@
 package crypto
 
 import (
+	"bytes"
+	"encoding/hex"
 	"fmt"
 
 	"github.com/dedis/kyber"
@@ -10,13 +12,33 @@ type privateKey struct {
 	x kyber.Scalar
 }
 
-func createPrivateKey() *privateKey {
+func createPrivateKey() PrivateKey {
 	x := curve.Scalar().Pick(curve.RandomStream())
 	out := privateKey{
 		x: x,
 	}
 
 	return &out
+}
+
+func createPrivateKeyFromString(str string) (PrivateKey, error) {
+	decoded, decodedErr := hex.DecodeString(str)
+	if decodedErr != nil {
+		return nil, decodedErr
+	}
+
+	x := curve.Scalar()
+	reader := bytes.NewReader(decoded)
+	_, err := x.UnmarshalFrom(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	out := privateKey{
+		x: x,
+	}
+
+	return &out, nil
 }
 
 // PublicKey returns the public key
@@ -26,7 +48,25 @@ func (app *privateKey) PublicKey() kyber.Point {
 }
 
 // RingSign signs a ring signature on the given message, in the given ring pubKey
-func (app *privateKey) RingSign(msg string, ringPubKeys []kyber.Point, signerIndex int) *ringSignature {
+func (app *privateKey) RingSign(msg string, ringPubKeys []kyber.Point) RingSignature {
+
+	retrieveSignerIndexFn := func(ringPubKeys []kyber.Point, pk PrivateKey) int {
+		pubKey := pk.PublicKey()
+		for index, oneRingPubKey := range ringPubKeys {
+			if oneRingPubKey.Equal(pubKey) {
+				return index
+			}
+		}
+
+		return -1
+	}
+
+	// retrieve our signerIndex:
+	signerIndex := retrieveSignerIndexFn(ringPubKeys, app)
+	if signerIndex == -1 {
+		panic("the signer PublicKey is not in the ring")
+	}
+
 	// generate k:
 	k := genK(app.x, msg)
 
@@ -64,7 +104,7 @@ func (app *privateKey) RingSign(msg string, ringPubKeys []kyber.Point, signerInd
 }
 
 // Sign signs a message
-func (app *privateKey) Sign(msg string) *signature {
+func (app *privateKey) Sign(msg string) Signature {
 	// generate k:
 	k := genK(app.x, msg)
 
@@ -83,4 +123,9 @@ func (app *privateKey) Sign(msg string) *signature {
 	// create signature:
 	out := createSignature(r, s)
 	return out
+}
+
+// String returns the string representation of the PrivateKey
+func (app *privateKey) String() string {
+	return app.x.String()
 }
