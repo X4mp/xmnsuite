@@ -1,3 +1,5 @@
 vendor
 test_files/
 TODO.md
+credentials.json
+db

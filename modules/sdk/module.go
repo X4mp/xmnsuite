@@ -84,7 +84,7 @@ func (app *module) registerResourcePointer(context *lua.LState) {
 			// decode the pubkey:
 			pubKeyAsBytes, pubKeyAsBytesErr := hex.DecodeString(from.String())
 			if pubKeyAsBytesErr != nil {
-				l.ArgError(1, "the from pubKey cold not be decoded is invalid")
+				l.ArgError(1, "the from pubKey could not be decoded is invalid")
 				return 1
 			}
 
