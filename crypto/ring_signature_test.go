@@ -20,6 +20,7 @@ func TestRingSignature_Success(t *testing.T) {
 	firstRing := pk.RingSign(msg, ringPubKeys, 0)
 	secondRing := secondPK.RingSign(msg, ringPubKeys, 1)
 	invalidRing := invalidPK.RingSign(msg, ringPubKeys, 0)
+	secondRingBadIndex := secondPK.RingSign(msg, ringPubKeys, 0)
 
 	if !firstRing.Verify(msg) {
 		t.Errorf("the first ring was expected to be verified")
@@ -33,6 +34,11 @@ func TestRingSignature_Success(t *testing.T) {
 
 	if invalidRing.Verify(msg) {
 		t.Errorf("the invalid ring was NOT expected to be verified")
+		return
+	}
+
+	if secondRingBadIndex.Verify(msg) {
+		t.Errorf("the second ring (bad index) was NOT expected to be verified")
 		return
 	}
 }
