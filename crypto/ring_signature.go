@@ -10,9 +10,14 @@ type ringSignature struct {
 	e    kyber.Scalar
 }
 
-type sharedSignature struct {
-	s kyber.Scalar
-	p kyber.Point
+func createRingSignature(ring []kyber.Point, s []kyber.Scalar, e kyber.Scalar) *ringSignature {
+	out := ringSignature{
+		ring: ring,
+		s:    s,
+		e:    e,
+	}
+
+	return &out
 }
 
 // Verify verifies if the message has been signed by at least 1 shared signature

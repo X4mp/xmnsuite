@@ -59,8 +59,8 @@ func (app *privateKey) RingSign(msg string, ringPubKeys []kyber.Point, signerInd
 	// close the ring:
 	esx := curve.Scalar().Mul(es[signerIndex], app.x)
 	ss[signerIndex] = curve.Scalar().Sub(k, esx)
-	out := ringSignature{ring: ringPubKeys, e: es[0], s: ss}
-	return &out
+	out := createRingSignature(ringPubKeys, ss, es[0])
+	return out
 }
 
 // Sign signs a message
