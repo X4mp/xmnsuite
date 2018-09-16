@@ -18,6 +18,10 @@
   name = "github.com/urfave/cli"
   version = "1.20.0"
 
+[[override]]
+  name = "github.com/dedis/kyber"
+  branch = "master"
+
 [prune]
   go-tests = true
   unused-packages = true

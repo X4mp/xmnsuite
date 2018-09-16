@@ -26,6 +26,29 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:c594f17a44dc0df66ef67ae61b126fc51c84b826af250493f2e37c2ac4389bbe"
+  name = "github.com/dedis/fixbuf"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "290118f838f79dd2f76edf7a98cccf989eaf3310"
+  version = "v1.0.2"
+
+[[projects]]
+  branch = "master"
+  digest = "1:e3207e22a1e6f3437795ae79c646e170d2aebcb152b0a633314994499a441217"
+  name = "github.com/dedis/kyber"
+  packages = [
+    ".",
+    "group/edwards25519",
+    "group/internal/marshalling",
+    "group/mod",
+    "util/random",
+    "xof/blake2xb",
+  ]
+  pruneopts = "UT"
+  revision = "b723602b9b0f02a52729cabf89a7774ce5be0503"
+
+[[projects]]
   digest = "1:c7644c73a3d23741fdba8a99b1464e021a224b7e205be497271a8003a15ca41b"
   name = "github.com/ebuchman/fail-test"
   packages = ["."]
@@ -333,9 +356,10 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:9e3997e60d29a1ad4c0dbaa96702e4881144638d5d0ce2d5c0fe83eeba2be476"
+  digest = "1:dc5528a8e608bda0fc8ab3f02bb093dbe4f68ddee95ee93d7f01941957211a5c"
   name = "golang.org/x/crypto"
   packages = [
+    "blake2b",
     "chacha20poly1305",
     "curve25519",
     "hkdf",
@@ -451,6 +475,8 @@
   analyzer-name = "dep"
   analyzer-version = 1
   input-imports = [
+    "github.com/dedis/kyber",
+    "github.com/dedis/kyber/group/edwards25519",
     "github.com/nsf/termbox-go",
     "github.com/satori/go.uuid",
     "github.com/tendermint/go-amino",
