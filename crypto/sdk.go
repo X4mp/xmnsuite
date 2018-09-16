@@ -8,7 +8,7 @@ import (
 type PrivateKey interface {
 	PublicKey() kyber.Point
 	Sign(msg string) Signature
-	RingSign(msg string, ringPubKeys []kyber.Point) RingSignature
+	RingSign(msg string, ringPubKeys []kyber.Point) (RingSignature, error)
 	String() string
 }
 
@@ -22,6 +22,7 @@ type Signature interface {
 // RingSignature represents a RingSignature
 type RingSignature interface {
 	Verify(msg string) bool
+	String() string
 }
 
 // CreatePKParams represents the CreatePK func params
@@ -29,16 +30,10 @@ type CreatePKParams struct {
 	PKAsString string
 }
 
-// CreateSigParams represents the CreateSig func params
-type CreateSigParams struct {
-	SigAsString string
-}
-
 // SDKFunc represents the crypto SDK func
 var SDKFunc = struct {
-	GenPK     func() PrivateKey
-	CreatePK  func(params CreatePKParams) PrivateKey
-	CreateSig func(params CreateSigParams) Signature
+	GenPK    func() PrivateKey
+	CreatePK func(params CreatePKParams) PrivateKey
 }{
 	GenPK: func() PrivateKey {
 		return createPrivateKey()
@@ -55,13 +50,5 @@ var SDKFunc = struct {
 		}
 
 		return pk
-	},
-	CreateSig: func(params CreateSigParams) Signature {
-		sig, sigErr := createSignatureFromString(params.SigAsString)
-		if sigErr != nil {
-			panic(sigErr)
-		}
-
-		return sig
 	},
 }

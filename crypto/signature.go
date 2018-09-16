@@ -1,10 +1,11 @@
 package crypto
 
 import (
+	"encoding/base64"
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"regexp"
+	"strings"
 
 	"github.com/dedis/kyber"
 )
@@ -20,12 +21,12 @@ func createSignature(r kyber.Point, s kyber.Scalar) Signature {
 }
 
 func createSignatureFromString(sigAsString string) (Signature, error) {
-	pattern, patternErr := regexp.Compile("([0-9a-f]+)")
-	if patternErr != nil {
-		return nil, patternErr
+	decoded, decodedErr := base64.StdEncoding.DecodeString(sigAsString)
+	if decodedErr != nil {
+		return nil, decodedErr
 	}
 
-	strs := pattern.FindAllString(sigAsString, -1)
+	strs := strings.Split(string(decoded), "-")
 	if len(strs) != 2 {
 		str := fmt.Sprintf("the given string (%s) us not a valid signature", sigAsString)
 		return nil, errors.New(str)
@@ -97,5 +98,6 @@ func (app *signature) Verify(msg string) bool {
 func (app *signature) String() string {
 	rAsString := app.r.String()
 	sAsString := app.s.String()
-	return fmt.Sprintf("%s-%s", rAsString, sAsString)
+	str := fmt.Sprintf("%s-%s", rAsString, sAsString)
+	return base64.StdEncoding.EncodeToString([]byte(str))
 }

@@ -3,6 +3,7 @@ package crypto
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"fmt"
 
 	"github.com/dedis/kyber"
@@ -48,7 +49,7 @@ func (app *privateKey) PublicKey() kyber.Point {
 }
 
 // RingSign signs a ring signature on the given message, in the given ring pubKey
-func (app *privateKey) RingSign(msg string, ringPubKeys []kyber.Point) RingSignature {
+func (app *privateKey) RingSign(msg string, ringPubKeys []kyber.Point) (RingSignature, error) {
 
 	retrieveSignerIndexFn := func(ringPubKeys []kyber.Point, pk PrivateKey) int {
 		pubKey := pk.PublicKey()
@@ -64,7 +65,7 @@ func (app *privateKey) RingSign(msg string, ringPubKeys []kyber.Point) RingSigna
 	// retrieve our signerIndex:
 	signerIndex := retrieveSignerIndexFn(ringPubKeys, app)
 	if signerIndex == -1 {
-		panic("the signer PublicKey is not in the ring")
+		return nil, errors.New("the signer PublicKey is not in the ring")
 	}
 
 	// generate k:
@@ -100,7 +101,7 @@ func (app *privateKey) RingSign(msg string, ringPubKeys []kyber.Point) RingSigna
 	esx := curve.Scalar().Mul(es[signerIndex], app.x)
 	ss[signerIndex] = curve.Scalar().Sub(k, esx)
 	out := createRingSignature(ringPubKeys, ss, es[0])
-	return out
+	return out, nil
 }
 
 // Sign signs a message

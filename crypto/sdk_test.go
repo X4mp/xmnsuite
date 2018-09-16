@@ -62,24 +62,3 @@ func TestSDK_createPK_withValidHex_invalidPK_panic(t *testing.T) {
 		PKAsString: hex.EncodeToString([]byte("this is not a PK")),
 	})
 }
-
-func TestSDK_CreateSignature_Success(t *testing.T) {
-	// variables:
-	msg := "this is a message to sign"
-	pk := SDKFunc.GenPK()
-
-	// create the signature:
-	sig := pk.Sign(msg)
-
-	// convert back and forth to string:
-	sigAsString := sig.String()
-	newSig := SDKFunc.CreateSig(CreateSigParams{
-		SigAsString: sigAsString,
-	})
-
-	if sigAsString != newSig.String() {
-		t.Errorf("the signatures were expected to be the same.  Expected: %s, Actual: %s", sigAsString, newSig.String())
-		return
-	}
-
-}

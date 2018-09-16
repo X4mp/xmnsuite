@@ -1,10 +1,17 @@
 package crypto
 
 import (
+	"encoding/hex"
+	"fmt"
+
+	kyber "github.com/dedis/kyber"
+	edwards25519 "github.com/dedis/kyber/group/edwards25519"
 	crypto "github.com/xmnservices/xmnsuite/crypto"
 	lua "github.com/yuin/gopher-lua"
 	luajson "layeh.com/gopher-json"
 )
+
+var curve = edwards25519.NewBlakeSHA256Ed25519()
 
 const luaPrivKey = "privkey"
 
@@ -97,10 +104,56 @@ func (app *module) registerPrivKey(context *lua.LState) {
 		return 1
 	}
 
+	//execute the ringSignFn command on the privkey instance:
+	ringSignFn := func(l *lua.LState) int {
+		p := checkFn(l)
+		if l.GetTop() == 3 {
+			msg := l.CheckString(2)
+			ring := l.CheckTable(3)
+
+			ringPubKeysAsString := []string{}
+			ring.ForEach(func(key lua.LValue, value lua.LValue) {
+				ringPubKeysAsString = append(ringPubKeysAsString, value.String())
+			})
+
+			ringPubKeys := []kyber.Point{}
+			for _, oneRingPubKeyAsString := range ringPubKeysAsString {
+				decoded, decodedErr := hex.DecodeString(oneRingPubKeyAsString)
+				if decodedErr != nil {
+					l.ArgError(2, "the ring PublicKey list contain at least 1 invalid PublicKey instance")
+					return 1
+				}
+
+				p := curve.Point()
+				pErr := p.UnmarshalBinary(decoded)
+				if pErr != nil {
+					l.ArgError(2, "the ring PublicKey list contain at least 1 PublicKey that could not be unmarshalled to a curve point")
+					return 1
+				}
+
+				ringPubKeys = append(ringPubKeys, p)
+			}
+
+			ringSig, ringSigErr := p.RingSign(msg, ringPubKeys)
+			if ringSigErr != nil {
+				str := fmt.Sprintf("there was an error while creating a ring signature: %s", ringSigErr.Error())
+				l.RaiseError(str)
+				return 1
+			}
+
+			l.Push(lua.LString(ringSig.String()))
+			return 1
+		}
+
+		l.ArgError(1, "the save func expected 1 parameter")
+		return 1
+	}
+
 	// the users methods:
 	var methods = map[string]lua.LGFunction{
-		"pubKey": pubKeyFn,
-		"sign":   signFn,
+		"pubKey":   pubKeyFn,
+		"sign":     signFn,
+		"ringSign": ringSignFn,
 	}
 
 	mt := context.NewTypeMetatable(luaPrivKey)
