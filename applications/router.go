@@ -4,7 +4,7 @@ import (
 	"errors"
 	"regexp"
 
-	crypto "github.com/tendermint/tendermint/crypto"
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 	roles "github.com/xmnservices/xmnsuite/roles"
 	users "github.com/xmnservices/xmnsuite/users"
 )
@@ -165,7 +165,7 @@ func createRoute(roleKey string, rols roles.Roles, usrs users.Users, patternAsSt
 }
 
 // Matches returns true if the route matches the regex, false otherwise
-func (obj *route) Matches(from crypto.PubKey, path string) bool {
+func (obj *route) Matches(from crypto.PublicKey, path string) bool {
 
 	//if the route needs write access:
 	if obj.handl.IsWrite() {
@@ -186,7 +186,7 @@ func (obj *route) Matches(from crypto.PubKey, path string) bool {
 }
 
 // Handler returns the handler
-func (obj *route) Handler(from crypto.PubKey, path string) PreparedHandler {
+func (obj *route) Handler(from crypto.PublicKey, path string) PreparedHandler {
 	if !obj.Matches(from, path) {
 		return nil
 	}
@@ -226,7 +226,7 @@ func createRouter(rtes map[int][]Route) Router {
 }
 
 // Route route a request
-func (obj *router) Route(from crypto.PubKey, path string, method int) PreparedHandler {
+func (obj *router) Route(from crypto.PublicKey, path string, method int) PreparedHandler {
 	if rtes, ok := obj.rtes[method]; ok {
 		for _, oneRte := range rtes {
 			handl := oneRte.Handler(from, path)

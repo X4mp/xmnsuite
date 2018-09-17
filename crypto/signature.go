@@ -2,20 +2,21 @@ package crypto
 
 import (
 	"encoding/base64"
-	"encoding/hex"
-	"errors"
-	"fmt"
-	"strings"
 
 	"github.com/dedis/kyber"
 )
 
 type signature struct {
-	r kyber.Point
+	r PublicKey
 	s kyber.Scalar
 }
 
-func createSignature(r kyber.Point, s kyber.Scalar) Signature {
+type jsonSignature struct {
+	RAsString string `json:"r"`
+	SAsString string `json:"s"`
+}
+
+func createSignature(r PublicKey, s kyber.Scalar) Signature {
 	out := signature{r: r, s: s}
 	return &out
 }
@@ -26,39 +27,17 @@ func createSignatureFromString(sigAsString string) (Signature, error) {
 		return nil, decodedErr
 	}
 
-	strs := strings.Split(string(decoded), "-")
-	if len(strs) != 2 {
-		str := fmt.Sprintf("the given string (%s) us not a valid signature", sigAsString)
-		return nil, errors.New(str)
+	ptr := new(signature)
+	err := cdc.UnmarshalJSON(decoded, ptr)
+	if err != nil {
+		return nil, err
 	}
 
-	decodedR, decodedRErr := hex.DecodeString(strs[0])
-	if decodedRErr != nil {
-		return nil, decodedRErr
-	}
-
-	decodedS, decodedSErr := hex.DecodeString(strs[1])
-	if decodedSErr != nil {
-		return nil, decodedSErr
-	}
-
-	r := curve.Point()
-	rErr := r.UnmarshalBinary(decodedR)
-	if rErr != nil {
-		return nil, rErr
-	}
-
-	s := curve.Scalar()
-	sErr := s.UnmarshalBinary(decodedS)
-	if sErr != nil {
-		return nil, sErr
-	}
-
-	return createSignature(r, s), nil
+	return ptr, nil
 }
 
 // PublicKey returns the public key of the signature
-func (app *signature) PublicKey(msg string) kyber.Point {
+func (app *signature) PublicKey(msg string) PublicKey {
 	// Create a generator.
 	g := curve.Point().Base()
 
@@ -66,10 +45,10 @@ func (app *signature) PublicKey(msg string) kyber.Point {
 	e := hash(msg + app.r.String())
 
 	// y = (r - s * G) * (1 / e)
-	y := curve.Point().Sub(app.r, curve.Point().Mul(app.s, g))
+	y := curve.Point().Sub(app.r.Point(), curve.Point().Mul(app.s, g))
 	y = curve.Point().Mul(curve.Scalar().Div(curve.Scalar().One(), e), y)
 
-	return y
+	return createPublicKey(y)
 }
 
 // Verify verifies if the signature has been made by the given public key, on the message
@@ -85,7 +64,7 @@ func (app *signature) Verify(msg string) bool {
 	e := hash(msg + app.r.String())
 
 	// Attempt to reconstruct 's * G' with a provided signature; s * G = r - e * p
-	sGv := curve.Point().Sub(app.r, curve.Point().Mul(e, p))
+	sGv := curve.Point().Sub(app.r.Point(), curve.Point().Mul(e, p.Point()))
 
 	// Construct the actual 's * G'
 	sG := curve.Point().Mul(app.s, g)
@@ -96,8 +75,41 @@ func (app *signature) Verify(msg string) bool {
 
 // String returns the string representation of the signature
 func (app *signature) String() string {
-	rAsString := app.r.String()
-	sAsString := app.s.String()
-	str := fmt.Sprintf("%s-%s", rAsString, sAsString)
-	return base64.StdEncoding.EncodeToString([]byte(str))
+	js, jsErr := cdc.MarshalJSON(app)
+	if jsErr != nil {
+		panic(jsErr)
+	}
+
+	return base64.StdEncoding.EncodeToString(js)
+}
+
+// MarshalJSON returns a JSON representation of the object
+func (app *signature) MarshalJSON() ([]byte, error) {
+	return cdc.MarshalJSON(jsonSignature{
+		RAsString: app.r.String(),
+		SAsString: app.s.String(),
+	})
+}
+
+// UnmarshalJSON returns an object based on the JSON data
+func (app *signature) UnmarshalJSON(data []byte) error {
+	ptr := new(jsonSignature)
+	err := cdc.UnmarshalJSON(data, ptr)
+	if err != nil {
+		return err
+	}
+
+	r, rErr := fromStringToPoint(ptr.RAsString)
+	if rErr != nil {
+		return rErr
+	}
+
+	s, sErr := fromStringToScalar(ptr.SAsString)
+	if sErr != nil {
+		return sErr
+	}
+
+	app.r = createPublicKey(r)
+	app.s = s
+	return nil
 }

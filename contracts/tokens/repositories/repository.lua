@@ -1,4 +1,5 @@
 require("datastore")
+local uuid = require("uuid")
 
 Repository = {} --class
 Repository.__index = Repository
@@ -15,16 +16,22 @@ Repository.__index = Repository
         local db = tables.load()
         local keyname = generateKeyname("wallet", "pubkey", pubKey)
         retWal = db:retrieve(keyname)
-        setmetatable(retWal, Wallet)
-        return retWal
+        if retWal == null then
+            return null
+        end
+
+        return Wallet:load(retWal)
     end
 
-    -- retrieveTokenByID retrieves a token by its ID.  If the token doesn't exists, returns null
-    function Repository:retrieveTokenByID(id)
+    -- retrieveTokenByUUID retrieves a token by its UUID.  If the token doesn't exists, returns null
+    function Repository:retrieveTokenByUUID(uid)
         local db = tables.load()
-        local keyname = generateKeyname("token", "id", id)
+        local keyname = generateKeyname("token", "uuid", uid:string())
         retTok = db:retrieve(keyname)
-        setmetatable(retTok, Token)
-        return retTok
+        if retTok == null then
+            return null
+        end
+
+        return Token:load(retTok)
     end
 -- class Repository

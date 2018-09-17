@@ -1,16 +1,16 @@
 package roles
 
 import (
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/lists"
-	crypto "github.com/tendermint/tendermint/crypto"
 )
 
 // Roles represents a role
 type Roles interface {
 	Lists() lists.Lists
 	Copy() Roles
-	Add(key string, usrs ...crypto.PubKey) int
-	Del(key string, usrs ...crypto.PubKey) int
+	Add(key string, usrs ...crypto.PublicKey) int
+	Del(key string, usrs ...crypto.PublicKey) int
 	EnableWriteAccess(key string, keyPatterns ...string) int
 	DisableWriteAccess(key string, keyPatterns ...string) int
 	HasWriteAccess(key string, keys ...string) []string

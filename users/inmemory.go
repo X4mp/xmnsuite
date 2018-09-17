@@ -3,8 +3,8 @@ package users
 import (
 	"fmt"
 
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/objects"
-	crypto "github.com/tendermint/tendermint/crypto"
 )
 
 type concreteUsers struct {
@@ -34,18 +34,18 @@ func (app *concreteUsers) Copy() Users {
 }
 
 // Key returns the key where the user is stored
-func (app *concreteUsers) Key(pubKey crypto.PubKey) string {
+func (app *concreteUsers) Key(pubKey crypto.PublicKey) string {
 	return fmt.Sprintf("user:by_pubkey:%s", pubKey)
 }
 
 // Exists returns true if the user exists, false otherwise
-func (app *concreteUsers) Exists(pubKey crypto.PubKey) bool {
+func (app *concreteUsers) Exists(pubKey crypto.PublicKey) bool {
 	key := app.Key(pubKey)
 	return app.store.Keys().Exists(key) == 1
 }
 
 // Add adds a user
-func (app *concreteUsers) Insert(pubKey crypto.PubKey) bool {
+func (app *concreteUsers) Insert(pubKey crypto.PublicKey) bool {
 	if app.Exists(pubKey) {
 		return false
 	}
@@ -53,14 +53,14 @@ func (app *concreteUsers) Insert(pubKey crypto.PubKey) bool {
 	key := app.Key(pubKey)
 	app.store.Save(&objects.ObjInKey{
 		Key: key,
-		Obj: pubKey,
+		Obj: pubKey.String(),
 	})
 
 	return true
 }
 
 // Delete deletes a user
-func (app *concreteUsers) Delete(pubKey crypto.PubKey) bool {
+func (app *concreteUsers) Delete(pubKey crypto.PublicKey) bool {
 	if !app.Exists(pubKey) {
 		return false
 	}

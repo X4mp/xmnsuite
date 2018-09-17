@@ -4,11 +4,11 @@ Deposit = {} --class
 Deposit.__index = Deposit
 
     -- create create a new Deposit instance
-    function Deposit:create(id, walletID, tokenID, amount, createdOn)
+    function Deposit:create(uid, walletPubKey, tokenUUID, amount, createdOn)
         local deposit = {
-            id = id,
-            wallet_id = walletID,
-            token_id = tokenID,
+            uid = uid,
+            wallet_pub_key = walletPubKey,
+            token_uuid = tokenUUID,
             amount = amount,
             created_on = createdOn
         }
@@ -20,11 +20,11 @@ Deposit.__index = Deposit
     -- save saves a deposit instance to the database.  Returns true if successful, false otherwise
     function Deposit:save()
         local db = tables.load()
-        local keynameDepositByID = generateKeyname("deposit", "id", self.id)
+        local keynameDepositByID = generateKeyname("deposit", "uuid", self.uid:string())
         local retAmountSaved = db:save({key=keynameDepositByID, table={
-            id = self.id,
-            wallet_id = self.wallet_id,
-            token_id = self.token_id,
+            uid = self.uid,
+            wallet_pub_key = self.wallet_pub_key,
+            token_uuid = self.token_uuid,
             amount = self.amount,
             created_on = self.created_on
         }})
@@ -33,10 +33,10 @@ Deposit.__index = Deposit
             return false
         end
 
-        -- save the desposit IDs in these keys as well, to make it possible to retrieve them by tokenID and walletPubKey:
+        -- save the desposit IDs in these keys as well, to make it possible to retrieve them by tokenUUID and walletPubKey:
         keys = {
-            generateKeyname("deposit", "wallet_id", self.wallet_id),
-            generateKeyname("deposit", "token_id", self.token_id)
+            generateKeyname("deposit", "wallet_pub_key", self.wallet_pub_key),
+            generateKeyname("deposit", "token_uuid", self.token_uuid:string())
         }
 
         local lst = lists.load()

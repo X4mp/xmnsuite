@@ -2,9 +2,9 @@ package tests
 
 import (
 	uuid "github.com/satori/go.uuid"
-	crypto "github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 	applications "github.com/xmnservices/xmnsuite/applications"
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
 	chain_module "github.com/xmnservices/xmnsuite/modules/chain"
 	datastore_module "github.com/xmnservices/xmnsuite/modules/datastore"
@@ -13,7 +13,7 @@ import (
 )
 
 // ExecuteForTests executes the chain for tests
-func ExecuteForTests(context *lua.LState, scriptPath string, dbPath string, rootPubKeys []crypto.PubKey) (applications.Node, error) {
+func ExecuteForTests(context *lua.LState, scriptPath string, dbPath string, rootPubKeys []crypto.PublicKey) (applications.Node, error) {
 	// variables:
 	instanceID := uuid.NewV4()
 	nodePK := ed25519.GenPrivKey()

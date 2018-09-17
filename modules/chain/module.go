@@ -7,8 +7,9 @@ import (
 	"strconv"
 
 	uuid "github.com/satori/go.uuid"
-	crypto "github.com/tendermint/tendermint/crypto"
+	tcrypto "github.com/tendermint/tendermint/crypto"
 	applications "github.com/xmnservices/xmnsuite/applications"
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
 	datastore_module "github.com/xmnservices/xmnsuite/modules/datastore"
 	tendermint "github.com/xmnservices/xmnsuite/tendermint"
@@ -49,8 +50,8 @@ type module struct {
 	context     *lua.LState
 	dbPath      string
 	instanceID  *uuid.UUID
-	rootPubKeys []crypto.PubKey
-	nodePK      crypto.PrivKey
+	rootPubKeys []crypto.PublicKey
+	nodePK      tcrypto.PrivKey
 	ds          datastore_module.Datastore
 	ch          *chain
 }
@@ -59,8 +60,8 @@ func createModule(
 	context *lua.LState,
 	dbPath string,
 	instanceID *uuid.UUID,
-	rootPubKeys []crypto.PubKey,
-	nodePK crypto.PrivKey,
+	rootPubKeys []crypto.PublicKey,
+	nodePK tcrypto.PrivKey,
 	ds datastore_module.Datastore,
 ) Chain {
 	out := module{
@@ -410,7 +411,7 @@ func (app *module) Spawn() (applications.Node, error) {
 			var saveTrx applications.SaveTransactionFn
 			if oneRte.saveTrx != nil {
 				luaSaveTrxFn := oneRte.saveTrx
-				saveTrx = func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) (applications.TransactionResponse, error) {
+				saveTrx = func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (applications.TransactionResponse, error) {
 
 					//replace the datastore:
 					app.replaceDS(store)
@@ -433,7 +434,7 @@ func (app *module) Spawn() (applications.Node, error) {
 					dataAsString := string(data)
 
 					// sig:
-					sigAsString := hex.EncodeToString(sig)
+					sigAsString := sig.String()
 
 					// call the func and return the value:
 					return callLuaTrxFunc(
@@ -451,7 +452,7 @@ func (app *module) Spawn() (applications.Node, error) {
 			var delTrx applications.DeleteTransactionFn
 			if oneRte.delTrx != nil {
 				luaDelTrxFn := oneRte.delTrx
-				delTrx = func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (applications.TransactionResponse, error) {
+				delTrx = func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (applications.TransactionResponse, error) {
 					//replace the datastore:
 					app.replaceDS(store)
 
@@ -470,7 +471,7 @@ func (app *module) Spawn() (applications.Node, error) {
 					}
 
 					// sig:
-					sigAsString := hex.EncodeToString(sig)
+					sigAsString := sig.String()
 
 					// call the func and return the value:
 					return callLuaTrxFunc(
@@ -487,7 +488,7 @@ func (app *module) Spawn() (applications.Node, error) {
 			var queryTrx applications.QueryFn
 			if oneRte.queryTrx != nil {
 				luaQueryFn := oneRte.queryTrx
-				queryTrx = func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (applications.QueryResponse, error) {
+				queryTrx = func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (applications.QueryResponse, error) {
 					//replace the datastore:
 					app.replaceDS(store)
 
@@ -506,7 +507,7 @@ func (app *module) Spawn() (applications.Node, error) {
 					}
 
 					// sig:
-					sigAsString := hex.EncodeToString(sig)
+					sigAsString := sig.String()
 
 					// call the func and return the value:
 					return callLuaQueryFunc(

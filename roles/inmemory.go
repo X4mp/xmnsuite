@@ -1,20 +1,14 @@
 package roles
 
 import (
-	"encoding/gob"
 	"errors"
 	"fmt"
 	"regexp"
 
-	crypto "github.com/tendermint/tendermint/crypto"
-	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/helpers"
 	"github.com/xmnservices/xmnsuite/lists"
 )
-
-func init() {
-	gob.Register(&ed25519.PubKeyEd25519{})
-}
 
 type concreteRoles struct {
 	lst lists.Lists
@@ -43,13 +37,13 @@ func (app *concreteRoles) Copy() Roles {
 }
 
 // Add adds users to a role key and returns the amount of users in that role
-func (app *concreteRoles) Add(key string, usrs ...crypto.PubKey) int {
+func (app *concreteRoles) Add(key string, usrs ...crypto.PublicKey) int {
 	lst := app.convertUsers(usrs)
 	return app.Lists().Add(key, lst...)
 }
 
 // Del deletes users from a role and returns the amount of users deleted
-func (app *concreteRoles) Del(key string, usrs ...crypto.PubKey) int {
+func (app *concreteRoles) Del(key string, usrs ...crypto.PublicKey) int {
 	lst := app.convertUsers(usrs)
 	return app.Lists().Del(key, lst...)
 }
@@ -109,10 +103,10 @@ func (app *concreteRoles) HasWriteAccess(key string, keys ...string) []string {
 
 }
 
-func (app *concreteRoles) convertUsers(usrs []crypto.PubKey) []interface{} {
+func (app *concreteRoles) convertUsers(usrs []crypto.PublicKey) []interface{} {
 	lst := []interface{}{}
 	for _, oneUser := range usrs {
-		lst = append(lst, oneUser)
+		lst = append(lst, oneUser.String())
 	}
 
 	return lst

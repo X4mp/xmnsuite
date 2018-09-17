@@ -5,7 +5,7 @@ import (
 	"errors"
 	"strconv"
 
-	crypto "github.com/tendermint/tendermint/crypto"
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
 	"github.com/xmnservices/xmnsuite/keys"
 	"github.com/xmnservices/xmnsuite/lists"
@@ -210,11 +210,9 @@ func (app *module) registerUsers(context *lua.LState) {
 		}
 
 		pubKeyAsString := l.CheckString(2)
-		pubKey, pubKeyErr := fromStringToPubKey(pubKeyAsString)
-		if pubKeyErr != nil {
-			l.ArgError(1, pubKeyErr.Error())
-			return 1
-		}
+		pubKey := crypto.SDKFunc.CreatePubKey(crypto.CreatePubKeyParams{
+			PubKeyAsString: pubKeyAsString,
+		})
 
 		key := p.Key(pubKey)
 		l.Push(lua.LString(key))
@@ -230,11 +228,9 @@ func (app *module) registerUsers(context *lua.LState) {
 		}
 
 		pubKeyAsString := l.CheckString(2)
-		pubKey, pubKeyErr := fromStringToPubKey(pubKeyAsString)
-		if pubKeyErr != nil {
-			l.ArgError(1, pubKeyErr.Error())
-			return 1
-		}
+		pubKey := crypto.SDKFunc.CreatePubKey(crypto.CreatePubKeyParams{
+			PubKeyAsString: pubKeyAsString,
+		})
 
 		exists := p.Exists(pubKey)
 		l.Push(lua.LBool(exists))
@@ -250,11 +246,9 @@ func (app *module) registerUsers(context *lua.LState) {
 		}
 
 		pubKeyAsString := l.CheckString(2)
-		pubKey, pubKeyErr := fromStringToPubKey(pubKeyAsString)
-		if pubKeyErr != nil {
-			l.ArgError(1, pubKeyErr.Error())
-			return 1
-		}
+		pubKey := crypto.SDKFunc.CreatePubKey(crypto.CreatePubKeyParams{
+			PubKeyAsString: pubKeyAsString,
+		})
 
 		isInserted := p.Insert(pubKey)
 		l.Push(lua.LBool(isInserted))
@@ -270,11 +264,9 @@ func (app *module) registerUsers(context *lua.LState) {
 		}
 
 		pubKeyAsString := l.CheckString(2)
-		pubKey, pubKeyErr := fromStringToPubKey(pubKeyAsString)
-		if pubKeyErr != nil {
-			l.ArgError(1, pubKeyErr.Error())
-			return 1
-		}
+		pubKey := crypto.SDKFunc.CreatePubKey(crypto.CreatePubKeyParams{
+			PubKeyAsString: pubKeyAsString,
+		})
 
 		isDeleted := p.Delete(pubKey)
 		l.Push(lua.LBool(isDeleted))
@@ -333,17 +325,13 @@ func (app *module) registerRoles(context *lua.LState) {
 			return 1
 		}
 
-		pubKeys := []crypto.PubKey{}
+		pubKeys := []crypto.PublicKey{}
 		key := l.CheckString(2)
 		for i := 3; i <= amount; i++ {
 			pubKeyAsString := l.CheckString(i)
-			pubKey, pubKeyErr := fromStringToPubKey(pubKeyAsString)
-			if pubKeyErr != nil {
-				l.ArgError(1, pubKeyErr.Error())
-				return 1
-			}
-
-			pubKeys = append(pubKeys, pubKey)
+			pubKeys = append(pubKeys, crypto.SDKFunc.CreatePubKey(crypto.CreatePubKeyParams{
+				PubKeyAsString: pubKeyAsString,
+			}))
 		}
 
 		amountAdded := p.Add(key, pubKeys...)
@@ -360,17 +348,13 @@ func (app *module) registerRoles(context *lua.LState) {
 			return 1
 		}
 
-		pubKeys := []crypto.PubKey{}
+		pubKeys := []crypto.PublicKey{}
 		key := l.CheckString(2)
 		for i := 3; i <= amount; i++ {
 			pubKeyAsString := l.CheckString(i)
-			pubKey, pubKeyErr := fromStringToPubKey(pubKeyAsString)
-			if pubKeyErr != nil {
-				l.ArgError(1, pubKeyErr.Error())
-				return 1
-			}
-
-			pubKeys = append(pubKeys, pubKey)
+			pubKeys = append(pubKeys, crypto.SDKFunc.CreatePubKey(crypto.CreatePubKeyParams{
+				PubKeyAsString: pubKeyAsString,
+			}))
 		}
 
 		amountAdded := p.Del(key, pubKeys...)

@@ -2,6 +2,8 @@ package crypto
 
 import (
 	"testing"
+
+	tests "github.com/xmnservices/xmnsuite/tests"
 )
 
 func TestSignature_Success(t *testing.T) {
@@ -16,7 +18,7 @@ func TestSignature_Success(t *testing.T) {
 	derivedPubKey := sig.PublicKey(msg)
 
 	// make sure the original PublicKey and the derived PublicKey are the same:
-	if !pk.PublicKey().Equal(derivedPubKey) {
+	if !pk.PublicKey().Equals(derivedPubKey) {
 		t.Errorf("the original PublicKey was expected to be the same as the derived PublicKey")
 		return
 	}
@@ -39,5 +41,9 @@ func TestSignature_Success(t *testing.T) {
 		t.Errorf("the signatures were expected to be the same.  Expected: %s, Actual: %s", sigAsString, newSig.String())
 		return
 	}
+
+	// convert to json back and forth:
+	empty := new(signature)
+	tests.ConvertToJSON(t, sig, empty, cdc)
 
 }

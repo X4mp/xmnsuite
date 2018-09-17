@@ -1,6 +1,7 @@
 require("crypto")
 local sdk = require("sdk")
 local json = require("json")
+local uuid = require("uuid")
 
 function save(fromPK, path, obj)
     -- create the resource pointer:
@@ -67,8 +68,8 @@ function delete(fromPK, path)
     return resp
 end
 
--- create the node pk:
-local nodePK = privkey.new("a3288910407b8954f7afab990ce902a33c290a73fd399fec9d96e1ff221826ac05e88c7a56bfbac5062c2b21060d94af33e72fcc64bcd599f3af596c96d859b31418adb0de")
+-- create the user pk:
+local userPK = privkey.new("dfab9ff67f646eb235e4aa9b0474a8ba6a987cf905f1e5a04ac3e4d99168730f")
 
 -- generate a new wallet pk:
 local walletPK = privkey.new()
@@ -80,13 +81,13 @@ local wallet = {
 }
 
 -- insert a new wallet:
-insWalletResp = save(nodePK, "/wallets", wallet)
+insWalletResp = save(userPK, "/wallets", wallet)
 assert(insWalletResp:code() == 0)
 assert(insWalletResp:log() == "success")
 assert(insWalletResp:gazUsed() == 0)
 
 -- retrieve a wallet:
-retResp = retrieve(nodePK, "/wallets/" .. wallet.pub_key)
+retResp = retrieve(userPK, "/wallets/" .. wallet.pub_key)
 assert(retResp:code() == 0)
 assert(retResp:key() == "/wallets/" .. wallet.pub_key)
 assert(retResp:log() == "success")
@@ -97,7 +98,7 @@ assert(tonumber(retWallet.created_on) == wallet.created_on)
 
 -- create a new token
 local tok = {
-    id = "24f1267a-931d-4560-8a10-650b0b83d81a",
+    uid = uuid.new():string(),
     amount = math.pow(2, 62),
     wallet = wallet.pub_key,
     symbol = "XMND",
@@ -107,19 +108,19 @@ local tok = {
 }
 
 -- save the new token:
-insTokResp = save(nodePK, "/tokens", tok)
+insTokResp = save(userPK, "/tokens", tok)
 assert(insTokResp:code() == 0)
 assert(insTokResp:log() == "success")
 assert(insTokResp:gazUsed() == 0)
 
 -- retrieve a token:
-retTokResp = retrieve(nodePK, "/tokens/" .. tok.id)
+retTokResp = retrieve(userPK, "/tokens/" .. tok.uid)
 assert(retTokResp:code() == 0)
-assert(retTokResp:key() == "/tokens/" .. tok.id)
+assert(retTokResp:key() == "/tokens/" .. tok.uid)
 assert(retTokResp:log() == "success")
 
 retToken = json.decode(retTokResp:value())
-assert(retToken.id == tok.id)
+assert(retToken.uid == tok.uid)
 assert(retToken.symbol == tok.symbol)
 assert(retToken.name == tok.name)
 assert(retToken.description == tok.description)
@@ -130,11 +131,11 @@ assert(tonumber(retToken.created_on) == tok.created_on)
 -- retrieve the deposits related to the token:
 
 -- delete a token:
-delResp = delete(nodePK, "/tokens/" .. tok.id)
+delResp = delete(userPK, "/tokens/" .. tok.uid)
 assert(delResp:code() == 0)
 assert(delResp:log() == "success")
 
 -- delete a wallet:
-delResp = delete(nodePK, "/wallets/" .. wallet.pub_key)
+delResp = delete(userPK, "/wallets/" .. wallet.pub_key)
 assert(delResp:code() == 0)
 assert(delResp:log() == "success")

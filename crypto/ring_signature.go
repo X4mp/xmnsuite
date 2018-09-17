@@ -2,21 +2,23 @@ package crypto
 
 import (
 	"encoding/base64"
-	"encoding/hex"
-	"errors"
-	"fmt"
-	"strings"
 
 	"github.com/dedis/kyber"
 )
 
 type ringSignature struct {
-	ring []kyber.Point
+	ring []PublicKey
 	s    []kyber.Scalar
 	e    kyber.Scalar
 }
 
-func createRingSignature(ring []kyber.Point, s []kyber.Scalar, e kyber.Scalar) RingSignature {
+type jsonRingSignature struct {
+	RingAsStrings []string `json:"ring"`
+	SAsStrings    []string `json:"s"`
+	EAsString     string   `json:"e"`
+}
+
+func createRingSignature(ring []PublicKey, s []kyber.Scalar, e kyber.Scalar) RingSignature {
 	out := ringSignature{
 		ring: ring,
 		s:    s,
@@ -32,59 +34,13 @@ func createRingSignatureFromString(str string) (RingSignature, error) {
 		return nil, decodedErr
 	}
 
-	splitted := strings.Split(string(decoded), "|")
-	if len(splitted) != 3 {
-		return nil, errors.New("the decoded string was expected to have 3 parts")
+	ptr := new(ringSignature)
+	err := cdc.UnmarshalJSON(decoded, ptr)
+	if err != nil {
+		return nil, err
 	}
 
-	ringAsStrings := strings.Split(splitted[0], "-")
-	sAsStrings := strings.Split(splitted[1], "-")
-	eAsString := splitted[2]
-
-	rings := []kyber.Point{}
-	for _, oneRingAsString := range ringAsStrings {
-		decodedRing, decodedRingErr := hex.DecodeString(oneRingAsString)
-		if decodedRingErr != nil {
-			return nil, decodedRingErr
-		}
-
-		oneRing := curve.Point()
-		decErr := oneRing.UnmarshalBinary(decodedRing)
-		if decErr != nil {
-			return nil, decErr
-		}
-
-		rings = append(rings, oneRing)
-	}
-
-	s := []kyber.Scalar{}
-	for _, oneS := range sAsStrings {
-		decodedS, decodedSErr := hex.DecodeString(oneS)
-		if decodedSErr != nil {
-			return nil, decodedSErr
-		}
-
-		oneS := curve.Scalar()
-		decErr := oneS.UnmarshalBinary(decodedS)
-		if decErr != nil {
-			return nil, decErr
-		}
-
-		s = append(s, oneS)
-	}
-
-	decodedE, decodedEErr := hex.DecodeString(eAsString)
-	if decodedEErr != nil {
-		return nil, decodedEErr
-	}
-
-	e := curve.Scalar()
-	decErr := e.UnmarshalBinary(decodedE)
-	if decErr != nil {
-		return nil, decErr
-	}
-
-	return createRingSignature(rings, s, e), nil
+	return ptr, nil
 }
 
 // Verify verifies if the message has been signed by at least 1 shared signature
@@ -99,7 +55,7 @@ func (app *ringSignature) Verify(msg string) bool {
 	amount := len(app.ring)
 	for i := 0; i < amount; i++ {
 		sg := curve.Point().Mul(app.s[i], g)
-		ep := curve.Point().Mul(e, app.ring[i])
+		ep := curve.Point().Mul(e, app.ring[i].Point())
 		added := curve.Point().Add(sg, ep)
 		e = hash(msg + added.String())
 	}
@@ -109,20 +65,67 @@ func (app *ringSignature) Verify(msg string) bool {
 
 // String returns the string representation of the ring signature
 func (app *ringSignature) String() string {
-	ringAsStrings := []string{}
+	js, jsErr := cdc.MarshalJSON(app)
+	if jsErr != nil {
+		panic(jsErr)
+	}
+
+	return base64.StdEncoding.EncodeToString(js)
+}
+
+// MarshalJSON returns a JSON representation of the object
+func (app *ringSignature) MarshalJSON() ([]byte, error) {
+	rings := []string{}
 	for _, oneRing := range app.ring {
-		ringAsStrings = append(ringAsStrings, oneRing.String())
+		rings = append(rings, oneRing.String())
 	}
 
-	sAsStrings := []string{}
+	s := []string{}
 	for _, oneS := range app.s {
-		sAsStrings = append(sAsStrings, oneS.String())
+		s = append(s, oneS.String())
 	}
 
-	ringAsString := strings.Join(ringAsStrings, "-")
-	sAsString := strings.Join(sAsStrings, "-")
-	eAsString := app.e.String()
+	return cdc.MarshalJSON(jsonRingSignature{
+		RingAsStrings: rings,
+		SAsStrings:    s,
+		EAsString:     app.e.String(),
+	})
+}
 
-	str := fmt.Sprintf("%s|%s|%s", ringAsString, sAsString, eAsString)
-	return base64.StdEncoding.EncodeToString([]byte(str))
+// UnmarshalJSON returns an object based on the JSON data
+func (app *ringSignature) UnmarshalJSON(data []byte) error {
+	ptr := new(jsonRingSignature)
+	err := cdc.UnmarshalJSON(data, ptr)
+	if err != nil {
+		return err
+	}
+
+	rings := []PublicKey{}
+	for _, oneRingAsString := range ptr.RingAsStrings {
+		p, pErr := fromStringToPoint(oneRingAsString)
+		if pErr != nil {
+			return pErr
+		}
+
+		rings = append(rings, createPublicKey(p))
+	}
+
+	ss := []kyber.Scalar{}
+	for _, oneS := range ptr.SAsStrings {
+		s, sErr := fromStringToScalar(oneS)
+		if sErr != nil {
+			return sErr
+		}
+
+		ss = append(ss, s)
+	}
+
+	e, eErr := fromStringToScalar(ptr.EAsString)
+	if eErr != nil {
+		return eErr
+	}
+	app.ring = rings
+	app.s = ss
+	app.e = e
+	return nil
 }

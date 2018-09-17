@@ -67,7 +67,7 @@ function retrieve(pk, from, path)
 end
 
 -- create the private key:
-pk = privkey.new("a328891040d6a18f2777b3638a3f56707a73505a3f4ba498c9fc80b962d475d821f4d96ca016b8c5a33fbc0e1fbaa11d16b9b008ade72ba4cef520d3b1edab70d70cf8f4ac")
+pk = privkey.new("60699820e4ba230a2590255678f1ce701f3943e2f7388854ae0af169b9871c0a")
 from = pk:pubKey()
 path = "/messages"
 id = "c52e8cdb-3fb2-4c0a-b4e7-90c677870774"

@@ -3,19 +3,19 @@ package applications
 import (
 	"errors"
 
-	crypto "github.com/tendermint/tendermint/crypto"
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
 	objects "github.com/xmnservices/xmnsuite/objects"
 )
 
 // SaveTransactionFn represents a save transaction func
-type SaveTransactionFn func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) (TransactionResponse, error)
+type SaveTransactionFn func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (TransactionResponse, error)
 
 // DeleteTransactionFn represents a delete transaction func
-type DeleteTransactionFn func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (TransactionResponse, error)
+type DeleteTransactionFn func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (TransactionResponse, error)
 
 // QueryFn represents a query func.  The return values are: code, key, value, log
-type QueryFn func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error)
+type QueryFn func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (QueryResponse, error)
 
 const (
 	// IsSuccessful represents a successful query and/or transaction
@@ -56,16 +56,16 @@ const (
 
 // ResourcePointer represents a resource pointer
 type ResourcePointer interface {
-	From() crypto.PubKey
+	From() crypto.PublicKey
 	Path() string
-	Hash() []byte
+	Hash() string
 }
 
 // Resource represents a resource
 type Resource interface {
 	Pointer() ResourcePointer
 	Data() []byte
-	Hash() []byte
+	Hash() string
 }
 
 // InfoRequest represents an info request
@@ -77,15 +77,13 @@ type InfoRequest interface {
 type InfoResponse interface {
 	Size() int64
 	Version() string
-	LastBlockHeight() int64
-	LastBlockAppHash() []byte
 }
 
 // TransactionRequest represents a transaction request
 type TransactionRequest interface {
 	Resource() Resource
 	Pointer() ResourcePointer
-	Signature() []byte
+	Signature() crypto.Signature
 }
 
 // TransactionResponse represents a transaction response
@@ -105,7 +103,7 @@ type CommitResponse interface {
 // QueryRequest represents a query request
 type QueryRequest interface {
 	Pointer() ResourcePointer
-	Signature() []byte
+	Signature() crypto.Signature
 }
 
 // QueryResponse represents a query response
@@ -133,13 +131,13 @@ type PreparedHandler interface {
 
 // Route represents a route
 type Route interface {
-	Matches(from crypto.PubKey, path string) bool
-	Handler(from crypto.PubKey, path string) PreparedHandler
+	Matches(from crypto.PublicKey, path string) bool
+	Handler(from crypto.PublicKey, path string) PreparedHandler
 }
 
 // Router represents a router
 type Router interface {
-	Route(from crypto.PubKey, path string, method int) PreparedHandler
+	Route(from crypto.PublicKey, path string, method int) PreparedHandler
 }
 
 // Application represents an application
@@ -188,7 +186,7 @@ type Node interface {
 
 // CreateResourcePointerParams represents the CreateResourcePointer params
 type CreateResourcePointerParams struct {
-	From crypto.PubKey
+	From crypto.PublicKey
 	Path string
 }
 
@@ -207,7 +205,7 @@ type CreateInfoRequestParams struct {
 type CreateTransactionRequestParams struct {
 	Res    Resource
 	Ptr    ResourcePointer
-	Sig    []byte
+	Sig    crypto.Signature
 	JSData []byte
 }
 
@@ -222,7 +220,7 @@ type CreateTransactionResponseParams struct {
 // CreateQueryRequestParams represents the CreateQueryRequest params
 type CreateQueryRequestParams struct {
 	Ptr    ResourcePointer
-	Sig    []byte
+	Sig    crypto.Signature
 	JSData []byte
 }
 

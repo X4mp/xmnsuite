@@ -4,13 +4,12 @@ import (
 	"reflect"
 	"testing"
 
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 	tests "github.com/xmnservices/xmnsuite/tests"
-	"github.com/tendermint/tendermint/crypto"
-	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 )
 
-func createResourcePointerForTests() (ResourcePointer, crypto.PubKey, string) {
-	from := ed25519.GenPrivKey().PubKey()
+func createResourcePointerForTests() (ResourcePointer, crypto.PublicKey, string) {
+	from := crypto.SDKFunc.GenPK().PublicKey()
 	path := "/this/is/a/path"
 	res := createResourcePointer(from, path)
 	return res, from, path

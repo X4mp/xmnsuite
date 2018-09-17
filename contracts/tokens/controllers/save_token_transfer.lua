@@ -1,9 +1,10 @@
 local json = require("json")
+local uuid = require("uuid")
 
 -- transfer a token from a wallet to another
 function saveTokenTransfer(from, path, params, data, sig)
     local rep = Repository:create()
-    local token = rep:retrieveTokenByID(params.tokenID)
+    local token = rep:retrieveTokenByUUID(uuid.new(params.tokenID))
     if token == null then
         return {
             code = 1,

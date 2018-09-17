@@ -1,8 +1,6 @@
 package crypto
 
 import (
-	"bytes"
-	"encoding/hex"
 	"errors"
 	"fmt"
 
@@ -11,6 +9,10 @@ import (
 
 type privateKey struct {
 	x kyber.Scalar
+}
+
+type jsonPK struct {
+	PkAsString string `json:"pk"`
 }
 
 func createPrivateKey() PrivateKey {
@@ -23,16 +25,9 @@ func createPrivateKey() PrivateKey {
 }
 
 func createPrivateKeyFromString(str string) (PrivateKey, error) {
-	decoded, decodedErr := hex.DecodeString(str)
-	if decodedErr != nil {
-		return nil, decodedErr
-	}
-
-	x := curve.Scalar()
-	reader := bytes.NewReader(decoded)
-	_, err := x.UnmarshalFrom(reader)
-	if err != nil {
-		return nil, err
+	x, xErr := fromStringToScalar(str)
+	if xErr != nil {
+		return nil, xErr
 	}
 
 	out := privateKey{
@@ -43,18 +38,19 @@ func createPrivateKeyFromString(str string) (PrivateKey, error) {
 }
 
 // PublicKey returns the public key
-func (app *privateKey) PublicKey() kyber.Point {
+func (app *privateKey) PublicKey() PublicKey {
 	g := curve.Point().Base()
-	return curve.Point().Mul(app.x, g)
+	p := curve.Point().Mul(app.x, g)
+	return createPublicKey(p)
 }
 
 // RingSign signs a ring signature on the given message, in the given ring pubKey
-func (app *privateKey) RingSign(msg string, ringPubKeys []kyber.Point) (RingSignature, error) {
+func (app *privateKey) RingSign(msg string, ringPubKeys []PublicKey) (RingSignature, error) {
 
-	retrieveSignerIndexFn := func(ringPubKeys []kyber.Point, pk PrivateKey) int {
+	retrieveSignerIndexFn := func(ringPubKeys []PublicKey, pk PrivateKey) int {
 		pubKey := pk.PublicKey()
 		for index, oneRingPubKey := range ringPubKeys {
-			if oneRingPubKey.Equal(pubKey) {
+			if oneRingPubKey.Equals(pubKey) {
 				return index
 			}
 		}
@@ -92,7 +88,7 @@ func (app *privateKey) RingSign(msg string, ringPubKeys []kyber.Point) (RingSign
 
 		//eiPlus1ModR = H(m || si * G + ei * Pi)
 		sig := curve.Point().Mul(ss[i], g)
-		eipi := curve.Point().Mul(es[i], ringPubKeys[i])
+		eipi := curve.Point().Mul(es[i], ringPubKeys[i].Point())
 		es[(i+1)%r] = hash(msg + curve.Point().Add(sig, eipi).String())
 
 	}
@@ -122,11 +118,36 @@ func (app *privateKey) Sign(msg string) Signature {
 	s := curve.Scalar().Sub(k, curve.Scalar().Mul(e, app.x))
 
 	// create signature:
-	out := createSignature(r, s)
+	pubKey := createPublicKey(r)
+	out := createSignature(pubKey, s)
 	return out
 }
 
 // String returns the string representation of the PrivateKey
 func (app *privateKey) String() string {
 	return app.x.String()
+}
+
+// MarshalJSON returns a JSON representation of the object
+func (app *privateKey) MarshalJSON() ([]byte, error) {
+	return cdc.MarshalJSON(jsonPK{
+		PkAsString: app.String(),
+	})
+}
+
+// UnmarshalJSON returns an object based on the JSON data
+func (app *privateKey) UnmarshalJSON(data []byte) error {
+	ptr := new(jsonPK)
+	err := cdc.UnmarshalJSON(data, ptr)
+	if err != nil {
+		return err
+	}
+
+	x, xErr := fromStringToScalar(ptr.PkAsString)
+	if xErr != nil {
+		return xErr
+	}
+
+	app.x = x
+	return nil
 }

@@ -1,7 +1,9 @@
--- delete a token by its ID
-function deleteTokenByID(from, path, params, sig)
+local uuid = require("uuid")
+
+-- delete a token by its UUID
+function deleteTokenByUUID(from, path, params, sig)
     local rep = Repository:create()
-    local token = rep:retrieveTokenByID(params.id)
+    local token = rep:retrieveTokenByUUID(uuid.new(params.uid))
     if token == null then
         return {
             code = 1,

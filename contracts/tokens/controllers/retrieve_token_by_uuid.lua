@@ -1,9 +1,10 @@
 local json = require("json")
+local uuid = require("uuid")
 
--- retrieve wallet by its ID
-function retrieveTokenByID(from, path, params, sig)
+-- retrieve wallet by its UUID
+function retrieveTokenByUUID(from, path, params, sig)
     local rep = Repository:create()
-    local token = rep:retrieveTokenByID(params.id)
+    local token = rep:retrieveTokenByUUID(uuid.new(params.uid))
     if token == null then
         return {
             code = 1,
@@ -15,6 +16,6 @@ function retrieveTokenByID(from, path, params, sig)
         code = 0,
         log="success",
         key=path,
-        value=json.encode(token)
+        value=json.encode(token:toData())
     }
 end

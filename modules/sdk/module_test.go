@@ -1,12 +1,10 @@
 package sdk
 
 import (
-	"encoding/hex"
 	"os"
 	"testing"
 
-	crypto "github.com/tendermint/tendermint/crypto"
-	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 	tests_chain_module "github.com/xmnservices/xmnsuite/modules/chain/tests"
 	crypto_module "github.com/xmnservices/xmnsuite/modules/crypto"
 	json_module "github.com/xmnservices/xmnsuite/modules/json"
@@ -22,11 +20,12 @@ func TestSDK_Success(t *testing.T) {
 		os.RemoveAll(blkchainDdbPath)
 	}()
 
-	privKey := new(ed25519.PrivKeyEd25519)
-	privKeyAsBytes, _ := hex.DecodeString("a328891040d6a18f2777b3638a3f56707a73505a3f4ba498c9fc80b962d475d821f4d96ca016b8c5a33fbc0e1fbaa11d16b9b008ade72ba4cef520d3b1edab70d70cf8f4ac")
-	cdc.UnmarshalBinaryBare(privKeyAsBytes, privKey)
-	rootPubKeys := []crypto.PubKey{
-		privKey.PubKey(),
+	privKey := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{
+		PKAsString: "60699820e4ba230a2590255678f1ce701f3943e2f7388854ae0af169b9871c0a",
+	})
+
+	rootPubKeys := []crypto.PublicKey{
+		privKey.PublicKey(),
 	}
 
 	//create lua state:

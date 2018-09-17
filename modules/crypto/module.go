@@ -1,10 +1,8 @@
 package crypto
 
 import (
-	"encoding/hex"
 	"fmt"
 
-	kyber "github.com/dedis/kyber"
 	edwards25519 "github.com/dedis/kyber/group/edwards25519"
 	crypto "github.com/xmnservices/xmnsuite/crypto"
 	lua "github.com/yuin/gopher-lua"
@@ -116,22 +114,11 @@ func (app *module) registerPrivKey(context *lua.LState) {
 				ringPubKeysAsString = append(ringPubKeysAsString, value.String())
 			})
 
-			ringPubKeys := []kyber.Point{}
+			ringPubKeys := []crypto.PublicKey{}
 			for _, oneRingPubKeyAsString := range ringPubKeysAsString {
-				decoded, decodedErr := hex.DecodeString(oneRingPubKeyAsString)
-				if decodedErr != nil {
-					l.ArgError(2, "the ring PublicKey list contain at least 1 invalid PublicKey instance")
-					return 1
-				}
-
-				p := curve.Point()
-				pErr := p.UnmarshalBinary(decoded)
-				if pErr != nil {
-					l.ArgError(2, "the ring PublicKey list contain at least 1 PublicKey that could not be unmarshalled to a curve point")
-					return 1
-				}
-
-				ringPubKeys = append(ringPubKeys, p)
+				ringPubKeys = append(ringPubKeys, crypto.SDKFunc.CreatePubKey(crypto.CreatePubKeyParams{
+					PubKeyAsString: oneRingPubKeyAsString,
+				}))
 			}
 
 			ringSig, ringSigErr := p.RingSign(msg, ringPubKeys)

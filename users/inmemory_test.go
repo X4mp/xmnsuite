@@ -3,12 +3,12 @@ package users
 import (
 	"testing"
 
-	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 )
 
 func TestSave_thenRetrieve_Success(t *testing.T) {
 	//variables:
-	pubKey := ed25519.GenPrivKey().PubKey()
+	pubKey := crypto.SDKFunc.GenPK().PublicKey()
 
 	//create app:
 	app := createConcreteUsers()

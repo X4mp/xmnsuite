@@ -9,9 +9,9 @@ import (
 	"strings"
 
 	uuid "github.com/satori/go.uuid"
-	crypto "github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 	cliapp "github.com/urfave/cli"
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
 	modules "github.com/xmnservices/xmnsuite/modules"
 	module_chain "github.com/xmnservices/xmnsuite/modules/chain"
@@ -193,29 +193,14 @@ func (app *cli) loadChainModule() error {
 	}
 
 	// rpubkeys:
-	rootPubKeys := []crypto.PubKey{}
+	rootPubKeys := []crypto.PublicKey{}
 	rootPubKeyAsCommaSeperatedString := app.cliContext.String("rpubkeys")
 	if rootPubKeyAsCommaSeperatedString != "" {
 		rootPubKeysAsString := strings.Split(rootPubKeyAsCommaSeperatedString, ",")
 		for _, oneRootPubKeyAsString := range rootPubKeysAsString {
-			pubKeyAsBytes, pubKeyAsBytesErr := hex.DecodeString(oneRootPubKeyAsString)
-			if pubKeyAsBytesErr != nil {
-				log.Printf("the given root PubKey (%s) is not a valid hex encoded string, skip", oneRootPubKeyAsString)
-
-				// output error:
-				str := fmt.Sprintf("the given root PubKey could not be hex decoded: %s", pubKeyAsBytesErr.Error())
-				return errors.New(str)
-			}
-
-			pubKey := new(ed25519.PubKeyEd25519)
-			unErr := cdc.UnmarshalBinaryBare(pubKeyAsBytes, pubKey)
-			if unErr != nil {
-				log.Printf("the given root PubKey (%s) is not a valid PublicKey, skip", oneRootPubKeyAsString)
-
-				// output error:
-				str := fmt.Sprintf("the given root PubKey could not be Unmarshalled to a PublicKey: %s", unErr.Error())
-				return errors.New(str)
-			}
+			pubKey := crypto.SDKFunc.CreatePubKey(crypto.CreatePubKeyParams{
+				PubKeyAsString: oneRootPubKeyAsString,
+			})
 
 			// add the pubkey to our list:
 			rootPubKeys = append(rootPubKeys, pubKey)

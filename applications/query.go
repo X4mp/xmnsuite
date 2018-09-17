@@ -3,6 +3,8 @@ package applications
 import (
 	"errors"
 	"fmt"
+
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 )
 
 /*
@@ -10,13 +12,12 @@ import (
  */
 
 type queryRequest struct {
-	Ptr ResourcePointer `json:"pointer"`
-	Sig []byte          `json:"sig"`
+	Ptr ResourcePointer  `json:"pointer"`
+	Sig crypto.Signature `json:"sig"`
 }
 
-func createQueryRequest(ptr ResourcePointer, sig []byte) (QueryRequest, error) {
-
-	if !ptr.From().VerifyBytes(ptr.Hash(), sig) {
+func createQueryRequest(ptr ResourcePointer, sig crypto.Signature) (QueryRequest, error) {
+	if !ptr.From().Equals(sig.PublicKey(ptr.Hash())) {
 		str := fmt.Sprintf("the signature and resource pointer's hash could not be validated by the resource pointer's public key")
 		return nil, errors.New(str)
 	}
@@ -35,7 +36,7 @@ func (obj *queryRequest) Pointer() ResourcePointer {
 }
 
 // Signature returns the signature
-func (obj *queryRequest) Signature() []byte {
+func (obj *queryRequest) Signature() crypto.Signature {
 	return obj.Sig
 }
 

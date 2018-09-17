@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	uuid "github.com/satori/go.uuid"
-	crypto "github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 	applications "github.com/xmnservices/xmnsuite/applications"
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
 	objects "github.com/xmnservices/xmnsuite/objects"
 )
@@ -35,8 +35,8 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 	version := "2018.04.29"
 	privKey := ed25519.GenPrivKey()
 	store := datastore.SDKFunc.Create()
-	fromPrivKey := ed25519.GenPrivKey()
-	fromPubKey := fromPrivKey.PubKey()
+	fromPrivKey := crypto.SDKFunc.GenPK()
+	fromPubKey := fromPrivKey.PublicKey()
 
 	// enable our user to write on the right routes:
 	routerRoleKey := "router-role-key"
@@ -57,7 +57,7 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 			RtesParams: []applications.CreateRouteParams{
 				applications.CreateRouteParams{
 					Pattern: "/messages",
-					SaveTrx: func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) (applications.TransactionResponse, error) {
+					SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (applications.TransactionResponse, error) {
 
 						// unmarshal data:
 						msg := new(messageForTest)
@@ -94,7 +94,7 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 				},
 				applications.CreateRouteParams{
 					Pattern: "/messages/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
-					QueryTrx: func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (applications.QueryResponse, error) {
+					QueryTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (applications.QueryResponse, error) {
 						obj := objects.ObjInKey{
 							Key: path,
 							Obj: new(messageForTest),
@@ -201,11 +201,7 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 	})
 
 	// sign the resource:
-	firstSig, firstSigErr := fromPrivKey.Sign(firstRes.Hash())
-	if firstSigErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", firstSigErr.Error())
-		return
-	}
+	firstSig := fromPrivKey.Sign(firstRes.Hash())
 
 	// save the message:
 	trxResp, trxRespErr := client.Transact(applications.SDKFunc.CreateTransactionRequest(applications.CreateTransactionRequestParams{
@@ -251,11 +247,7 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 	})
 
 	// create the signature:
-	querySig, querySigErr := fromPrivKey.Sign(queryResPtr.Hash())
-	if querySigErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", querySigErr.Error())
-		return
-	}
+	querySig := fromPrivKey.Sign(queryResPtr.Hash())
 
 	// execute a query:
 	queryResp, queryRespErr := client.Query(applications.SDKFunc.CreateQueryRequest(applications.CreateQueryRequestParams{

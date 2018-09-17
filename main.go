@@ -13,6 +13,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 	cliapp "github.com/urfave/cli"
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 	module_chain "github.com/xmnservices/xmnsuite/modules/chain"
 )
 
@@ -76,6 +77,16 @@ func main() {
 				{
 					Name:  "pair",
 					Usage: "generate a new PrivateKey/PublicKey pair",
+					Action: func(c *cliapp.Context) error {
+						pk := crypto.SDKFunc.GenPK()
+						str := fmt.Sprintf("Private Key: %s\nPublic Key:  %s", pk.String(), pk.PublicKey().String())
+						print(str)
+						return nil
+					},
+				},
+				{
+					Name:  "nodepair",
+					Usage: "generate a new PrivateKey/PublicKey pair to run nodes",
 					Action: func(c *cliapp.Context) error {
 						pk := ed25519.GenPrivKey()
 						str := fmt.Sprintf("Private Key: %s\nPublic Key:  %s", hex.EncodeToString(pk.Bytes()), hex.EncodeToString(pk.PubKey().Bytes()))

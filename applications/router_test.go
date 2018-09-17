@@ -5,16 +5,15 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/xmnservices/xmnsuite/datastore"
+	crypto "github.com/xmnservices/xmnsuite/crypto"
+	datastore "github.com/xmnservices/xmnsuite/datastore"
 	roles "github.com/xmnservices/xmnsuite/roles"
 	users "github.com/xmnservices/xmnsuite/users"
-	crypto "github.com/tendermint/tendermint/crypto"
-	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 func TestCreateHandler_withSaveTrxFn_Success(t *testing.T) {
 	//variables:
-	fn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) (TransactionResponse, error) {
+	fn := func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (TransactionResponse, error) {
 		return nil, nil
 	}
 
@@ -48,7 +47,7 @@ func TestCreateHandler_withSaveTrxFn_Success(t *testing.T) {
 
 func TestCreateHandler_withDeleteTrxFn_Success(t *testing.T) {
 	//variables:
-	fn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (TransactionResponse, error) {
+	fn := func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (TransactionResponse, error) {
 		return nil, nil
 	}
 
@@ -82,7 +81,7 @@ func TestCreateHandler_withDeleteTrxFn_Success(t *testing.T) {
 
 func TestCreateHandler_withQueryFn_Success(t *testing.T) {
 	//variables:
-	fn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error) {
+	fn := func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (QueryResponse, error) {
 		return nil, nil
 	}
 
@@ -116,7 +115,7 @@ func TestCreateHandler_withQueryFn_Success(t *testing.T) {
 
 func TestCreatePreparedHandler_Success(t *testing.T) {
 	//variables:
-	queryFn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error) {
+	queryFn := func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (QueryResponse, error) {
 		return nil, nil
 	}
 
@@ -147,7 +146,7 @@ func TestCreatePreparedHandler_Success(t *testing.T) {
 
 func TestCreatePreparedHandler_withParams_Success(t *testing.T) {
 	//variables:
-	queryFn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error) {
+	queryFn := func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (QueryResponse, error) {
 		return nil, nil
 	}
 
@@ -181,7 +180,7 @@ func TestCreatePreparedHandler_withParams_Success(t *testing.T) {
 
 func TestCreateRoute_withReadRoute_matches_Success(t *testing.T) {
 	//variables:
-	queryFn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error) {
+	queryFn := func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (QueryResponse, error) {
 		return nil, nil
 	}
 
@@ -214,7 +213,7 @@ func TestCreateRoute_withReadRoute_matches_Success(t *testing.T) {
 
 func TestCreateRoute_withReadRoute_doesNotMatch_Success(t *testing.T) {
 	//variables:
-	queryFn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error) {
+	queryFn := func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (QueryResponse, error) {
 		return nil, nil
 	}
 
@@ -247,7 +246,7 @@ func TestCreateRoute_withReadRoute_doesNotMatch_Success(t *testing.T) {
 
 func TestCreateRoute_withWriteRoute_userDoesNotHaveWriteAccess_Success(t *testing.T) {
 	//variables:
-	saveTrxFn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) (TransactionResponse, error) {
+	saveTrxFn := func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (TransactionResponse, error) {
 		return nil, nil
 	}
 
@@ -255,7 +254,7 @@ func TestCreateRoute_withWriteRoute_userDoesNotHaveWriteAccess_Success(t *testin
 	rols := roles.SDKFunc.Create()
 	usrs := users.SDKFunc.Create()
 	roleKey := "video-update-role-01"
-	from := ed25519.GenPrivKey().PubKey()
+	from := crypto.SDKFunc.GenPK().PublicKey()
 	patternAsString := "/videos/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>"
 	handler := createHandlerWithSaveTransactionFn(saveTrxFn)
 	path := fmt.Sprintf("/videos/%s", "6adbfdfc-bb7d-4236-96d6-96d1688a2441")
@@ -282,14 +281,14 @@ func TestCreateRoute_withWriteRoute_userDoesNotHaveWriteAccess_Success(t *testin
 
 func TestCreateRoute_withWriteRoute_userHasWriteAccess_Success(t *testing.T) {
 	//variables:
-	saveTrxFn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, data []byte, sig []byte) (TransactionResponse, error) {
+	saveTrxFn := func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (TransactionResponse, error) {
 		return nil, nil
 	}
 
 	//execute:
 	rols := roles.SDKFunc.Create()
 	usrs := users.SDKFunc.Create()
-	from := ed25519.GenPrivKey().PubKey()
+	from := crypto.SDKFunc.GenPK().PublicKey()
 	roleKey := "video-update-role-01"
 	patternAsString := "/videos/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>"
 	rolePatternAsString := "/videos/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})"
@@ -333,7 +332,7 @@ func TestCreateRouter_Success(t *testing.T) {
 	roleKey := "video-update-role-01"
 
 	// first route:
-	firstQueryFn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error) {
+	firstQueryFn := func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (QueryResponse, error) {
 		qr, qrErr := createEmptyQueryResponse(IsSuccessful, "first")
 		return qr, qrErr
 	}
@@ -347,7 +346,7 @@ func TestCreateRouter_Success(t *testing.T) {
 	}
 
 	// second route:
-	secondQueryFn := func(store datastore.DataStore, from crypto.PubKey, path string, params map[string]string, sig []byte) (QueryResponse, error) {
+	secondQueryFn := func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (QueryResponse, error) {
 		qr, qrErr := createEmptyQueryResponse(IsSuccessful, "second")
 		return qr, qrErr
 	}

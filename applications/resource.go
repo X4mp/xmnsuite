@@ -1,7 +1,7 @@
 package applications
 
 import (
-	crypto "github.com/tendermint/tendermint/crypto"
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 )
 
 /*
@@ -9,11 +9,11 @@ import (
  */
 
 type resourcePointer struct {
-	Frm crypto.PubKey `json:"from"`
-	Pth string        `json:"path"`
+	Frm crypto.PublicKey `json:"from"`
+	Pth string           `json:"path"`
 }
 
-func createResourcePointer(from crypto.PubKey, path string) ResourcePointer {
+func createResourcePointer(from crypto.PublicKey, path string) ResourcePointer {
 	out := resourcePointer{
 		Frm: from,
 		Pth: path,
@@ -23,7 +23,7 @@ func createResourcePointer(from crypto.PubKey, path string) ResourcePointer {
 }
 
 // From returns the requester's public key
-func (obj *resourcePointer) From() crypto.PubKey {
+func (obj *resourcePointer) From() crypto.PublicKey {
 	return obj.Frm
 }
 
@@ -33,7 +33,7 @@ func (obj *resourcePointer) Path() string {
 }
 
 // Hash represents the resource hash
-func (obj *resourcePointer) Hash() []byte {
+func (obj *resourcePointer) Hash() string {
 	return createResourceHash(obj)
 }
 
@@ -66,6 +66,6 @@ func (obj *resource) Data() []byte {
 }
 
 // Hash returns the hash
-func (obj *resource) Hash() []byte {
+func (obj *resource) Hash() string {
 	return createResourceHash(obj)
 }

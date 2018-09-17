@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	uuid "github.com/satori/go.uuid"
-	crypto "github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
 	datastore_module "github.com/xmnservices/xmnsuite/modules/datastore"
 	json_module "github.com/xmnservices/xmnsuite/modules/json"
@@ -18,7 +18,7 @@ func TestModule_Success(t *testing.T) {
 	dbPath := "./test_files"
 	instanceID := uuid.NewV4()
 	nodePK := ed25519.GenPrivKey()
-	rootPubKeys := []crypto.PubKey{}
+	rootPubKeys := []crypto.PublicKey{}
 	scriptPath := "tests/lua/chain.lua"
 	ds := datastore.SDKFunc.Create()
 	defer func() {

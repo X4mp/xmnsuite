@@ -14,14 +14,30 @@ Wallet.__index = Wallet
         return wallet
     end
 
+    -- load loads the data into an object
+    function Wallet:load(data)
+        local wallet = {
+            pub_key = data.pub_key,
+            created_on = data.created_on
+        }
+
+        setmetatable(wallet, Wallet)
+        return wallet
+    end
+
+    -- toData converts the object to data
+    function Wallet:toData()
+        return {
+            pub_key = self.pub_key,
+            created_on = self.created_on
+        }
+    end
+
     -- save saves a wallet instance to the database.  Returns true if successful, false otherwise
     function Wallet:save()
         local db = tables.load()
         local keyname = generateKeyname("wallet", "pubkey", self.pub_key)
-        local retAmountSaved = db:save({key=keyname, table={
-            pub_key = self.pub_key,
-            created_on = self.created_on
-        }})
+        local retAmountSaved = db:save({key=keyname, table=self:toData()})
 
         if retAmountSaved ~= 1 then
             return false

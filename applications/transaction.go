@@ -3,6 +3,8 @@ package applications
 import (
 	"errors"
 	"fmt"
+
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 )
 
 /*
@@ -10,14 +12,13 @@ import (
  */
 
 type transactionRequest struct {
-	Res Resource        `json:"resource"`
-	Ptr ResourcePointer `json:"resource_pointer"`
-	Sig []byte          `json:"signature"`
+	Res Resource         `json:"resource"`
+	Ptr ResourcePointer  `json:"resource_pointer"`
+	Sig crypto.Signature `json:"signature"`
 }
 
-func createTransactionRequestWithResource(res Resource, sig []byte) (TransactionRequest, error) {
-
-	if !res.Pointer().From().VerifyBytes(res.Hash(), sig) {
+func createTransactionRequestWithResource(res Resource, sig crypto.Signature) (TransactionRequest, error) {
+	if !res.Pointer().From().Equals(sig.PublicKey(res.Hash())) {
 		str := fmt.Sprintf("the signature and resource hash could not be validated by the resource pointer's public key")
 		return nil, errors.New(str)
 	}
@@ -31,9 +32,8 @@ func createTransactionRequestWithResource(res Resource, sig []byte) (Transaction
 	return &out, nil
 }
 
-func createTransactionRequestWithResourcePointer(ptr ResourcePointer, sig []byte) (TransactionRequest, error) {
-
-	if !ptr.From().VerifyBytes(ptr.Hash(), sig) {
+func createTransactionRequestWithResourcePointer(ptr ResourcePointer, sig crypto.Signature) (TransactionRequest, error) {
+	if !ptr.From().Equals(sig.PublicKey(ptr.Hash())) {
 		str := fmt.Sprintf("the signature and resource pointer hash could not be validated by the resource pointer's public key")
 		return nil, errors.New(str)
 	}
@@ -58,7 +58,7 @@ func (obj *transactionRequest) Pointer() ResourcePointer {
 }
 
 // Signature returns the signature
-func (obj *transactionRequest) Signature() []byte {
+func (obj *transactionRequest) Signature() crypto.Signature {
 	return obj.Sig
 }
 

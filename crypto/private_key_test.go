@@ -2,6 +2,8 @@ package crypto
 
 import (
 	"testing"
+
+	tests "github.com/xmnservices/xmnsuite/tests"
 )
 
 func TestPrivateKey_Success(t *testing.T) {
@@ -18,4 +20,8 @@ func TestPrivateKey_Success(t *testing.T) {
 		t.Errorf("the PrivateKeys were expected to be the same.  Expected: %s, Returned: %s", pk.String(), unmarshalPK.String())
 		return
 	}
+
+	// convert to json back and forth:
+	empty := new(privateKey)
+	tests.ConvertToJSON(t, pk, empty, cdc)
 }

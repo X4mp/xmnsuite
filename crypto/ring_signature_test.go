@@ -3,7 +3,7 @@ package crypto
 import (
 	"testing"
 
-	"github.com/dedis/kyber"
+	"github.com/xmnservices/xmnsuite/tests"
 )
 
 func TestRingSignature_Success(t *testing.T) {
@@ -11,7 +11,7 @@ func TestRingSignature_Success(t *testing.T) {
 	msg := "this is a message to sign"
 	pk := createPrivateKey()
 	secondPK := createPrivateKey()
-	ringPubKeys := []kyber.Point{
+	ringPubKeys := []PublicKey{
 		pk.PublicKey(),
 		secondPK.PublicKey(),
 	}
@@ -50,6 +50,10 @@ func TestRingSignature_Success(t *testing.T) {
 		t.Errorf("the rings were expected to be the same.  Expected: %s, Actual: %s", firstRingAsString, newRing.String())
 		return
 	}
+
+	// convert to json back and forth:
+	empty := new(ringSignature)
+	tests.ConvertToJSON(t, firstRing, empty, cdc)
 }
 
 func TestRingSignature_PubKeyIsNotInTheRing_returnsError(t *testing.T) {
@@ -58,7 +62,7 @@ func TestRingSignature_PubKeyIsNotInTheRing_returnsError(t *testing.T) {
 	pk := createPrivateKey()
 	secondPK := createPrivateKey()
 	invalidPK := createPrivateKey()
-	ringPubKeys := []kyber.Point{
+	ringPubKeys := []PublicKey{
 		pk.PublicKey(),
 		secondPK.PublicKey(),
 	}

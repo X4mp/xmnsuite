@@ -2,9 +2,10 @@ package tendermint
 
 import (
 	amino "github.com/tendermint/go-amino"
-	crypto "github.com/tendermint/tendermint/crypto"
+	tcrypto "github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 	applications "github.com/xmnservices/xmnsuite/applications"
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 )
 
 var cdc = amino.NewCodec()
@@ -15,10 +16,10 @@ func init() {
 
 // Register registers all the interface -> struct to amino
 func Register(codec *amino.Codec) {
-
 	//Dependencies:
 	func() {
 		applications.Register(codec)
+		crypto.Register(codec)
 	}()
 
 	// PublicKey
@@ -26,7 +27,7 @@ func Register(codec *amino.Codec) {
 		defer func() {
 			recover()
 		}()
-		codec.RegisterInterface((*crypto.PubKey)(nil), nil)
+		codec.RegisterInterface((*tcrypto.PubKey)(nil), nil)
 		codec.RegisterConcrete(ed25519.PubKeyEd25519{}, ed25519.Ed25519PubKeyAminoRoute, nil)
 	}()
 
@@ -35,7 +36,7 @@ func Register(codec *amino.Codec) {
 		defer func() {
 			recover()
 		}()
-		codec.RegisterInterface((*crypto.PrivKey)(nil), nil)
+		codec.RegisterInterface((*tcrypto.PrivKey)(nil), nil)
 		codec.RegisterConcrete(ed25519.PrivKeyEd25519{}, ed25519.Ed25519PrivKeyAminoRoute, nil)
 	}()
 }

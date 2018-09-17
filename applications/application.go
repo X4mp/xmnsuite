@@ -56,9 +56,7 @@ func (app *application) Info(req InfoRequest) InfoResponse {
 	version := req.Version()
 	state := app.storedState.State(app.version)
 	size := state.Size()
-	lastBlkHeight := state.Height()
-	lastBlkAppHash := state.Hash()
-	out := createInfoResponse(size, version, lastBlkHeight, lastBlkAppHash)
+	out := createInfoResponse(size, version)
 	return out
 }
 

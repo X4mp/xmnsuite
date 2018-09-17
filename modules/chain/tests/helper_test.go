@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	crypto "github.com/tendermint/tendermint/crypto"
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -12,7 +12,7 @@ func TestExecuteForTests_Success(t *testing.T) {
 	// variables:
 	dbPath := "./test_files"
 	scriptPath := "lua/chain.lua"
-	rootPubKeys := []crypto.PubKey{}
+	rootPubKeys := []crypto.PublicKey{}
 	defer func() {
 		os.RemoveAll(dbPath)
 	}()

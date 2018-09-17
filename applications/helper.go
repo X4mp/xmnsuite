@@ -1,25 +1,31 @@
 package applications
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"regexp"
 	"strings"
-
-	"github.com/tendermint/tendermint/crypto"
 )
 
 /*
  * Helpers
  */
 
-func createResourceHash(res interface{}) []byte {
+func createResourceHash(res interface{}) string {
 	js, jsErr := cdc.MarshalJSON(res)
 	if jsErr != nil {
 		panic(jsErr)
 	}
 
-	return crypto.Sha256(js)
+	sh := sha256.New()
+	_, err := sh.Write(js)
+	if err != nil {
+		panic(err)
+	}
+
+	return hex.EncodeToString(sh.Sum(nil))
 }
 
 func isCodeValid(code int) bool {

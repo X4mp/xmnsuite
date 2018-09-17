@@ -15,6 +15,6 @@ function retrieveWalletByPubKey(from, path, params, sig)
         code = 0,
         log="success",
         key=path,
-        value=json.encode(wallet)
+        value=json.encode(wallet:toData())
     }
 end

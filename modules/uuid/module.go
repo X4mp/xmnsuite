@@ -41,9 +41,26 @@ func (app *module) register() {
 }
 
 func (app *module) registerNew(context *lua.LState) int {
-	id := uuid.NewV4()
+
+	createOrGen := func(context *lua.LState) *uuid.UUID {
+		if context.GetTop() == 1 {
+			idAsString := context.CheckString(1)
+			id, idErr := uuid.FromString(idAsString)
+			if idErr != nil {
+				context.ArgError(1, "the given uuid (%s) is not a valid uuid v4 string")
+				return nil
+			}
+
+			return &id
+		}
+
+		id := uuid.NewV4()
+		return &id
+	}
+
+	id := createOrGen(context)
 	ud := context.NewUserData()
-	ud.Value = &id
+	ud.Value = id
 
 	context.SetMetatable(ud, context.GetTypeMetatable(luaUUID))
 	context.Push(ud)

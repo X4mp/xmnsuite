@@ -1,11 +1,10 @@
 package sdk
 
 import (
-	"encoding/hex"
 	"fmt"
 
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	applications "github.com/xmnservices/xmnsuite/applications"
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -81,20 +80,10 @@ func (app *module) registerResourcePointer(context *lua.LState) {
 			from := dataTable.RawGetString("from")
 			path := dataTable.RawGetString("path")
 
-			// decode the pubkey:
-			pubKeyAsBytes, pubKeyAsBytesErr := hex.DecodeString(from.String())
-			if pubKeyAsBytesErr != nil {
-				l.ArgError(1, "the from pubKey could not be decoded is invalid")
-				return 1
-			}
-
 			// unmarshal the bytes:
-			newPubKey := new(ed25519.PubKeyEd25519)
-			pubKerr := cdc.UnmarshalBinaryBare(pubKeyAsBytes, newPubKey)
-			if pubKerr != nil {
-				l.ArgError(1, "the from pubKey bytes cannot be converted to a pubKey instance")
-				return 1
-			}
+			newPubKey := crypto.SDKFunc.CreatePubKey(crypto.CreatePubKeyParams{
+				PubKeyAsString: from.String(),
+			})
 
 			// create the resource pointer:
 			ptr := applications.SDKFunc.CreateResourcePointer(applications.CreateResourcePointerParams{
@@ -122,8 +111,7 @@ func (app *module) registerResourcePointer(context *lua.LState) {
 			return 1
 		}
 
-		hashAsString := hex.EncodeToString(presource.ptr.Hash())
-		l.Push(lua.LString(hashAsString))
+		l.Push(lua.LString(presource.ptr.Hash()))
 		return 1
 	}
 
@@ -197,8 +185,7 @@ func (app *module) registerResource(context *lua.LState) {
 			return 1
 		}
 
-		hashAsString := hex.EncodeToString(res.ptr.Hash())
-		l.Push(lua.LString(hashAsString))
+		l.Push(lua.LString(res.ptr.Hash()))
 		return 1
 	}
 
@@ -227,15 +214,10 @@ func (app *module) registerService(context *lua.LState) int {
 		}
 
 		tb := l.ToTable(1)
-		luaSig := tb.RawGetString("sig")
-		sig, sigErr := hex.DecodeString(luaSig.String())
-		if sigErr != nil {
-			l.ArgError(1, "the sig could not be decoded")
-			return 1
-		}
-
 		params := applications.CreateTransactionRequestParams{
-			Sig: sig,
+			Sig: crypto.SDKFunc.CreateSig(crypto.CreateSigParams{
+				SigAsString: tb.RawGetString("sig").String(),
+			}),
 		}
 
 		luaRes := tb.RawGetString("resource")
@@ -262,7 +244,7 @@ func (app *module) registerService(context *lua.LState) int {
 		// execte the request:
 		resp, respErr := app.client.Transact(req)
 		if respErr != nil {
-			str := fmt.Sprintf("there was an error while execting the transaction request: %s", respErr.Error())
+			str := fmt.Sprintf("there was an error while executing the transaction request: %s", respErr.Error())
 			l.ArgError(1, str)
 			return 1
 		}
@@ -290,15 +272,10 @@ func (app *module) registerService(context *lua.LState) int {
 		}
 
 		tb := l.ToTable(1)
-		luaSig := tb.RawGetString("sig")
-		sig, sigErr := hex.DecodeString(luaSig.String())
-		if sigErr != nil {
-			l.ArgError(1, "the sig could not be decoded")
-			return 1
-		}
-
 		params := applications.CreateQueryRequestParams{
-			Sig: sig,
+			Sig: crypto.SDKFunc.CreateSig(crypto.CreateSigParams{
+				SigAsString: tb.RawGetString("sig").String(),
+			}),
 		}
 
 		luaResPtr := tb.RawGetString("rpointer")
@@ -310,14 +287,18 @@ func (app *module) registerService(context *lua.LState) int {
 			}
 		}
 
+		if params.Ptr == nil {
+			l.ArgError(1, "the params expected an rpointer value")
+			return 1
+		}
+
 		// create the request:
 		req := applications.SDKFunc.CreateQueryRequest(params)
 
 		// execte the request:
 		resp, respErr := app.client.Query(req)
 		if respErr != nil {
-			str := fmt.Sprintf("there was an error while execting the query request: %s", respErr.Error())
-			l.ArgError(1, str)
+			l.RaiseError("there was an error while executing the query request: %s", respErr.Error())
 			return 1
 		}
 

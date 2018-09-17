@@ -1,4 +1,5 @@
 local json = require("json")
+local uuid = require("uuid")
 
 -- save a new token
 function saveToken(from, path, params, data, sig)
@@ -16,7 +17,7 @@ function saveToken(from, path, params, data, sig)
     end
 
     -- create the new token instance, then save it:
-    local newToken = Token:create(newTokenData.id, newTokenData.symbol, newTokenData.name, newTokenData.description, newTokenData.created_on)
+    local newToken = Token:create(uuid.new(newTokenData.uid), newTokenData.symbol, newTokenData.name, newTokenData.description, newTokenData.created_on)
     isTokenSaved = newToken:save()
 
     -- if token not saved successfully:
@@ -28,7 +29,7 @@ function saveToken(from, path, params, data, sig)
     end
 
     -- save the deposit to the wallet:
-    local deposit = Deposit:create("b081e434-cfb2-4f1f-9f0b-015a2077af31", wallet.id, newToken.id, newTokenData.amount, os.time())
+    local deposit = Deposit:create(uuid.new(), wallet.pub_key, newToken.uid, newTokenData.amount, os.time())
     isDepositSaved = deposit:save()
 
     -- if deposit not saved successfully:
@@ -45,7 +46,7 @@ function saveToken(from, path, params, data, sig)
         gazUsed=0,
         tags={
             {
-                key=path .. "/" .. newToken.id,
+                key=path .. "/" .. newToken.uid:string(),
                 value=json.encode(newToken)
             }
         }

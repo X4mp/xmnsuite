@@ -1,18 +1,18 @@
 package users
 
 import (
+	crypto "github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/objects"
-	crypto "github.com/tendermint/tendermint/crypto"
 )
 
 // Users represents the users access control
 type Users interface {
 	Objects() objects.Objects
 	Copy() Users
-	Key(pubKey crypto.PubKey) string
-	Exists(pubKey crypto.PubKey) bool
-	Insert(pubKey crypto.PubKey) bool
-	Delete(pubKey crypto.PubKey) bool
+	Key(pubKey crypto.PublicKey) string
+	Exists(pubKey crypto.PublicKey) bool
+	Insert(pubKey crypto.PublicKey) bool
+	Delete(pubKey crypto.PublicKey) bool
 }
 
 // SDKFunc represents the users SDK func
