@@ -166,11 +166,11 @@ assert(tonumber(retDepsByWalletAndTokenUUID[1].amount) == tok.amount)
 assert(tonumber(retDepsByWalletAndTokenUUID[1].created_on) == tok.created_on)
 
 -- delete a token:
---delResp = delete(userPK, "/tokens/" .. tok.uid)
---assert(delResp:code() == 0)
---assert(delResp:log() == "success")
+delResp = delete(userPK, "/tokens/" .. tok.uid)
+assert(delResp:code() == 0)
+assert(delResp:log() == "success")
 
 -- delete a wallet:
---delResp = delete(userPK, "/wallets/" .. wallet.pub_key)
---assert(delResp:code() == 0)
---assert(delResp:log() == "success")
+delResp = delete(userPK, "/wallets/" .. wallet.pub_key)
+assert(delResp:code() == 0)
+assert(delResp:log() == "success")
