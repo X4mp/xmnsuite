@@ -16,6 +16,10 @@ Wallet.__index = Wallet
 
     -- load loads the data into an object
     function Wallet:load(data)
+        if data == null then
+            return null
+        end
+
         local wallet = {
             pub_key = data.pub_key,
             created_on = data.created_on

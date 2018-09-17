@@ -127,15 +127,50 @@ assert(retToken.description == tok.description)
 assert(tonumber(retToken.created_on) == tok.created_on)
 
 -- retrieve the deposits related to the wallet:
+retDepsByWalletPubKeyResp = retrieve(userPK, "/deposits/" .. wallet.pub_key)
+assert(retDepsByWalletPubKeyResp:code() == 0)
+assert(retDepsByWalletPubKeyResp:log() == "success")
+assert(retDepsByWalletPubKeyResp:key() == "/deposits/" .. wallet.pub_key)
+
+retDepsByWalletPubKey = json.decode(retDepsByWalletPubKeyResp:value())
+assert(table.getn(retDepsByWalletPubKey) == 1)
+assert(retDepsByWalletPubKey[1].wallet_pub_key == wallet.pub_key)
+assert(retDepsByWalletPubKey[1].token_uuid == tok.uid)
+assert(tonumber(retDepsByWalletPubKey[1].amount) == tok.amount)
+assert(tonumber(retDepsByWalletPubKey[1].created_on) == tok.created_on)
 
 -- retrieve the deposits related to the token:
+retDepsByTokenUUIDResp = retrieve(userPK, "/deposits/" .. tok.uid)
+assert(retDepsByTokenUUIDResp:code() == 0)
+assert(retDepsByTokenUUIDResp:log() == "success")
+assert(retDepsByTokenUUIDResp:key() == "/deposits/" .. tok.uid)
+
+retDepsByTokenUUID = json.decode(retDepsByTokenUUIDResp:value())
+assert(table.getn(retDepsByTokenUUID) == 1)
+assert(retDepsByTokenUUID[1].wallet_pub_key == wallet.pub_key)
+assert(retDepsByTokenUUID[1].token_uuid == tok.uid)
+assert(tonumber(retDepsByTokenUUID[1].amount) == tok.amount)
+assert(tonumber(retDepsByTokenUUID[1].created_on) == tok.created_on)
+
+-- retrieve the deposits related to the token AND wallet pub key:
+retDepsByWalletAndTokenUUIDResp = retrieve(userPK, "/deposits/" .. wallet.pub_key .. "/" .. tok.uid)
+assert(retDepsByWalletAndTokenUUIDResp:code() == 0)
+assert(retDepsByWalletAndTokenUUIDResp:log() == "success")
+assert(retDepsByWalletAndTokenUUIDResp:key() == "/deposits/" .. wallet.pub_key .. "/" .. tok.uid)
+
+retDepsByWalletAndTokenUUID = json.decode(retDepsByWalletAndTokenUUIDResp:value())
+assert(table.getn(retDepsByWalletAndTokenUUID) == 1)
+assert(retDepsByWalletAndTokenUUID[1].wallet_pub_key == wallet.pub_key)
+assert(retDepsByWalletAndTokenUUID[1].token_uuid == tok.uid)
+assert(tonumber(retDepsByWalletAndTokenUUID[1].amount) == tok.amount)
+assert(tonumber(retDepsByWalletAndTokenUUID[1].created_on) == tok.created_on)
 
 -- delete a token:
-delResp = delete(userPK, "/tokens/" .. tok.uid)
-assert(delResp:code() == 0)
-assert(delResp:log() == "success")
+--delResp = delete(userPK, "/tokens/" .. tok.uid)
+--assert(delResp:code() == 0)
+--assert(delResp:log() == "success")
 
 -- delete a wallet:
-delResp = delete(userPK, "/wallets/" .. wallet.pub_key)
-assert(delResp:code() == 0)
-assert(delResp:log() == "success")
+--delResp = delete(userPK, "/wallets/" .. wallet.pub_key)
+--assert(delResp:code() == 0)
+--assert(delResp:log() == "success")

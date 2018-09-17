@@ -628,6 +628,11 @@ func (app *module) registerListsOrSets(context *lua.LState, labelName string, ls
 		}
 
 		elements := p.Retrieve(key, index, amount)
+		if elements == nil {
+			l.Push(lua.LNil)
+			return 1
+		}
+
 		tab := l.NewTable()
 		for index, oneElement := range elements {
 			tab.Insert(index+1, lua.LString(oneElement.(string)))
@@ -668,6 +673,11 @@ func (app *module) registerListsOrSets(context *lua.LState, labelName string, ls
 
 		tab := l.NewTable()
 		elements := p.Union(keys...)
+		if elements == nil {
+			l.Push(lua.LNil)
+			return 1
+		}
+
 		for index, oneElement := range elements {
 			tab.Insert(index+1, lua.LString(oneElement.(string)))
 		}
@@ -712,6 +722,11 @@ func (app *module) registerListsOrSets(context *lua.LState, labelName string, ls
 
 		tab := l.NewTable()
 		elements := p.Inter(keys...)
+		if elements == nil {
+			l.Push(lua.LNil)
+			return 1
+		}
+
 		for index, oneElement := range elements {
 			tab.Insert(index+1, lua.LString(oneElement.(string)))
 		}
@@ -819,6 +834,11 @@ func (app *module) registerListsOrSets(context *lua.LState, labelName string, ls
 
 		tab := l.NewTable()
 		elements := p.Walk(key, execGoFunc)
+		if elements == nil {
+			l.Push(lua.LNil)
+			return 1
+		}
+
 		for index, oneElement := range elements {
 			tab.Insert(index+1, lua.LString(oneElement.(string)))
 		}
@@ -882,4 +902,6 @@ func (app *module) Get() datastore.DataStore {
 // Replace replaces the datastore
 func (app *module) Replace(newDS datastore.DataStore) {
 	app.tables = newDS.Objects()
+	app.sts = newDS.Sets()
+	app.lst = newDS.Lists()
 }

@@ -150,8 +150,7 @@ func createRoute(roleKey string, rols roles.Roles, usrs users.Users, patternAsSt
 		return nil, patternErr
 	}
 
-	//create the role:
-
+	//create the route:
 	out := route{
 		rols:          rols,
 		usrs:          usrs,

@@ -29,11 +29,15 @@ function saveToken(from, path, params, data, sig)
     end
 
     -- save the deposit to the wallet:
-    local deposit = Deposit:create(uuid.new(), wallet.pub_key, newToken.uid, newTokenData.amount, os.time())
+    local deposit = Deposit:create(uuid.new(), wallet.pub_key, newToken.uid, newTokenData.amount, newTokenData.created_on)
     isDepositSaved = deposit:save()
 
     -- if deposit not saved successfully:
     if isDepositSaved == false then
+
+        -- delete the previously created token:
+        newToken:delete()
+
         return {
             code = 2,
             log="the initial token deposit could not be saved",

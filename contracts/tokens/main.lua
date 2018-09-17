@@ -39,13 +39,13 @@ chain.chain().load({
                     chain.route().new("save", "/wallets", saveWallet),
                     chain.route().new("delete", "/wallets/<pubkey|[0-9a-f]{64}>", deleteWalletByPubKey),
                     chain.route().new("retrieve", "/wallets/<pubkey|[0-9a-f]{64}>", retrieveWalletByPubKey),
-                    chain.route().new("retrieve", "/wallets/<pubkey|[0-9a-f]{64}>/deposits", retrieveDepositsByWalletPubKey),
-                    chain.route().new("retrieve", "/wallets/<pubkey|[0-9a-f]{64}>/tokens/<tokenUUID|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>/deposits", retrieveDepositsByWalletPubKeyAndTokenUUID),
                     chain.route().new("save", "/tokens", saveToken),
                     chain.route().new("delete", "/tokens/<uid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", deleteTokenByUUID),
                     chain.route().new("retrieve", "/tokens/<uid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", retrieveTokenByUUID),
-                    chain.route().new("retrieve", "/tokens/<uid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>/deposits", retrieveDepositsByTokenUUID),
-                    chain.route().new("save", "/tokens/<tokenUUID|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>/from-<fromPubKey|[0-9a-f]{74}>/to-<toPubKey|[0-9a-f]{74}>", saveTokenTransfer),
+                    chain.route().new("retrieve", "/deposits/<pubkey|[0-9a-f]{64}>", retrieveDepositsByWalletPubKey),
+                    chain.route().new("retrieve", "/deposits/<tokenid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", retrieveDepositsByTokenUUID),
+                    chain.route().new("retrieve", "/deposits/<pubkey|[0-9a-f]{64}>/<tokenid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", retrieveDepositsByWalletPubKeyAndTokenUUID),
+                    chain.route().new("save", "/tokens/<tokenid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>/<frompubkey|[0-9a-f]{74}>/<topubkey|[0-9a-f]{74}>", saveTokenTransfer),
                 }
             })
         })

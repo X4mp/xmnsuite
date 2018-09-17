@@ -20,6 +20,10 @@ Token.__index = Token
 
     -- load loads the data into an object
     function Token:load(data)
+        if data == null then
+            return null
+        end
+        
         local tok = {
             uid = uuid.new(data.uid),
             symbol = data.symbol,
