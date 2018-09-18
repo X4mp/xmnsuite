@@ -14,14 +14,6 @@ const luaResource = "resource"
 const luaTrxResponse = "trxresponse"
 const luaQueryResponse = "queryresponse"
 
-type resourcePointer struct {
-	ptr routers.ResourcePointer
-}
-
-type resource struct {
-	ptr routers.Resource
-}
-
 type module struct {
 	context *lua.LState
 	client  applications.Client
@@ -63,9 +55,9 @@ func (app *module) register() {
 func (app *module) registerResourcePointer(context *lua.LState) {
 
 	//verifies that the given type is a ResourcePointer instance:
-	checkFn := func(l *lua.LState) *resourcePointer {
+	checkFn := func(l *lua.LState) routers.ResourcePointer {
 		ud := l.CheckUserData(1)
-		if v, ok := ud.Value.(*resourcePointer); ok {
+		if v, ok := ud.Value.(routers.ResourcePointer); ok {
 			return v
 		}
 
@@ -86,15 +78,10 @@ func (app *module) registerResourcePointer(context *lua.LState) {
 				PubKeyAsString: from.String(),
 			})
 
-			// create the resource pointer:
-			ptr := routers.SDKFunc.CreateResourcePointer(routers.CreateResourcePointerParams{
+			ud.Value = routers.SDKFunc.CreateResourcePointer(routers.CreateResourcePointerParams{
 				From: newPubKey,
 				Path: path.String(),
 			})
-
-			ud.Value = &resourcePointer{
-				ptr: ptr,
-			}
 
 			l.SetMetatable(ud, l.GetTypeMetatable(luaResourcePointer))
 			l.Push(ud)
@@ -112,7 +99,7 @@ func (app *module) registerResourcePointer(context *lua.LState) {
 			return 1
 		}
 
-		l.Push(lua.LString(presource.ptr.Hash()))
+		l.Push(lua.LString(presource.Hash()))
 		return 1
 	}
 
@@ -134,9 +121,9 @@ func (app *module) registerResourcePointer(context *lua.LState) {
 func (app *module) registerResource(context *lua.LState) {
 
 	//verifies that the given type is a Resource instance:
-	checkFn := func(l *lua.LState) *resource {
+	checkFn := func(l *lua.LState) routers.Resource {
 		ud := l.CheckUserData(1)
-		if v, ok := ud.Value.(*resource); ok {
+		if v, ok := ud.Value.(routers.Resource); ok {
 			return v
 		}
 
@@ -153,16 +140,11 @@ func (app *module) registerResource(context *lua.LState) {
 			data := dataTable.RawGetString("data")
 
 			if ptrUD, ok := ptr.(*lua.LUserData); ok {
-				if pointer, ok := ptrUD.Value.(*resourcePointer); ok {
-
-					res := routers.SDKFunc.CreateResource(routers.CreateResourceParams{
-						ResPtr: pointer.ptr,
+				if pointer, ok := ptrUD.Value.(routers.ResourcePointer); ok {
+					ud.Value = routers.SDKFunc.CreateResource(routers.CreateResourceParams{
+						ResPtr: pointer,
 						Data:   []byte(data.String()),
 					})
-
-					ud.Value = &resource{
-						ptr: res,
-					}
 
 					l.SetMetatable(ud, l.GetTypeMetatable(luaResource))
 					l.Push(ud)
@@ -186,7 +168,7 @@ func (app *module) registerResource(context *lua.LState) {
 			return 1
 		}
 
-		l.Push(lua.LString(res.ptr.Hash()))
+		l.Push(lua.LString(res.Hash()))
 		return 1
 	}
 
@@ -224,8 +206,8 @@ func (app *module) registerService(context *lua.LState) int {
 		luaRes := tb.RawGetString("resource")
 		if luaRes.Type().String() != lua.LTNil.String() {
 			if restUD, ok := luaRes.(*lua.LUserData); ok {
-				if res, ok := restUD.Value.(*resource); ok {
-					params.Res = res.ptr
+				if res, ok := restUD.Value.(routers.Resource); ok {
+					params.Res = res
 				}
 			}
 		}
@@ -233,8 +215,8 @@ func (app *module) registerService(context *lua.LState) int {
 		luaResPtr := tb.RawGetString("rpointer")
 		if luaResPtr.Type().String() != lua.LTNil.String() {
 			if restPtrUD, ok := luaResPtr.(*lua.LUserData); ok {
-				if resPtr, ok := restPtrUD.Value.(*resourcePointer); ok {
-					params.Ptr = resPtr.ptr
+				if resPtr, ok := restPtrUD.Value.(routers.ResourcePointer); ok {
+					params.Ptr = resPtr
 				}
 			}
 		}
@@ -282,8 +264,8 @@ func (app *module) registerService(context *lua.LState) int {
 		luaResPtr := tb.RawGetString("rpointer")
 		if luaResPtr.Type().String() != lua.LTNil.String() {
 			if restPtrUD, ok := luaResPtr.(*lua.LUserData); ok {
-				if resPtr, ok := restPtrUD.Value.(*resourcePointer); ok {
-					params.Ptr = resPtr.ptr
+				if resPtr, ok := restPtrUD.Value.(routers.ResourcePointer); ok {
+					params.Ptr = resPtr
 				}
 			}
 		}
