@@ -6,7 +6,6 @@ require("helpers/helper")
 -- models
 require("models/deposit")
 require("models/token")
-require("models/transfer")
 require("models/wallet")
 
 -- repositories
@@ -20,7 +19,6 @@ require("controllers/retrieve_deposits_by_wallet_pubkey_and_token_uuid")
 require("controllers/retrieve_deposits_by_wallet_pubkey")
 require("controllers/retrieve_token_by_uuid")
 require("controllers/retrieve_wallet_by_pubkey")
-require("controllers/save_token_transfer")
 require("controllers/save_token")
 require("controllers/save_wallet")
 
@@ -45,7 +43,6 @@ chain.chain().load({
                     chain.route().new("retrieve", "/deposits/<pubkey|[0-9a-f]{64}>", retrieveDepositsByWalletPubKey),
                     chain.route().new("retrieve", "/deposits/<tokenid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", retrieveDepositsByTokenUUID),
                     chain.route().new("retrieve", "/deposits/<pubkey|[0-9a-f]{64}>/<tokenid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", retrieveDepositsByWalletPubKeyAndTokenUUID),
-                    chain.route().new("save", "/tokens/<tokenid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>/<frompubkey|[0-9a-f]{74}>/<topubkey|[0-9a-f]{74}>", saveTokenTransfer),
                 }
             })
         })
