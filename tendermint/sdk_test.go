@@ -14,6 +14,7 @@ import (
 	crypto "github.com/xmnservices/xmnsuite/crypto"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
 	objects "github.com/xmnservices/xmnsuite/objects"
+	"github.com/xmnservices/xmnsuite/routers"
 )
 
 type messageForTest struct {
@@ -51,13 +52,13 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 		ToBlockIndex:   -1,
 		Version:        version,
 		DataStore:      store,
-		RouterParams: applications.CreateRouterParams{
+		RouterParams: routers.CreateRouterParams{
 			DataStore: routerDS,
 			RoleKey:   routerRoleKey,
-			RtesParams: []applications.CreateRouteParams{
-				applications.CreateRouteParams{
+			RtesParams: []routers.CreateRouteParams{
+				routers.CreateRouteParams{
 					Pattern: "/messages",
-					SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (applications.TransactionResponse, error) {
+					SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
 
 						// unmarshal data:
 						msg := new(messageForTest)
@@ -80,8 +81,8 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 							return nil, errors.New(str)
 						}
 
-						resp := applications.SDKFunc.CreateTransactionResponse(applications.CreateTransactionResponseParams{
-							Code:    applications.IsSuccessful,
+						resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
+							Code:    routers.IsSuccessful,
 							Log:     "success",
 							GazUsed: 1205,
 							Tags: map[string][]byte{
@@ -92,9 +93,9 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 						return resp, nil
 					},
 				},
-				applications.CreateRouteParams{
+				routers.CreateRouteParams{
 					Pattern: "/messages/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
-					QueryTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (applications.QueryResponse, error) {
+					QueryTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (routers.QueryResponse, error) {
 						obj := objects.ObjInKey{
 							Key: path,
 							Obj: new(messageForTest),
@@ -111,8 +112,8 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 							return nil, jsErr
 						}
 
-						resp := applications.SDKFunc.CreateQueryResponse(applications.CreateQueryResponseParams{
-							Code:  applications.IsSuccessful,
+						resp := routers.SDKFunc.CreateQueryResponse(routers.CreateQueryResponseParams{
+							Code:  routers.IsSuccessful,
 							Log:   "success",
 							Key:   path,
 							Value: js,
@@ -192,8 +193,8 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 	}
 
 	// create the resource:
-	firstRes := applications.SDKFunc.CreateResource(applications.CreateResourceParams{
-		ResPtr: applications.SDKFunc.CreateResourcePointer(applications.CreateResourcePointerParams{
+	firstRes := routers.SDKFunc.CreateResource(routers.CreateResourceParams{
+		ResPtr: routers.SDKFunc.CreateResourcePointer(routers.CreateResourcePointerParams{
 			From: fromPubKey,
 			Path: "/messages",
 		}),
@@ -204,7 +205,7 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 	firstSig := fromPrivKey.Sign(firstRes.Hash())
 
 	// save the message:
-	trxResp, trxRespErr := client.Transact(applications.SDKFunc.CreateTransactionRequest(applications.CreateTransactionRequestParams{
+	trxResp, trxRespErr := client.Transact(routers.SDKFunc.CreateTransactionRequest(routers.CreateTransactionRequestParams{
 		Res: firstRes,
 		Sig: firstSig,
 	}))
@@ -215,7 +216,7 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 	}
 
 	retTrxCode := trxResp.Transaction().Code()
-	if retTrxCode != applications.IsSuccessful {
+	if retTrxCode != routers.IsSuccessful {
 		t.Errorf("the transaction was expected to be successful")
 		return
 	}
@@ -241,7 +242,7 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 
 	// create the resource pointer:
 	queryPath := fmt.Sprintf("/messages/%s", firstID.String())
-	queryResPtr := applications.SDKFunc.CreateResourcePointer(applications.CreateResourcePointerParams{
+	queryResPtr := routers.SDKFunc.CreateResourcePointer(routers.CreateResourcePointerParams{
 		From: fromPubKey,
 		Path: queryPath,
 	})
@@ -250,7 +251,7 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 	querySig := fromPrivKey.Sign(queryResPtr.Hash())
 
 	// execute a query:
-	queryResp, queryRespErr := client.Query(applications.SDKFunc.CreateQueryRequest(applications.CreateQueryRequestParams{
+	queryResp, queryRespErr := client.Query(routers.SDKFunc.CreateQueryRequest(routers.CreateQueryRequestParams{
 		Ptr: queryResPtr,
 		Sig: querySig,
 	}))
@@ -261,7 +262,7 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 	}
 
 	retQueryCode := queryResp.Code()
-	if retQueryCode != applications.IsSuccessful {
+	if retQueryCode != routers.IsSuccessful {
 		t.Errorf("the query ewas expected to be successful")
 		return
 	}

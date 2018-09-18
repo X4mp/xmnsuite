@@ -1,4 +1,4 @@
-package applications
+package routers
 
 import (
 	"reflect"

@@ -3,14 +3,10 @@ package applications
 import (
 	amino "github.com/tendermint/go-amino"
 	crypto "github.com/xmnservices/xmnsuite/crypto"
+	routers "github.com/xmnservices/xmnsuite/routers"
 )
 
 const (
-	// XMNSuiteApplicationsResourcePointer represents the xmnsuite ResourcePointer resource
-	XMNSuiteApplicationsResourcePointer = "xmnsuite/ResourcePointer"
-
-	// XMNSuiteApplicationsResource represents the xmnsuite Resource resource
-	XMNSuiteApplicationsResource = "xmnsuite/Resource"
 
 	// XMNSuiteApplicationsInfoRequest represents the xmnsuite InfoRequest resource
 	XMNSuiteApplicationsInfoRequest = "xmnsuite/InfoRequest"
@@ -18,20 +14,8 @@ const (
 	// XMNSuiteApplicationsInfoResponse represents the xmnsuite InfoResponse resource
 	XMNSuiteApplicationsInfoResponse = "xmnsuite/InfoResponse"
 
-	// XMNSuiteApplicationsTransactionRequest represents the xmnsuite TransactionRequest resource
-	XMNSuiteApplicationsTransactionRequest = "xmnsuite/TransactionRequest"
-
-	// XMNSuiteApplicationsTransactionResponse represents the xmnsuite TransactionResponse resource
-	XMNSuiteApplicationsTransactionResponse = "xmnsuite/TransactionResponse"
-
 	// XMNSuiteApplicationsCommitResponse represents the xmnsuite CommitResponse resource
 	XMNSuiteApplicationsCommitResponse = "xmnsuite/CommitResponse"
-
-	// XMNSuiteApplicationsQueryRequest represents the xmnsuite QueryRequest resource
-	XMNSuiteApplicationsQueryRequest = "xmnsuite/QueryRequest"
-
-	// XMNSuiteApplicationsQueryResponse represents the xmnsuite QueryResponse resource
-	XMNSuiteApplicationsQueryResponse = "xmnsuite/QueryResponse"
 
 	// XMNSuiteApplicationsClientTransactionResponse represents the xmnsuite ClientTransactionResponse resource
 	XMNSuiteApplicationsClientTransactionResponse = "xmnsuite/ClientTransactionResponse"
@@ -47,24 +31,7 @@ func init() {
 func Register(codec *amino.Codec) {
 	// Dependencies
 	crypto.Register(codec)
-
-	// ResourcePointer
-	func() {
-		defer func() {
-			recover()
-		}()
-		codec.RegisterInterface((*ResourcePointer)(nil), nil)
-		codec.RegisterConcrete(&resourcePointer{}, XMNSuiteApplicationsResourcePointer, nil)
-	}()
-
-	// Resource
-	func() {
-		defer func() {
-			recover()
-		}()
-		codec.RegisterInterface((*Resource)(nil), nil)
-		codec.RegisterConcrete(&resource{}, XMNSuiteApplicationsResource, nil)
-	}()
+	routers.Register(codec)
 
 	// InfoRequest
 	func() {
@@ -84,24 +51,6 @@ func Register(codec *amino.Codec) {
 		codec.RegisterConcrete(&infoResponse{}, XMNSuiteApplicationsInfoResponse, nil)
 	}()
 
-	// TransactionRequest
-	func() {
-		defer func() {
-			recover()
-		}()
-		codec.RegisterInterface((*TransactionRequest)(nil), nil)
-		codec.RegisterConcrete(&transactionRequest{}, XMNSuiteApplicationsTransactionRequest, nil)
-	}()
-
-	// TransactionResponse
-	func() {
-		defer func() {
-			recover()
-		}()
-		codec.RegisterInterface((*TransactionResponse)(nil), nil)
-		codec.RegisterConcrete(&transactionResponse{}, XMNSuiteApplicationsTransactionResponse, nil)
-	}()
-
 	// CommitResponse
 	func() {
 		defer func() {
@@ -109,24 +58,6 @@ func Register(codec *amino.Codec) {
 		}()
 		codec.RegisterInterface((*CommitResponse)(nil), nil)
 		codec.RegisterConcrete(&commitResponse{}, XMNSuiteApplicationsCommitResponse, nil)
-	}()
-
-	// QueryRequest
-	func() {
-		defer func() {
-			recover()
-		}()
-		codec.RegisterInterface((*QueryRequest)(nil), nil)
-		codec.RegisterConcrete(&queryRequest{}, XMNSuiteApplicationsQueryRequest, nil)
-	}()
-
-	// QueryResponse
-	func() {
-		defer func() {
-			recover()
-		}()
-		codec.RegisterInterface((*QueryResponse)(nil), nil)
-		codec.RegisterConcrete(&queryResponse{}, XMNSuiteApplicationsQueryResponse, nil)
 	}()
 
 	// ClientTransactionResponse

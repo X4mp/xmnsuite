@@ -1,13 +1,17 @@
 package applications
 
+import (
+	routers "github.com/xmnservices/xmnsuite/routers"
+)
+
 type clientTransactionResponse struct {
-	Chk TransactionResponse `json:"check_response"`
-	Trx TransactionResponse `json:"transaction_response"`
-	Ht  int64               `json:"height"`
-	Hsh []byte              `json:"hash"`
+	Chk routers.TransactionResponse `json:"check_response"`
+	Trx routers.TransactionResponse `json:"transaction_response"`
+	Ht  int64                       `json:"height"`
+	Hsh []byte                      `json:"hash"`
 }
 
-func createClientTransactionResponse(chk TransactionResponse, trx TransactionResponse, height int64, hash []byte) ClientTransactionResponse {
+func createClientTransactionResponse(chk routers.TransactionResponse, trx routers.TransactionResponse, height int64, hash []byte) ClientTransactionResponse {
 	out := clientTransactionResponse{
 		Chk: chk,
 		Trx: trx,
@@ -19,12 +23,12 @@ func createClientTransactionResponse(chk TransactionResponse, trx TransactionRes
 }
 
 // Check returns the check response
-func (obj *clientTransactionResponse) Check() TransactionResponse {
+func (obj *clientTransactionResponse) Check() routers.TransactionResponse {
 	return obj.Chk
 }
 
 // Transaction returns the transaction response
-func (obj *clientTransactionResponse) Transaction() TransactionResponse {
+func (obj *clientTransactionResponse) Transaction() routers.TransactionResponse {
 	return obj.Trx
 }
 

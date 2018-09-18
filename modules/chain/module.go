@@ -12,6 +12,7 @@ import (
 	crypto "github.com/xmnservices/xmnsuite/crypto"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
 	datastore_module "github.com/xmnservices/xmnsuite/modules/datastore"
+	"github.com/xmnservices/xmnsuite/routers"
 	tendermint "github.com/xmnservices/xmnsuite/tendermint"
 	lua "github.com/yuin/gopher-lua"
 )
@@ -321,9 +322,9 @@ func (app *module) registerRoute(context *lua.LState) int {
 		}
 
 		routeTypeMapping := map[string]int{
-			"retrieve": applications.Retrieve,
-			"save":     applications.Save,
-			"delete":   applications.Delete,
+			"retrieve": routers.Retrieve,
+			"save":     routers.Save,
+			"delete":   routers.Delete,
 		}
 
 		rteTypeAsString := l.CheckString(1)
@@ -406,12 +407,12 @@ func (app *module) Spawn() (applications.Node, error) {
 	appsSlice := []applications.Application{}
 	for _, oneApp := range app.ch.apps {
 		// create the route params:
-		rteParams := []applications.CreateRouteParams{}
+		rteParams := []routers.CreateRouteParams{}
 		for _, oneRte := range oneApp.router.rtes {
-			var saveTrx applications.SaveTransactionFn
+			var saveTrx routers.SaveTransactionFn
 			if oneRte.saveTrx != nil {
 				luaSaveTrxFn := oneRte.saveTrx
-				saveTrx = func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (applications.TransactionResponse, error) {
+				saveTrx = func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
 
 					//replace the datastore:
 					app.replaceDS(store)
@@ -449,10 +450,10 @@ func (app *module) Spawn() (applications.Node, error) {
 				}
 			}
 
-			var delTrx applications.DeleteTransactionFn
+			var delTrx routers.DeleteTransactionFn
 			if oneRte.delTrx != nil {
 				luaDelTrxFn := oneRte.delTrx
-				delTrx = func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (applications.TransactionResponse, error) {
+				delTrx = func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (routers.TransactionResponse, error) {
 					//replace the datastore:
 					app.replaceDS(store)
 
@@ -485,10 +486,10 @@ func (app *module) Spawn() (applications.Node, error) {
 				}
 			}
 
-			var queryTrx applications.QueryFn
+			var queryTrx routers.QueryFn
 			if oneRte.queryTrx != nil {
 				luaQueryFn := oneRte.queryTrx
-				queryTrx = func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (applications.QueryResponse, error) {
+				queryTrx = func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (routers.QueryResponse, error) {
 					//replace the datastore:
 					app.replaceDS(store)
 
@@ -521,7 +522,7 @@ func (app *module) Spawn() (applications.Node, error) {
 				}
 			}
 
-			rteParams = append(rteParams, applications.CreateRouteParams{
+			rteParams = append(rteParams, routers.CreateRouteParams{
 				Pattern:  oneRte.pattern,
 				SaveTrx:  saveTrx,
 				DelTrx:   delTrx,
@@ -545,7 +546,7 @@ func (app *module) Spawn() (applications.Node, error) {
 			ToBlockIndex:   int64(oneApp.endIndex),
 			Version:        oneApp.version,
 			DataStore:      app.ds.Get(),
-			RouterParams: applications.CreateRouterParams{
+			RouterParams: routers.CreateRouterParams{
 				DataStore:  routerDS,
 				RoleKey:    routerRoleKey,
 				RtesParams: rteParams,
@@ -596,7 +597,7 @@ func (app *module) Spawn() (applications.Node, error) {
 	return node, nil
 }
 
-func callLuaQueryFunc(fn *lua.LFunction, context *lua.LState, args ...lua.LValue) (applications.QueryResponse, error) {
+func callLuaQueryFunc(fn *lua.LFunction, context *lua.LState, args ...lua.LValue) (routers.QueryResponse, error) {
 	luaP := lua.P{
 		Fn:      fn,
 		NRet:    1,
@@ -630,7 +631,7 @@ func callLuaQueryFunc(fn *lua.LFunction, context *lua.LState, args ...lua.LValue
 			valueAsBytes = nil
 		}
 
-		return applications.SDKFunc.CreateQueryResponse(applications.CreateQueryResponseParams{
+		return routers.SDKFunc.CreateQueryResponse(routers.CreateQueryResponseParams{
 			Code:  code,
 			Log:   log.String(),
 			Key:   key.String(),
@@ -641,7 +642,7 @@ func callLuaQueryFunc(fn *lua.LFunction, context *lua.LState, args ...lua.LValue
 	return nil, errors.New("the query response is not a valid table")
 }
 
-func callLuaTrxFunc(fn *lua.LFunction, context *lua.LState, args ...lua.LValue) (applications.TransactionResponse, error) {
+func callLuaTrxFunc(fn *lua.LFunction, context *lua.LState, args ...lua.LValue) (routers.TransactionResponse, error) {
 	luaP := lua.P{
 		Fn:      fn,
 		NRet:    1,
@@ -689,7 +690,7 @@ func callLuaTrxFunc(fn *lua.LFunction, context *lua.LState, args ...lua.LValue) 
 				return nil, errors.New(str)
 			}
 
-			return applications.SDKFunc.CreateTransactionResponse(applications.CreateTransactionResponseParams{
+			return routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
 				Code:    code,
 				Log:     log.String(),
 				GazUsed: int64(gazUsed),
@@ -697,7 +698,7 @@ func callLuaTrxFunc(fn *lua.LFunction, context *lua.LState, args ...lua.LValue) 
 			}), nil
 		}
 
-		return applications.SDKFunc.CreateTransactionResponse(applications.CreateTransactionResponseParams{
+		return routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
 			Code: code,
 			Log:  log.String(),
 		}), nil

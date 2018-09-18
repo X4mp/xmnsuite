@@ -5,6 +5,7 @@ import (
 
 	applications "github.com/xmnservices/xmnsuite/applications"
 	crypto "github.com/xmnservices/xmnsuite/crypto"
+	"github.com/xmnservices/xmnsuite/routers"
 	lua "github.com/yuin/gopher-lua"
 )
 
@@ -14,11 +15,11 @@ const luaTrxResponse = "trxresponse"
 const luaQueryResponse = "queryresponse"
 
 type resourcePointer struct {
-	ptr applications.ResourcePointer
+	ptr routers.ResourcePointer
 }
 
 type resource struct {
-	ptr applications.Resource
+	ptr routers.Resource
 }
 
 type module struct {
@@ -86,7 +87,7 @@ func (app *module) registerResourcePointer(context *lua.LState) {
 			})
 
 			// create the resource pointer:
-			ptr := applications.SDKFunc.CreateResourcePointer(applications.CreateResourcePointerParams{
+			ptr := routers.SDKFunc.CreateResourcePointer(routers.CreateResourcePointerParams{
 				From: newPubKey,
 				Path: path.String(),
 			})
@@ -154,7 +155,7 @@ func (app *module) registerResource(context *lua.LState) {
 			if ptrUD, ok := ptr.(*lua.LUserData); ok {
 				if pointer, ok := ptrUD.Value.(*resourcePointer); ok {
 
-					res := applications.SDKFunc.CreateResource(applications.CreateResourceParams{
+					res := routers.SDKFunc.CreateResource(routers.CreateResourceParams{
 						ResPtr: pointer.ptr,
 						Data:   []byte(data.String()),
 					})
@@ -214,7 +215,7 @@ func (app *module) registerService(context *lua.LState) int {
 		}
 
 		tb := l.ToTable(1)
-		params := applications.CreateTransactionRequestParams{
+		params := routers.CreateTransactionRequestParams{
 			Sig: crypto.SDKFunc.CreateSig(crypto.CreateSigParams{
 				SigAsString: tb.RawGetString("sig").String(),
 			}),
@@ -239,7 +240,7 @@ func (app *module) registerService(context *lua.LState) int {
 		}
 
 		// create the request:
-		req := applications.SDKFunc.CreateTransactionRequest(params)
+		req := routers.SDKFunc.CreateTransactionRequest(params)
 
 		// execte the request:
 		resp, respErr := app.client.Transact(req)
@@ -272,7 +273,7 @@ func (app *module) registerService(context *lua.LState) int {
 		}
 
 		tb := l.ToTable(1)
-		params := applications.CreateQueryRequestParams{
+		params := routers.CreateQueryRequestParams{
 			Sig: crypto.SDKFunc.CreateSig(crypto.CreateSigParams{
 				SigAsString: tb.RawGetString("sig").String(),
 			}),
@@ -293,7 +294,7 @@ func (app *module) registerService(context *lua.LState) int {
 		}
 
 		// create the request:
-		req := applications.SDKFunc.CreateQueryRequest(params)
+		req := routers.SDKFunc.CreateQueryRequest(params)
 
 		// execte the request:
 		resp, respErr := app.client.Query(req)
@@ -326,9 +327,9 @@ func (app *module) registerService(context *lua.LState) int {
 }
 
 func (app *module) registerQueryResponse(context *lua.LState) int {
-	checkFn := func(l *lua.LState) applications.QueryResponse {
+	checkFn := func(l *lua.LState) routers.QueryResponse {
 		ud := l.CheckUserData(1)
-		if v, ok := ud.Value.(applications.QueryResponse); ok {
+		if v, ok := ud.Value.(routers.QueryResponse); ok {
 			return v
 		}
 
@@ -397,7 +398,7 @@ func (app *module) registerClientTrxResponse(context *lua.LState) int {
 		resp := checkFn(l)
 
 		chk := resp.Check()
-		if chk.Code() != applications.IsSuccessful {
+		if chk.Code() != routers.IsSuccessful {
 			l.Push(lua.LNumber(chk.Code()))
 			return 1
 		}
@@ -411,7 +412,7 @@ func (app *module) registerClientTrxResponse(context *lua.LState) int {
 		resp := checkFn(l)
 
 		chk := resp.Check()
-		if chk.Code() != applications.IsSuccessful {
+		if chk.Code() != routers.IsSuccessful {
 			l.Push(lua.LString(chk.Log()))
 			return 1
 		}

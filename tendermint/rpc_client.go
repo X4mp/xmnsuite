@@ -6,6 +6,7 @@ import (
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	rpcclient "github.com/tendermint/tendermint/rpc/lib/client"
 	applications "github.com/xmnservices/xmnsuite/applications"
+	routers "github.com/xmnservices/xmnsuite/routers"
 )
 
 /*
@@ -31,7 +32,7 @@ func createRPCClient(ipAddress string) (applications.Client, error) {
 }
 
 // Query executes a query and returns its response:
-func (app *rpcClient) Query(req applications.QueryRequest) (applications.QueryResponse, error) {
+func (app *rpcClient) Query(req routers.QueryRequest) (routers.QueryResponse, error) {
 	js, jsErr := cdc.MarshalJSON(req)
 	if jsErr != nil {
 		return nil, jsErr
@@ -50,7 +51,7 @@ func (app *rpcClient) Query(req applications.QueryRequest) (applications.QueryRe
 		return nil, outErr
 	}
 
-	return applications.SDKFunc.CreateQueryResponse(applications.CreateQueryResponseParams{
+	return routers.SDKFunc.CreateQueryResponse(routers.CreateQueryResponseParams{
 		Code:  int(result.Response.GetCode()),
 		Log:   result.Response.GetLog(),
 		Key:   string(result.Response.GetKey()),
@@ -59,7 +60,7 @@ func (app *rpcClient) Query(req applications.QueryRequest) (applications.QueryRe
 }
 
 // Transact executes a transaction and returns its response:
-func (app *rpcClient) Transact(req applications.TransactionRequest) (applications.ClientTransactionResponse, error) {
+func (app *rpcClient) Transact(req routers.TransactionRequest) (applications.ClientTransactionResponse, error) {
 	reqJS, reqJSErr := cdc.MarshalJSON(req)
 	if reqJSErr != nil {
 		return nil, reqJSErr
@@ -83,7 +84,7 @@ func (app *rpcClient) Transact(req applications.TransactionRequest) (application
 	}
 
 	// create the transaction response:
-	trsResponse := applications.SDKFunc.CreateTransactionResponse(applications.CreateTransactionResponseParams{
+	trsResponse := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
 		Code:    int(code),
 		Log:     log,
 		GazUsed: gazUsed,
@@ -102,7 +103,7 @@ func (app *rpcClient) Transact(req applications.TransactionRequest) (application
 	}
 
 	// retrieve the commit data:
-	chkResponse := applications.SDKFunc.CreateTransactionResponse(applications.CreateTransactionResponseParams{
+	chkResponse := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
 		Code:    int(chkCode),
 		Log:     chkLog,
 		GazUsed: chkGazUsed,

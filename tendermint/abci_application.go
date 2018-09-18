@@ -4,6 +4,7 @@ import (
 	types "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	applications "github.com/xmnservices/xmnsuite/applications"
+	routers "github.com/xmnservices/xmnsuite/routers"
 )
 
 /*
@@ -64,7 +65,7 @@ func (app *abciApplication) DeliverTx(tx []byte) types.ResponseDeliverTx {
 	}
 
 	// execute the transaction on the application:
-	resp := curApp.Transact(applications.SDKFunc.CreateTransactionRequest(applications.CreateTransactionRequestParams{
+	resp := curApp.Transact(routers.SDKFunc.CreateTransactionRequest(routers.CreateTransactionRequestParams{
 		JSData: tx,
 	}))
 
@@ -96,7 +97,7 @@ func (app *abciApplication) CheckTx(tx []byte) types.ResponseCheckTx {
 	}
 
 	// execute the transaction on the application:
-	resp := curApp.CheckTransact(applications.SDKFunc.CreateTransactionRequest(applications.CreateTransactionRequestParams{
+	resp := curApp.CheckTransact(routers.SDKFunc.CreateTransactionRequest(routers.CreateTransactionRequestParams{
 		JSData: tx,
 	}))
 
@@ -144,7 +145,7 @@ func (app *abciApplication) Commit() types.ResponseCommit {
 func (app *abciApplication) Query(reqQuery types.RequestQuery) types.ResponseQuery {
 	if !reqQuery.GetProve() {
 		return types.ResponseQuery{
-			Code: uint32(applications.InvalidRequest),
+			Code: uint32(routers.InvalidRequest),
 			Log:  "the query cannot be trusted",
 		}
 	}
@@ -156,7 +157,7 @@ func (app *abciApplication) Query(reqQuery types.RequestQuery) types.ResponseQue
 	}
 
 	//execute the query on the application:
-	resp := curApp.Query(applications.SDKFunc.CreateQueryRequest(applications.CreateQueryRequestParams{
+	resp := curApp.Query(routers.SDKFunc.CreateQueryRequest(routers.CreateQueryRequestParams{
 		JSData: reqQuery.GetData(),
 	}))
 

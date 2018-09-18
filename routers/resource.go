@@ -1,4 +1,4 @@
-package applications
+package routers
 
 import (
 	crypto "github.com/xmnservices/xmnsuite/crypto"
