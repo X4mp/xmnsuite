@@ -3,7 +3,7 @@ package tests
 import (
 	uuid "github.com/satori/go.uuid"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
-	applications "github.com/xmnservices/xmnsuite/applications"
+	applications "github.com/xmnservices/xmnsuite/blockchains/applications"
 	crypto "github.com/xmnservices/xmnsuite/crypto"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
 	chain_module "github.com/xmnservices/xmnsuite/modules/chain"

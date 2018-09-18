@@ -8,12 +8,12 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	tcrypto "github.com/tendermint/tendermint/crypto"
-	applications "github.com/xmnservices/xmnsuite/applications"
+	applications "github.com/xmnservices/xmnsuite/blockchains/applications"
+	tendermint "github.com/xmnservices/xmnsuite/blockchains/tendermint"
 	crypto "github.com/xmnservices/xmnsuite/crypto"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
 	datastore_module "github.com/xmnservices/xmnsuite/modules/datastore"
 	"github.com/xmnservices/xmnsuite/routers"
-	tendermint "github.com/xmnservices/xmnsuite/tendermint"
 	lua "github.com/yuin/gopher-lua"
 )
 

@@ -1,7 +1,7 @@
 package sdk
 
 import (
-	applications "github.com/xmnservices/xmnsuite/applications"
+	applications "github.com/xmnservices/xmnsuite/blockchains/applications"
 	lua "github.com/yuin/gopher-lua"
 )
 

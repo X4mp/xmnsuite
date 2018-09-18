@@ -3,7 +3,7 @@ package tendermint
 import (
 	types "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
-	applications "github.com/xmnservices/xmnsuite/applications"
+	applications "github.com/xmnservices/xmnsuite/blockchains/applications"
 	routers "github.com/xmnservices/xmnsuite/routers"
 )
 

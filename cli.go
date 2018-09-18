@@ -11,6 +11,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 	cliapp "github.com/urfave/cli"
+	tendermint "github.com/xmnservices/xmnsuite/blockchains/tendermint"
 	crypto "github.com/xmnservices/xmnsuite/crypto"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
 	modules "github.com/xmnservices/xmnsuite/modules"
@@ -20,7 +21,6 @@ import (
 	json_module "github.com/xmnservices/xmnsuite/modules/json"
 	module_sdk "github.com/xmnservices/xmnsuite/modules/sdk"
 	uuid_module "github.com/xmnservices/xmnsuite/modules/uuid"
-	tendermint "github.com/xmnservices/xmnsuite/tendermint"
 	lua "github.com/yuin/gopher-lua"
 )
 

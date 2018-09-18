@@ -3,7 +3,7 @@ package sdk
 import (
 	"fmt"
 
-	applications "github.com/xmnservices/xmnsuite/applications"
+	applications "github.com/xmnservices/xmnsuite/blockchains/applications"
 	crypto "github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/routers"
 	lua "github.com/yuin/gopher-lua"

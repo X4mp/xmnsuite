@@ -3,7 +3,7 @@ package chain
 import (
 	uuid "github.com/satori/go.uuid"
 	tcrypto "github.com/tendermint/tendermint/crypto"
-	applications "github.com/xmnservices/xmnsuite/applications"
+	applications "github.com/xmnservices/xmnsuite/blockchains/applications"
 	crypto "github.com/xmnservices/xmnsuite/crypto"
 	datastore_module "github.com/xmnservices/xmnsuite/modules/datastore"
 	lua "github.com/yuin/gopher-lua"

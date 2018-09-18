@@ -4,7 +4,7 @@ import (
 	amino "github.com/tendermint/go-amino"
 	tcrypto "github.com/tendermint/tendermint/crypto"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
-	applications "github.com/xmnservices/xmnsuite/applications"
+	applications "github.com/xmnservices/xmnsuite/blockchains/applications"
 	crypto "github.com/xmnservices/xmnsuite/crypto"
 )
 
