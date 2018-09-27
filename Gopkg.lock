@@ -80,6 +80,14 @@
   version = "v0.3.0"
 
 [[projects]]
+  digest = "1:b7fc4c3fd91df516486f53cc86f4b55a0c815782dbe852c5a19cce8e6c577aac"
+  name = "github.com/go-resty/resty"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "d4920dcf5b7689548a6db640278a9b35a5b48ec6"
+  version = "v1.9.1"
+
+[[projects]]
   digest = "1:586ea76dbd0374d6fb649a91d70d652b7fe0ccffb8910a77468e7702e7901f3d"
   name = "github.com/go-stack/stack"
   packages = ["."]
@@ -123,6 +131,17 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "2e65f85255dbc3072edf28d6b5b8efc472979f5a"
+
+[[projects]]
+  digest = "1:17a7d3dcbcb91116dc01e89b8b3a4ceb23781b45796e21ed88415ec3536d4440"
+  name = "github.com/gorilla/rpc"
+  packages = [
+    ".",
+    "json",
+  ]
+  pruneopts = "UT"
+  revision = "22c016f3df3febe0c1f6727598b6389507e03a18"
+  version = "v1.1.0"
 
 [[projects]]
   digest = "1:43dd08a10854b2056e615d1b1d22ac94559d822e1f8b6fcc92c1a1057e85188e"
@@ -343,7 +362,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:5b95084facc4be1ee2c86c40ba1a735e44ecd93be718dd5efecda89793dbd2d1"
+  digest = "1:01c635b58a702e90a93e75b9aa736c4375ce4a58c999b0073ff801c795033072"
   name = "github.com/yuin/gopher-lua"
   packages = [
     ".",
@@ -352,7 +371,7 @@
     "pm",
   ]
   pruneopts = "UT"
-  revision = "b942cacc89fe49895d145e8b360612a9a51d0423"
+  revision = "799fa34954fbf844a6c25ea3b061bfd56f73bd10"
 
 [[projects]]
   branch = "master"
@@ -375,7 +394,7 @@
   revision = "0e37d006457bf46f9e6692014ba72ef82c33022c"
 
 [[projects]]
-  digest = "1:d36f55a999540d29b6ea3c2ea29d71c76b1d9853fdcd3e5c5cb4836f2ba118f1"
+  digest = "1:7cc72287b751b14a2f5d48ff9e450a4e76038dfc0bac57dc23394c2193192b6b"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -385,6 +404,7 @@
     "idna",
     "internal/timeseries",
     "netutil",
+    "publicsuffix",
     "trace",
   ]
   pruneopts = "UT"
@@ -396,7 +416,7 @@
   name = "golang.org/x/sys"
   packages = ["cpu"]
   pruneopts = "UT"
-  revision = "d0be0721c37eeb5299f245a996a483160fc36940"
+  revision = "ee1b12c67af419cf5a9be3bdbeea7fc1c5f32f11"
 
 [[projects]]
   digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"
@@ -423,11 +443,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:077c1c599507b3b3e9156d17d36e1e61928ee9b53a5b420f10f28ebd4a0b275c"
+  digest = "1:4b89f7cb4fa89ee4b8ec3fff8e91105e7f1fee84761edcb063a738e376c53357"
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
   pruneopts = "UT"
-  revision = "11092d34479b07829b72e10713b159248caf5dad"
+  revision = "4b56f30a1fd96a133a036b62cdd2a249883dd89b"
 
 [[projects]]
   digest = "1:2dab32a43451e320e49608ff4542fdfc653c95dcc35d0065ec9c6c3dd540ed74"
@@ -477,6 +497,9 @@
   input-imports = [
     "github.com/dedis/kyber",
     "github.com/dedis/kyber/group/edwards25519",
+    "github.com/go-resty/resty",
+    "github.com/gorilla/rpc",
+    "github.com/gorilla/rpc/json",
     "github.com/nsf/termbox-go",
     "github.com/satori/go.uuid",
     "github.com/tendermint/go-amino",

@@ -22,6 +22,10 @@
   name = "github.com/dedis/kyber"
   branch = "master"
 
+[[override]]
+  name = "github.com/go-resty/resty"
+  version = "1.9.1"
+
 [prune]
   go-tests = true
   unused-packages = true

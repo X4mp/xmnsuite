@@ -47,12 +47,26 @@ type CreateSigParams struct {
 	SigAsString string
 }
 
+// EncryptParams represents the Encrypt params
+type EncryptParams struct {
+	Pass []byte
+	Msg  []byte
+}
+
+// DecryptParams represents the Decrypt params
+type DecryptParams struct {
+	Pass         []byte
+	EncryptedMsg string
+}
+
 // SDKFunc represents the crypto SDK func
 var SDKFunc = struct {
 	GenPK        func() PrivateKey
 	CreatePK     func(params CreatePKParams) PrivateKey
 	CreatePubKey func(params CreatePubKeyParams) PublicKey
 	CreateSig    func(params CreateSigParams) Signature
+	Encrypt      func(params EncryptParams) string
+	Decrypt      func(params DecryptParams) []byte
 }{
 	GenPK: func() PrivateKey {
 		return createPrivateKey()
@@ -87,5 +101,21 @@ var SDKFunc = struct {
 		}
 
 		return sig
+	},
+	Encrypt: func(params EncryptParams) string {
+		out, outErr := encrypt(params.Pass, params.Msg)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
+	},
+	Decrypt: func(params DecryptParams) []byte {
+		out, outErr := decrypt(params.Pass, params.EncryptedMsg)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
 	},
 }

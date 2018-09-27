@@ -2,6 +2,7 @@ package crypto
 
 import (
 	"encoding/hex"
+	"reflect"
 	"testing"
 )
 
@@ -93,4 +94,25 @@ func TestSDK_createPubKey_withValidHex_invalidPubKey_panic(t *testing.T) {
 	SDKFunc.CreatePubKey(CreatePubKeyParams{
 		PubKeyAsString: hex.EncodeToString([]byte("this is an invalid pubkey")),
 	})
+}
+
+func TestSDK_encrypt_decrypt_Success(t *testing.T) {
+	// variables:
+	pass := []byte("this is the password used to generate the pk")
+	textToEncrypt := []byte("this is some text to encrypt... this is even longer text!")
+
+	encryptedText := SDKFunc.Encrypt(EncryptParams{
+		Pass: pass,
+		Msg:  textToEncrypt,
+	})
+
+	decrypted := SDKFunc.Decrypt(DecryptParams{
+		Pass:         pass,
+		EncryptedMsg: encryptedText,
+	})
+
+	if !reflect.DeepEqual(textToEncrypt, decrypted) {
+		t.Errorf("the decrypted text was excpected to be the same as the original text")
+		return
+	}
 }
