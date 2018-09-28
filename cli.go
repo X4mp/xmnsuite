@@ -157,6 +157,9 @@ func (app *cli) loadChainModule() error {
 	// dbpath:
 	dbPath := app.cliContext.String("dbpath")
 
+	// port
+	port := app.cliContext.Int("port")
+
 	// nodepk:
 	nodePkAsString := app.cliContext.String("nodepk")
 	nodePKAsBytes, nodePKAsBytesErr := hex.DecodeString(nodePkAsString)
@@ -214,6 +217,7 @@ func (app *cli) loadChainModule() error {
 	app.loadedModules["chain"] = module_chain.SDKFunc.Create(module_chain.CreateParams{
 		Context:     app.luaContext,
 		DBPath:      dbPath,
+		Port:        port,
 		ID:          &id,
 		RootPubKeys: rootPubKeys,
 		NodePK:      nodePK,

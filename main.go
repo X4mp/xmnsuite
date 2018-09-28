@@ -42,6 +42,11 @@ func main() {
 			Usage: "this is the blockchain database path",
 		},
 		cliapp.StringFlag{
+			Name:  "port",
+			Value: "26657",
+			Usage: "this is the blockchain port",
+		},
+		cliapp.StringFlag{
 			Name:  "nodepk",
 			Value: "",
 			Usage: "this is the first blockchain node private key",

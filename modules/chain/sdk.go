@@ -18,6 +18,7 @@ type Chain interface {
 type CreateParams struct {
 	Context     *lua.LState
 	DBPath      string
+	Port        int
 	ID          *uuid.UUID
 	RootPubKeys []crypto.PublicKey
 	NodePK      tcrypto.PrivKey
@@ -29,7 +30,7 @@ var SDKFunc = struct {
 	Create func(params CreateParams) Chain
 }{
 	Create: func(params CreateParams) Chain {
-		out := createModule(params.Context, params.DBPath, params.ID, params.RootPubKeys, params.NodePK, params.Datastore)
+		out := createModule(params.Context, params.DBPath, params.Port, params.ID, params.RootPubKeys, params.NodePK, params.Datastore)
 		return out
 	},
 }

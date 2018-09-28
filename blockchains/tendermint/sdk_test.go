@@ -3,6 +3,7 @@ package tendermint
 import (
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -30,6 +31,7 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 		os.RemoveAll(rootDir)
 	}()
 
+	port := rand.Int()%9000 + 1000
 	namespace := "testapp"
 	name := "MyTestApp"
 	id := uuid.NewV4()
@@ -157,7 +159,7 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 	appService := SDKFunc.CreateApplicationService()
 
 	// spawn the node:
-	node, nodeErr := appService.Spawn(rootDir, blkChain, apps)
+	node, nodeErr := appService.Spawn(port, rootDir, blkChain, apps)
 	if nodeErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", nodeErr.Error())
 		return

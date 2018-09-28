@@ -1,6 +1,7 @@
 package chain
 
 import (
+	"math/rand"
 	"os"
 	"testing"
 
@@ -15,6 +16,7 @@ import (
 
 func TestModule_Success(t *testing.T) {
 	// variables:
+	port := rand.Int()%9000 + 1000
 	dbPath := "./test_files"
 	instanceID := uuid.NewV4()
 	nodePK := ed25519.GenPrivKey()
@@ -44,7 +46,7 @@ func TestModule_Success(t *testing.T) {
 	})
 
 	// create module:
-	module := createModule(context, dbPath, &instanceID, rootPubKeys, nodePK, dsMod)
+	module := createModule(context, dbPath, port, &instanceID, rootPubKeys, nodePK, dsMod)
 
 	//execute the script:
 	doFileErr := context.DoFile(scriptPath)

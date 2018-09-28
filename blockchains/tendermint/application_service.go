@@ -1,6 +1,7 @@
 package tendermint
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -21,7 +22,12 @@ func createApplicationService() ApplicationService {
 }
 
 // Spawn spawns a new blockchain application
-func (obj *applicationService) Spawn(rootDir string, blkChain Blockchain, apps applications.Applications) (applications.Node, error) {
+func (obj *applicationService) Spawn(
+	port int,
+	rootDir string,
+	blkChain Blockchain,
+	apps applications.Applications,
+) (applications.Node, error) {
 
 	// retrieve the genesis block:
 	gen := blkChain.GetGenesis()
@@ -35,6 +41,9 @@ func (obj *applicationService) Spawn(rootDir string, blkChain Blockchain, apps a
 	//create the config:
 	dirPath := filepath.Join(rootDir, gen.GetPath().String())
 	conf := config.DefaultConfig().SetRoot(dirPath)
+
+	//set the custom port in the RPC ListenAddress:
+	conf.RPC.ListenAddress = fmt.Sprintf("tcp://0.0.0.0:%d", port)
 
 	// create the node:
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))

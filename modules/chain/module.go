@@ -50,6 +50,7 @@ type route struct {
 type module struct {
 	context     *lua.LState
 	dbPath      string
+	port        int
 	instanceID  *uuid.UUID
 	rootPubKeys []crypto.PublicKey
 	nodePK      tcrypto.PrivKey
@@ -60,6 +61,7 @@ type module struct {
 func createModule(
 	context *lua.LState,
 	dbPath string,
+	port int,
 	instanceID *uuid.UUID,
 	rootPubKeys []crypto.PublicKey,
 	nodePK tcrypto.PrivKey,
@@ -68,6 +70,7 @@ func createModule(
 	out := module{
 		context:     context,
 		dbPath:      dbPath,
+		port:        port,
 		instanceID:  instanceID,
 		rootPubKeys: rootPubKeys,
 		nodePK:      nodePK,
@@ -583,7 +586,7 @@ func (app *module) Spawn() (applications.Node, error) {
 	appService := tendermint.SDKFunc.CreateApplicationService()
 
 	// spawn the node:
-	node, nodeErr := appService.Spawn(app.dbPath, blkChain, apps)
+	node, nodeErr := appService.Spawn(app.port, app.dbPath, blkChain, apps)
 	if nodeErr != nil {
 		return nil, nodeErr
 	}
