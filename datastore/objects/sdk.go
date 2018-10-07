@@ -1,7 +1,7 @@
 package objects
 
 import (
-	"github.com/xmnservices/xmnsuite/keys"
+	"github.com/xmnservices/xmnsuite/datastore/keys"
 )
 
 // ObjInKey represents an object in key

@@ -3,7 +3,7 @@ package tests
 import (
 	"testing"
 
-	"github.com/xmnservices/xmnsuite/objects"
+	"github.com/xmnservices/xmnsuite/datastore/objects"
 )
 
 func TestCreate_Success(t *testing.T) {

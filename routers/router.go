@@ -5,8 +5,8 @@ import (
 	"regexp"
 
 	crypto "github.com/xmnservices/xmnsuite/crypto"
-	roles "github.com/xmnservices/xmnsuite/roles"
-	users "github.com/xmnservices/xmnsuite/users"
+	roles "github.com/xmnservices/xmnsuite/datastore/roles"
+	users "github.com/xmnservices/xmnsuite/datastore/users"
 )
 
 /*

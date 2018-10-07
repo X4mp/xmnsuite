@@ -2,7 +2,7 @@ package roles
 
 import (
 	crypto "github.com/xmnservices/xmnsuite/crypto"
-	"github.com/xmnservices/xmnsuite/lists"
+	"github.com/xmnservices/xmnsuite/datastore/lists"
 )
 
 // Roles represents a role

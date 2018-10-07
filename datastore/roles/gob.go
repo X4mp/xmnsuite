@@ -1,9 +1,9 @@
-package users
+package roles
 
 import (
 	"encoding/gob"
 
-	"github.com/xmnservices/xmnsuite/roles"
+	"github.com/xmnservices/xmnsuite/datastore/lists"
 )
 
 func init() {
@@ -12,6 +12,6 @@ func init() {
 
 // RegisterGob registers the hashtree for gob
 func RegisterGob() {
-	roles.RegisterGob()
-	gob.Register(&concreteUsers{})
+	lists.RegisterGob()
+	gob.Register(&concreteRoles{})
 }

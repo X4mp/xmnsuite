@@ -3,8 +3,8 @@ package lists
 import (
 	"encoding/gob"
 
-	"github.com/xmnservices/xmnsuite/keys"
-	"github.com/xmnservices/xmnsuite/objects"
+	"github.com/xmnservices/xmnsuite/datastore/keys"
+	"github.com/xmnservices/xmnsuite/datastore/objects"
 )
 
 func init() {

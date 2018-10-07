@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	tests "github.com/xmnservices/xmnsuite/tests"
 	uuid "github.com/satori/go.uuid"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
+	tests "github.com/xmnservices/xmnsuite/tests"
 )
 
 func TestValidator_Success(t *testing.T) {

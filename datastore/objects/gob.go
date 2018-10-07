@@ -3,7 +3,7 @@ package objects
 import (
 	"encoding/gob"
 
-	"github.com/xmnservices/xmnsuite/keys"
+	"github.com/xmnservices/xmnsuite/datastore/keys"
 )
 
 func init() {

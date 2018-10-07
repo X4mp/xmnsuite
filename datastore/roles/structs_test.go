@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	crypto "github.com/xmnservices/xmnsuite/crypto"
+	"github.com/xmnservices/xmnsuite/datastore/lists"
+	"github.com/xmnservices/xmnsuite/datastore/users"
 	"github.com/xmnservices/xmnsuite/helpers"
-	"github.com/xmnservices/xmnsuite/lists"
-	"github.com/xmnservices/xmnsuite/users"
 )
 
 func TestSingle_save_thenExists_thenRetrieve_thenDelete_Success(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"errors"
 	"fmt"
 
-	objects "github.com/xmnservices/xmnsuite/objects"
+	objects "github.com/xmnservices/xmnsuite/datastore/objects"
 )
 
 /*

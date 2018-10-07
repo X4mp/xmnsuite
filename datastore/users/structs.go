@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	crypto "github.com/xmnservices/xmnsuite/crypto"
-	"github.com/xmnservices/xmnsuite/objects"
+	"github.com/xmnservices/xmnsuite/datastore/objects"
 )
 
 type concreteUsers struct {

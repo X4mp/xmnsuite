@@ -7,8 +7,8 @@ import (
 
 	crypto "github.com/xmnservices/xmnsuite/crypto"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
-	roles "github.com/xmnservices/xmnsuite/roles"
-	users "github.com/xmnservices/xmnsuite/users"
+	roles "github.com/xmnservices/xmnsuite/datastore/roles"
+	users "github.com/xmnservices/xmnsuite/datastore/users"
 )
 
 func TestCreateHandler_withSaveTrxFn_Success(t *testing.T) {

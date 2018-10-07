@@ -6,8 +6,8 @@ import (
 	"regexp"
 
 	crypto "github.com/xmnservices/xmnsuite/crypto"
+	"github.com/xmnservices/xmnsuite/datastore/lists"
 	"github.com/xmnservices/xmnsuite/helpers"
-	"github.com/xmnservices/xmnsuite/lists"
 )
 
 type concreteRoles struct {

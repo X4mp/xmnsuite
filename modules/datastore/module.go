@@ -7,11 +7,11 @@ import (
 
 	crypto "github.com/xmnservices/xmnsuite/crypto"
 	datastore "github.com/xmnservices/xmnsuite/datastore"
-	"github.com/xmnservices/xmnsuite/keys"
-	"github.com/xmnservices/xmnsuite/lists"
-	"github.com/xmnservices/xmnsuite/objects"
-	"github.com/xmnservices/xmnsuite/roles"
-	"github.com/xmnservices/xmnsuite/users"
+	"github.com/xmnservices/xmnsuite/datastore/keys"
+	"github.com/xmnservices/xmnsuite/datastore/lists"
+	"github.com/xmnservices/xmnsuite/datastore/objects"
+	"github.com/xmnservices/xmnsuite/datastore/roles"
+	"github.com/xmnservices/xmnsuite/datastore/users"
 	lua "github.com/yuin/gopher-lua"
 )
 

@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/xmnservices/xmnsuite/helpers"
-	"github.com/xmnservices/xmnsuite/keys"
+	"github.com/xmnservices/xmnsuite/datastore/keys"
 )
 
 /*

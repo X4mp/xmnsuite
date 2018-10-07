@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/xmnservices/xmnsuite/datastore/objects"
 	"github.com/xmnservices/xmnsuite/helpers"
-	"github.com/xmnservices/xmnsuite/objects"
 )
 
 type concreteLists struct {

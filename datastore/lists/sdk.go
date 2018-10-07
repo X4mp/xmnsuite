@@ -1,6 +1,6 @@
 package lists
 
-import "github.com/xmnservices/xmnsuite/objects"
+import "github.com/xmnservices/xmnsuite/datastore/objects"
 
 // WalkFn represents the func called by walk
 type WalkFn func(index int, value interface{}) (interface{}, error)

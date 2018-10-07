@@ -6,7 +6,7 @@ import (
 
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/xmnservices/xmnsuite/keys"
+	"github.com/xmnservices/xmnsuite/datastore/keys"
 	lua "github.com/yuin/gopher-lua"
 )
 

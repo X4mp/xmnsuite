@@ -1,12 +1,12 @@
 package datastore
 
 import (
+	"github.com/xmnservices/xmnsuite/datastore/keys"
+	"github.com/xmnservices/xmnsuite/datastore/lists"
+	"github.com/xmnservices/xmnsuite/datastore/objects"
+	"github.com/xmnservices/xmnsuite/datastore/roles"
+	"github.com/xmnservices/xmnsuite/datastore/users"
 	"github.com/xmnservices/xmnsuite/hashtree"
-	"github.com/xmnservices/xmnsuite/keys"
-	"github.com/xmnservices/xmnsuite/lists"
-	"github.com/xmnservices/xmnsuite/objects"
-	"github.com/xmnservices/xmnsuite/roles"
-	"github.com/xmnservices/xmnsuite/users"
 )
 
 /*
