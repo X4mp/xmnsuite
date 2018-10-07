@@ -22,6 +22,25 @@ func TestAdd_thenDelete_Success(t *testing.T) {
 	//add:
 	app.Add(key, firstElement, secondElement, thirdElement)
 
+	// convert with GOB:
+	gobData, gobDataErr := helpers.GetBytes(app)
+	if gobDataErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", gobDataErr.Error())
+		return
+	}
+
+	ptr := new(concreteLists)
+	gobErr := helpers.Marshal(gobData, ptr)
+	if gobErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", gobErr.Error())
+		return
+	}
+
+	if !app.Objects().Keys().Head().Head().Compare(ptr.Objects().Keys().Head().Head()) {
+		t.Errorf("there was an error while converting the hashtree backandforth using gob")
+		return
+	}
+
 	//delete:
 	retAmount := app.Del(key, secondElement, []byte("invalid"))
 	if retAmount != 1 {
@@ -162,6 +181,25 @@ func TestAdd_thenRetrieve_notUnique_Success(t *testing.T) {
 	thirdIsNil := app.Retrieve("this-is-invalid-yes", 0, 2)
 	if thirdIsNil != nil {
 		t.Errorf("the returned value was expected to be nil, value returned: %v", thirdIsNil)
+		return
+	}
+
+	// convert with GOB:
+	gobData, gobDataErr := helpers.GetBytes(app)
+	if gobDataErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", gobDataErr.Error())
+		return
+	}
+
+	ptr := new(concreteLists)
+	gobErr := helpers.Marshal(gobData, ptr)
+	if gobErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", gobErr.Error())
+		return
+	}
+
+	if !app.Objects().Keys().Head().Head().Compare(ptr.Objects().Keys().Head().Head()) {
+		t.Errorf("there was an error while converting the hashtree backandforth using gob")
 		return
 	}
 }

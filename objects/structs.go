@@ -13,12 +13,12 @@ import (
  */
 
 type concreteObjects struct {
-	keys keys.Keys
+	K keys.Keys
 }
 
 func createObjects() Objects {
 	out := concreteObjects{
-		keys: keys.SDKFunc.Create(),
+		K: keys.SDKFunc.Create(),
 	}
 
 	return &out
@@ -26,13 +26,13 @@ func createObjects() Objects {
 
 // Keys returns the keys instance
 func (app *concreteObjects) Keys() keys.Keys {
-	return app.keys
+	return app.K
 }
 
 // Copy copies the objects instance
 func (app *concreteObjects) Copy() Objects {
 	out := concreteObjects{
-		keys: app.Keys().Copy(),
+		K: app.Keys().Copy(),
 	}
 
 	return &out
@@ -42,8 +42,8 @@ func (app *concreteObjects) Copy() Objects {
 func (app *concreteObjects) Retrieve(objs ...*ObjInKey) int {
 	cpt := 0
 	for index, oneObj := range objs {
-		if app.keys.Exists(oneObj.Key) == 1 {
-			data := app.keys.Retrieve(oneObj.Key)
+		if app.K.Exists(oneObj.Key) == 1 {
+			data := app.K.Retrieve(oneObj.Key)
 			marErr := helpers.Marshal(data.([]byte), objs[index].Obj)
 			if marErr != nil {
 				str := fmt.Sprintf("there was an error while unmarshalling data to the given pointer (index: %d): %s", index, marErr.Error())
@@ -67,7 +67,7 @@ func (app *concreteObjects) Save(objs ...*ObjInKey) int {
 			panic(errors.New(str))
 		}
 
-		app.keys.Save(oneObj.Key, bytes)
+		app.K.Save(oneObj.Key, bytes)
 		cpt++
 	}
 

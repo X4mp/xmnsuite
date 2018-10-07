@@ -11,12 +11,12 @@ import (
 )
 
 type concreteRoles struct {
-	lst lists.Lists
+	Lst lists.Lists
 }
 
 func createConcreteRoles() Roles {
 	out := concreteRoles{
-		lst: lists.SDKFunc.CreateSet(),
+		Lst: lists.SDKFunc.CreateSet(),
 	}
 
 	return &out
@@ -24,13 +24,13 @@ func createConcreteRoles() Roles {
 
 // Lists returns the lists
 func (app *concreteRoles) Lists() lists.Lists {
-	return app.lst
+	return app.Lst
 }
 
 // Copy copies the roles instance
 func (app *concreteRoles) Copy() Roles {
 	out := concreteRoles{
-		lst: app.lst.Copy(),
+		Lst: app.Lst.Copy(),
 	}
 
 	return &out

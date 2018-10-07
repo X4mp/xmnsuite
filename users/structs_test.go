@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	crypto "github.com/xmnservices/xmnsuite/crypto"
+	"github.com/xmnservices/xmnsuite/helpers"
 )
 
 func TestSave_thenRetrieve_Success(t *testing.T) {
@@ -44,6 +45,25 @@ func TestSave_thenRetrieve_Success(t *testing.T) {
 	isInserted := app.Insert(pubKey)
 	if !isInserted {
 		t.Errorf("the returned bool was expected to be true, false returned")
+		return
+	}
+
+	// convert with GOB:
+	gobData, gobDataErr := helpers.GetBytes(app)
+	if gobDataErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", gobDataErr.Error())
+		return
+	}
+
+	ptr := new(concreteUsers)
+	gobErr := helpers.Marshal(gobData, ptr)
+	if gobErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", gobErr.Error())
+		return
+	}
+
+	if !app.Objects().Keys().Head().Head().Compare(ptr.Objects().Keys().Head().Head()) {
+		t.Errorf("there was an error while converting the hashtree backandforth using gob")
 		return
 	}
 

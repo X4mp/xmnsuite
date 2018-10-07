@@ -8,18 +8,14 @@ import (
 	"errors"
 	"fmt"
 	"math"
-
-	amino "github.com/tendermint/go-amino"
 )
 
-var cdc = amino.NewCodec()
-
 /*
-* Hash
+ * Hash
  */
 
-type concreteHash struct {
-	h []byte
+type hash struct {
+	H []byte `json:"hash"`
 }
 
 func createHashFromString(str string) (Hash, error) {
@@ -28,8 +24,8 @@ func createHashFromString(str string) (Hash, error) {
 		return nil, decErr
 	}
 
-	out := concreteHash{
-		h: dec,
+	out := hash{
+		H: dec,
 	}
 
 	return &out, nil
@@ -39,34 +35,34 @@ func createHashFromData(data []byte) Hash {
 	sha := sha256.New()
 	sha.Write(data)
 
-	out := concreteHash{
-		h: sha.Sum(nil),
+	out := hash{
+		H: sha.Sum(nil),
 	}
 
 	return &out
 }
 
 // String returns a string representation of the hash
-func (obj *concreteHash) String() string {
-	return hex.EncodeToString(obj.h)
+func (obj *hash) String() string {
+	return hex.EncodeToString(obj.H)
 }
 
 // Get returns the hash as byte
-func (obj *concreteHash) Get() []byte {
-	return obj.h
+func (obj *hash) Get() []byte {
+	return obj.H
 }
 
 // Compare compares the hashes.  If equal, returns true, otherwise false
-func (obj *concreteHash) Compare(h Hash) bool {
-	return bytes.Compare(obj.h, h.Get()) == 0
+func (obj *hash) Compare(h Hash) bool {
+	return bytes.Compare(obj.H, h.Get()) == 0
 }
 
 /*
 * Block
  */
 
-type concreteBlock struct {
-	list []Hash
+type block struct {
+	List []Hash `json:"list"`
 }
 
 func createBlockFromData(data [][]byte) (Block, error) {
@@ -81,14 +77,14 @@ func createBlockFromData(data [][]byte) (Block, error) {
 		hashes = append(hashes, oneHash)
 	}
 
-	blk := concreteBlock{
-		list: hashes,
+	blk := block{
+		List: hashes,
 	}
 
 	return blk.resize(), nil
 }
 
-func (obj *concreteBlock) resize() Block {
+func (obj *block) resize() Block {
 	//need to make sure the elements are always a power of 2:
 	isPowerOfTwo := obj.isLengthPowerForTwo()
 	if !isPowerOfTwo {
@@ -98,27 +94,27 @@ func (obj *concreteBlock) resize() Block {
 	return obj
 }
 
-func (obj *concreteBlock) isLengthPowerForTwo() bool {
-	length := len(obj.list)
+func (obj *block) isLengthPowerForTwo() bool {
+	length := len(obj.List)
 	return (length != 0) && ((length & (length - 1)) == 0)
 }
 
-func (obj *concreteBlock) resizeToNextPowerOfTwo() Block {
-	lengthAsFloat := float64(len(obj.list))
+func (obj *block) resizeToNextPowerOfTwo() Block {
+	lengthAsFloat := float64(len(obj.List))
 	next := uint(math.Pow(2, math.Ceil(math.Log(lengthAsFloat)/math.Log(2))))
 	remaining := int(next) - int(lengthAsFloat)
 	for i := 0; i < remaining; i++ {
 		single := createHashFromData(nil)
-		obj.list = append(obj.list, single)
+		obj.List = append(obj.List, single)
 	}
 
 	return obj
 }
 
 // Leaves returns the leaves of the block
-func (obj *concreteBlock) Leaves() Leaves {
+func (obj *block) Leaves() Leaves {
 	leaves := []Leaf{}
-	for _, oneBlockHash := range obj.list {
+	for _, oneBlockHash := range obj.List {
 		oneLeaf := createLeaf(oneBlockHash)
 		leaves = append(leaves, oneLeaf)
 	}
@@ -127,16 +123,16 @@ func (obj *concreteBlock) Leaves() Leaves {
 }
 
 // HashTree returns the HashTree
-func (obj *concreteBlock) HashTree() HashTree {
+func (obj *block) HashTree() HashTree {
 	leaves := obj.Leaves()
 	tree := leaves.HashTree()
 	return tree
 }
 
 // MarshalJSON converts the instance to JSON
-func (obj *concreteBlock) MarshalJSON() ([]byte, error) {
+func (obj *block) MarshalJSON() ([]byte, error) {
 	list := []string{}
-	for _, oneHash := range obj.list {
+	for _, oneHash := range obj.List {
 		list = append(list, oneHash.String())
 	}
 
@@ -149,7 +145,7 @@ func (obj *concreteBlock) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON converts the JSON to an instance
-func (obj *concreteBlock) UnmarshalJSON(data []byte) error {
+func (obj *block) UnmarshalJSON(data []byte) error {
 	hashes := new([]string)
 	jsErr := json.Unmarshal(data, hashes)
 	if jsErr != nil {
@@ -166,61 +162,30 @@ func (obj *concreteBlock) UnmarshalJSON(data []byte) error {
 		out = append(out, oneHash)
 	}
 
-	obj.list = out
+	obj.List = out
 	return nil
 }
 
 /*
-* ParentLeaf
+ * ParentLeaf
  */
 
-type jsonParentLeaf struct {
-	Left  *jsonLeaf `json:"left"`
-	Right *jsonLeaf `json:"right"`
-}
-
-func createJSONParentLeaf(parent ParentLeaf) *jsonParentLeaf {
-	left := createJSONLeaf(parent.Left())
-	right := createJSONLeaf(parent.Right())
-	out := jsonParentLeaf{
-		Left:  left,
-		Right: right,
-	}
-
-	return &out
-}
-
-type concreteParentLeaf struct {
-	left  Leaf
-	right Leaf
+type parentLeaf struct {
+	Lft Leaf `json:"left"`
+	Rgt Leaf `json:"right"`
 }
 
 func createParentLeaf(left Leaf, right Leaf) ParentLeaf {
-	out := concreteParentLeaf{
-		left:  left,
-		right: right,
+	out := parentLeaf{
+		Lft: left,
+		Rgt: right,
 	}
 
 	return &out
 }
 
-func createParentLeafFromJSON(js *jsonParentLeaf) (ParentLeaf, error) {
-	left, leftErr := createLeafFromJSON(js.Left)
-	if leftErr != nil {
-		return nil, leftErr
-	}
-
-	right, rightErr := createLeafFromJSON(js.Right)
-	if rightErr != nil {
-		return nil, rightErr
-	}
-
-	out := createParentLeaf(left, right)
-	return out, nil
-}
-
 // HashTree returns the hashtree
-func (obj *concreteParentLeaf) HashTree() HashTree {
+func (obj *parentLeaf) HashTree() HashTree {
 	data := bytes.Join([][]byte{
 		obj.Left().Head().Get(),
 		obj.Right().Head().Get(),
@@ -232,7 +197,7 @@ func (obj *concreteParentLeaf) HashTree() HashTree {
 }
 
 // BlockLeaves returns the block leaves
-func (obj *concreteParentLeaf) BlockLeaves() Leaves {
+func (obj *parentLeaf) BlockLeaves() Leaves {
 	left := obj.Left()
 	right := obj.Right()
 	leftLeaves := left.Leaves()
@@ -241,111 +206,37 @@ func (obj *concreteParentLeaf) BlockLeaves() Leaves {
 }
 
 // Left returns the left leaf
-func (obj *concreteParentLeaf) Left() Leaf {
-	return obj.left
+func (obj *parentLeaf) Left() Leaf {
+	return obj.Lft
 }
 
 // Right returns the right leaf
-func (obj *concreteParentLeaf) Right() Leaf {
-	return obj.right
-}
-
-// MarshalJSON converts the instance to JSON
-func (obj *concreteParentLeaf) MarshalJSON() ([]byte, error) {
-	jsonParent := createJSONParentLeaf(obj)
-	js, jsErr := json.Marshal(jsonParent)
-	if jsErr != nil {
-		return nil, jsErr
-	}
-
-	return js, nil
-}
-
-// UnmarshalJSON converts the JSON to an instance
-func (obj *concreteParentLeaf) UnmarshalJSON(data []byte) error {
-	jsonParent := new(jsonParentLeaf)
-	jsErr := json.Unmarshal(data, jsonParent)
-	if jsErr != nil {
-		return jsErr
-	}
-
-	parent, parentErr := createParentLeafFromJSON(jsonParent)
-	if parentErr != nil {
-		return parentErr
-	}
-
-	obj.left = parent.Left()
-	obj.right = parent.Right()
-	return nil
+func (obj *parentLeaf) Right() Leaf {
+	return obj.Rgt
 }
 
 /*
 * Leaf
  */
 
-type jsonLeaf struct {
-	Head   string          `json:"head"`
-	Parent *jsonParentLeaf `json:"parent"`
-}
-
-func createJSONLeaf(leaf Leaf) *jsonLeaf {
-	head := leaf.Head().String()
-	if !leaf.HasParent() {
-		out := jsonLeaf{
-			Head:   head,
-			Parent: nil,
-		}
-
-		return &out
-	}
-
-	parent := createJSONParentLeaf(leaf.Parent())
-	out := jsonLeaf{
-		Head:   head,
-		Parent: parent,
-	}
-
-	return &out
-}
-
-type concreteLeaf struct {
-	head   Hash
-	parent ParentLeaf
+type leaf struct {
+	Hd Hash       `json:"head"`
+	Pt ParentLeaf `json:"parent"`
 }
 
 func createLeaf(head Hash) Leaf {
-	out := concreteLeaf{
-		head:   head,
-		parent: nil,
+	out := leaf{
+		Hd: head,
+		Pt: nil,
 	}
 
 	return &out
 }
 
-func createLeafFromJSON(js *jsonLeaf) (Leaf, error) {
-	head, headErr := createHashFromString(js.Head)
-	if headErr != nil {
-		return nil, headErr
-	}
-
-	if js.Parent == nil {
-		out := createLeaf(head)
-		return out, nil
-	}
-
-	parent, parentErr := createParentLeafFromJSON(js.Parent)
-	if parentErr != nil {
-		return nil, parentErr
-	}
-
-	out := createLeafWithParent(head, parent)
-	return out, nil
-}
-
 func createLeafWithParent(head Hash, parent ParentLeaf) Leaf {
-	out := concreteLeaf{
-		head:   head,
-		parent: parent,
+	out := leaf{
+		Hd: head,
+		Pt: parent,
 	}
 
 	return &out
@@ -363,22 +254,22 @@ func createChildLeaf(left Leaf, right Leaf) Leaf {
 }
 
 // Head returns the head hash
-func (obj *concreteLeaf) Head() Hash {
-	return obj.head
+func (obj *leaf) Head() Hash {
+	return obj.Hd
 }
 
 // HasParent returns true if there is a parent, false otherwise
-func (obj *concreteLeaf) HasParent() bool {
-	return obj.parent != nil
+func (obj *leaf) HasParent() bool {
+	return obj.Pt != nil
 }
 
 // Parent returns the parent, if any
-func (obj *concreteLeaf) Parent() ParentLeaf {
-	return obj.parent
+func (obj *leaf) Parent() ParentLeaf {
+	return obj.Pt
 }
 
 // Leaves returns the leaves
-func (obj *concreteLeaf) Leaves() Leaves {
+func (obj *leaf) Leaves() Leaves {
 	if obj.HasParent() {
 		return obj.Parent().BlockLeaves()
 	}
@@ -392,7 +283,7 @@ func (obj *concreteLeaf) Leaves() Leaves {
 }
 
 // Height returns the leaf height
-func (obj *concreteLeaf) Height() int {
+func (obj *leaf) Height() int {
 	cpt := 0
 	var oneLeaf Leaf
 	for {
@@ -410,104 +301,42 @@ func (obj *concreteLeaf) Height() int {
 	}
 }
 
-// MarshalJSON converts the instance to JSON
-func (obj *concreteLeaf) MarshalJSON() ([]byte, error) {
-	jsLeaf := createJSONLeaf(obj)
-	js, jsErr := json.Marshal(jsLeaf)
-	if jsErr != nil {
-		return nil, jsErr
-	}
-
-	return js, nil
-}
-
-// UnmarshalJSON converts the JSON to an instance
-func (obj *concreteLeaf) UnmarshalJSON(data []byte) error {
-	jsLeaf := new(jsonLeaf)
-	jsErr := json.Unmarshal(data, jsLeaf)
-	if jsErr != nil {
-		return jsErr
-	}
-
-	leaf, leafErr := createLeafFromJSON(jsLeaf)
-	if leafErr != nil {
-		return leafErr
-	}
-
-	obj.head = leaf.Head()
-	obj.parent = leaf.Parent()
-	return nil
-}
-
 /*
 * Leaves
  */
 
-type jsonLeaves struct {
-	List []*jsonLeaf `json:"leaves"`
-}
-
-func createJSONLeaves(leaves Leaves) *jsonLeaves {
-	list := []*jsonLeaf{}
-	for _, oneLeaf := range leaves.Leaves() {
-		jsonLeaf := createJSONLeaf(oneLeaf)
-		list = append(list, jsonLeaf)
-	}
-
-	out := jsonLeaves{
-		List: list,
-	}
-
-	return &out
-}
-
-type concreteLeaves struct {
-	list []Leaf
+type leaves struct {
+	Lst []Leaf `json:"leaves"`
 }
 
 func createLeaves(list []Leaf) Leaves {
-	out := concreteLeaves{
-		list: list,
+	out := leaves{
+		Lst: list,
 	}
 
 	return &out
 }
 
-func createLeavesFromJSON(jsLeaves *jsonLeaves) (Leaves, error) {
-	list := []Leaf{}
-	for _, oneJSLeaf := range jsLeaves.List {
-		oneLeaf, oneLeafErr := createLeafFromJSON(oneJSLeaf)
-		if oneLeafErr != nil {
-			return nil, oneLeafErr
-		}
-
-		list = append(list, oneLeaf)
-	}
-
-	out := createLeaves(list)
-	return out, nil
-}
-
 // Leaves returns the leaves
-func (obj *concreteLeaves) Leaves() []Leaf {
-	return obj.list
+func (obj *leaves) Leaves() []Leaf {
+	return obj.Lst
 }
 
 // Merge merge Leaves instances
-func (obj *concreteLeaves) Merge(lves Leaves) Leaves {
+func (obj *leaves) Merge(lves Leaves) Leaves {
 	for _, oneLeaf := range lves.Leaves() {
-		obj.list = append(obj.list, oneLeaf)
+		obj.Lst = append(obj.Lst, oneLeaf)
 	}
 
 	return obj
 }
 
 // HashTree returns the hashtree
-func (obj *concreteLeaves) HashTree() HashTree {
-	length := len(obj.list)
+func (obj *leaves) HashTree() HashTree {
+	length := len(obj.Lst)
 	if length == 2 {
-		left := obj.list[0]
-		right := obj.list[1]
+		left := obj.Lst[0]
+		right := obj.Lst[1]
 		parent := createParentLeaf(left, right)
 		tree := parent.HashTree()
 		return tree
@@ -518,16 +347,16 @@ func (obj *concreteLeaves) HashTree() HashTree {
 	return tree
 }
 
-func (obj *concreteLeaves) createChildrenLeaves() Leaves {
+func (obj *leaves) createChildrenLeaves() Leaves {
 	var childrenLeaves []Leaf
-	for index, oneLeaf := range obj.list {
+	for index, oneLeaf := range obj.Lst {
 
 		if index%2 != 0 {
 			continue
 		}
 
 		left := oneLeaf
-		right := obj.list[index+1]
+		right := obj.Lst[index+1]
 		child := createChildLeaf(left, right)
 		parent := createParentLeaf(left, right)
 		childWithParent := createLeafWithParent(child.Head(), parent)
@@ -537,137 +366,53 @@ func (obj *concreteLeaves) createChildrenLeaves() Leaves {
 	return createLeaves(childrenLeaves)
 }
 
-// MarshalJSON converts the instance to JSON
-func (obj *concreteLeaves) MarshalJSON() ([]byte, error) {
-	jsLeaves := createJSONLeaves(obj)
-	js, jsErr := json.Marshal(jsLeaves)
-	if jsErr != nil {
-		return nil, jsErr
-	}
-
-	return js, nil
-}
-
-// UnmarshalJSON converts the JSON to an instance
-func (obj *concreteLeaves) UnmarshalJSON(data []byte) error {
-	jsLeaves := new(jsonLeaves)
-	jsErr := json.Unmarshal(data, jsLeaves)
-	if jsErr != nil {
-		return jsErr
-	}
-
-	leaves, leavesErr := createLeavesFromJSON(jsLeaves)
-	if leavesErr != nil {
-		return leavesErr
-	}
-
-	obj.list = leaves.Leaves()
-	return nil
-}
-
 /*
 * Compact
  */
 
-func createJSONCompact(compact Compact) *JSONCompact {
-	head := compact.Head().String()
-	jsonLeaves := createJSONLeaves(compact.Leaves())
-	out := JSONCompact{
-		Head:   head,
-		Leaves: jsonLeaves,
-	}
-
-	return &out
-}
-
-type concreteCompact struct {
-	head   Hash
-	leaves Leaves
+type compact struct {
+	Hd   Hash   `json:"head"`
+	Lves Leaves `json:"leaves"`
 }
 
 func createCompact(head Hash, leaves Leaves) Compact {
-	out := concreteCompact{
-		head:   head,
-		leaves: leaves,
+	out := compact{
+		Hd:   head,
+		Lves: leaves,
 	}
 
 	return &out
 }
 
-func createCompactFromJSON(jsCompact *JSONCompact) (Compact, error) {
-	head, headErr := createHashFromString(jsCompact.Head)
-	if headErr != nil {
-		return nil, headErr
-	}
-
-	leaves, leavesErr := createLeavesFromJSON(jsCompact.Leaves)
-	if leavesErr != nil {
-		return nil, leavesErr
-	}
-
-	out := createCompact(head, leaves)
-	return out, nil
-
-}
-
 // Head returns the head hash
-func (obj *concreteCompact) Head() Hash {
-	return obj.head
+func (obj *compact) Head() Hash {
+	return obj.Hd
 }
 
 // Leaves returns the leaves
-func (obj *concreteCompact) Leaves() Leaves {
-	return obj.leaves
+func (obj *compact) Leaves() Leaves {
+	return obj.Lves
 }
 
 // Length returns the length of the compact hashtree
-func (obj *concreteCompact) Length() int {
-	return len(obj.leaves.Leaves())
-}
-
-// MarshalJSON converts the instance to JSON
-func (obj *concreteCompact) MarshalJSON() ([]byte, error) {
-	jsCompact := createJSONCompact(obj)
-	js, jsErr := json.Marshal(jsCompact)
-	if jsErr != nil {
-		return nil, jsErr
-	}
-
-	return js, nil
-}
-
-// UnmarshalJSON converts the JSON to an instance
-func (obj *concreteCompact) UnmarshalJSON(data []byte) error {
-	jsCompact := new(JSONCompact)
-	jsErr := json.Unmarshal(data, jsCompact)
-	if jsErr != nil {
-		return jsErr
-	}
-
-	compact, compactErr := createCompactFromJSON(jsCompact)
-	if compactErr != nil {
-		return compactErr
-	}
-
-	obj.head = compact.Head()
-	obj.leaves = compact.Leaves()
-	return nil
+func (obj *compact) Length() int {
+	return len(obj.Lves.Leaves())
 }
 
 /*
 * HashTree
  */
 
-// concreteHashTree represents a concrete HashTree implementation
-type concreteHashTree struct {
-	head   Hash
-	parent ParentLeaf
+// hashTree represents a concrete HashTree implementation
+type hashTree struct {
+	Hd Hash       `json:"head"`
+	Pt ParentLeaf `json:"parent"`
 }
 
 func createHashTree(head Hash, parent ParentLeaf) HashTree {
-	out := concreteHashTree{
-		head:   head,
-		parent: parent,
+	out := hashTree{
+		Hd: head,
+		Pt: parent,
 	}
 
 	return &out
@@ -684,35 +429,35 @@ func createHashTreeFromBlocks(blocks [][]byte) (HashTree, error) {
 }
 
 // Height returns the hashtree height
-func (obj *concreteHashTree) Height() int {
-	left := obj.parent.Left()
+func (obj *hashTree) Height() int {
+	left := obj.Pt.Left()
 	return left.Height() + 2
 }
 
 // Length returns the hashtree length
-func (obj *concreteHashTree) Length() int {
-	blockLeaves := obj.parent.BlockLeaves()
+func (obj *hashTree) Length() int {
+	blockLeaves := obj.Pt.BlockLeaves()
 	return len(blockLeaves.Leaves())
 }
 
 // Head returns the head hash
-func (obj *concreteHashTree) Head() Hash {
-	return obj.head
+func (obj *hashTree) Head() Hash {
+	return obj.Hd
 }
 
 // Parent returns the parent leaf
-func (obj *concreteHashTree) Parent() ParentLeaf {
-	return obj.parent
+func (obj *hashTree) Parent() ParentLeaf {
+	return obj.Pt
 }
 
 // Compact returns the compact version of the hashtree
-func (obj *concreteHashTree) Compact() Compact {
-	blockLeaves := obj.parent.BlockLeaves()
-	return createCompact(obj.head, blockLeaves)
+func (obj *hashTree) Compact() Compact {
+	blockLeaves := obj.Pt.BlockLeaves()
+	return createCompact(obj.Hd, blockLeaves)
 }
 
 // Order orders data that matches the leafs of the HashTree
-func (obj *concreteHashTree) Order(data [][]byte) ([][]byte, error) {
+func (obj *hashTree) Order(data [][]byte) ([][]byte, error) {
 	hashed := map[string][]byte{}
 	for _, oneData := range data {
 		sha := sha256.New()
@@ -722,7 +467,7 @@ func (obj *concreteHashTree) Order(data [][]byte) ([][]byte, error) {
 	}
 
 	out := [][]byte{}
-	leaves := obj.parent.BlockLeaves().Leaves()
+	leaves := obj.Pt.BlockLeaves().Leaves()
 	for _, oneLeaf := range leaves {
 		LeafHashAsString := oneLeaf.Head().String()
 		if oneData, ok := hashed[LeafHashAsString]; ok {
@@ -740,34 +485,4 @@ func (obj *concreteHashTree) Order(data [][]byte) ([][]byte, error) {
 	}
 
 	return out, nil
-}
-
-// MarshalJSON converts the instance to JSON
-func (obj *concreteHashTree) MarshalJSON() ([]byte, error) {
-	jsCompact := createJSONCompact(obj.Compact())
-	js, jsErr := json.Marshal(jsCompact)
-	if jsErr != nil {
-		return nil, jsErr
-	}
-
-	return js, nil
-}
-
-// UnmarshalJSON converts the JSON to an instance
-func (obj *concreteHashTree) UnmarshalJSON(data []byte) error {
-	jsCompact := new(JSONCompact)
-	jsErr := json.Unmarshal(data, jsCompact)
-	if jsErr != nil {
-		return jsErr
-	}
-
-	compact, compactErr := createCompactFromJSON(jsCompact)
-	if compactErr != nil {
-		return compactErr
-	}
-
-	ht := compact.Leaves().HashTree()
-	obj.head = ht.Head()
-	obj.parent = ht.Parent()
-	return nil
 }

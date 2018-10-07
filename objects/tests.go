@@ -2,17 +2,7 @@ package objects
 
 import (
 	uuid "github.com/satori/go.uuid"
-	amino "github.com/tendermint/go-amino"
 )
-
-func init() {
-	Register(cdc)
-}
-
-// Register registers all the interface -> struct to amino
-func Register(codec *amino.Codec) {
-	codec.RegisterConcrete(objFortests{}, "objects.objFortests", nil)
-}
 
 type objFortests struct {
 	ID          *uuid.UUID `json:"id"`

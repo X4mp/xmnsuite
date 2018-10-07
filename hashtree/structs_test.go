@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	helpers "github.com/xmnservices/xmnsuite/helpers"
 	convert "github.com/xmnservices/xmnsuite/tests"
 )
 
@@ -136,10 +137,11 @@ func TestCreateHashTree_withOneBlock_returnsError(t *testing.T) {
 	}
 }
 
-func TestCreate_convertToJSON_backAndForth_Success(t *testing.T) {
+func TestCreate_convertToJSON_convertToBinary_backAndForth_Success(t *testing.T) {
 
 	//variables:
-	empty := new(concreteHashTree)
+	jsEmpty := new(hashTree)
+	binEmpty := new(hashTree)
 	r := rand.New(rand.NewSource(99))
 	blks := [][]byte{
 		[]byte("this"),
@@ -156,5 +158,26 @@ func TestCreate_convertToJSON_backAndForth_Success(t *testing.T) {
 		return
 	}
 
-	convert.ConvertToJSON(t, h, empty, cdc)
+	// convert with amino:
+	convert.ConvertToJSON(t, h, jsEmpty, cdc)
+	convert.ConvertToBinary(t, h, binEmpty, cdc)
+
+	// convert with GOB:
+	data, dataErr := helpers.GetBytes(h)
+	if dataErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", dataErr.Error())
+		return
+	}
+
+	ptr := new(hashTree)
+	gobErr := helpers.Marshal(data, ptr)
+	if gobErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", gobErr.Error())
+		return
+	}
+
+	if !h.Head().Compare(ptr.Head()) {
+		t.Errorf("there was an error while converting the hashtree backandforth using gob")
+		return
+	}
 }

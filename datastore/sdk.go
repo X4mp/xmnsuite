@@ -21,6 +21,12 @@ type DataStore interface {
 	Roles() roles.Roles
 }
 
+// Service saves and retrieves datastores
+type Service interface {
+	Save(ds DataStore, filePath string) error
+	Retrieve(filePath string) (DataStore, error)
+}
+
 // SDKFunc represents the datastore SDK func
 var SDKFunc = struct {
 	Create func() DataStore

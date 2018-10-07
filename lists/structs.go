@@ -12,14 +12,14 @@ import (
 )
 
 type concreteLists struct {
-	isUnique bool
-	objs     objects.Objects
+	IsUnique bool
+	Objs     objects.Objects
 }
 
 func createConcreteLists(isUnique bool) Lists {
 	out := concreteLists{
-		isUnique: isUnique,
-		objs:     objects.SDKFunc.Create(),
+		IsUnique: isUnique,
+		Objs:     objects.SDKFunc.Create(),
 	}
 
 	return &out
@@ -27,14 +27,14 @@ func createConcreteLists(isUnique bool) Lists {
 
 // Objects returns the objects
 func (app *concreteLists) Objects() objects.Objects {
-	return app.objs
+	return app.Objs
 }
 
 // Copy copies the lists object
 func (app *concreteLists) Copy() Lists {
 	out := concreteLists{
-		isUnique: app.isUnique,
-		objs:     app.objs.Copy(),
+		IsUnique: app.IsUnique,
+		Objs:     app.Objs.Copy(),
 	}
 
 	return &out
@@ -43,8 +43,8 @@ func (app *concreteLists) Copy() Lists {
 // Add add values to a key, and returns the amount of elements added
 func (app *concreteLists) Add(key string, values ...interface{}) int {
 	//if the key is new:
-	if app.objs.Keys().Exists(key) == 0 {
-		app.objs.Save(&objects.ObjInKey{
+	if app.Objs.Keys().Exists(key) == 0 {
+		app.Objs.Save(&objects.ObjInKey{
 			Key: key,
 			Obj: values,
 		})
@@ -58,7 +58,7 @@ func (app *concreteLists) Add(key string, values ...interface{}) int {
 		Obj: new([]interface{}),
 	}
 
-	app.objs.Retrieve(&retObj)
+	app.Objs.Retrieve(&retObj)
 	ptrList := retObj.Obj.(*[]interface{})
 	list := *ptrList
 
@@ -71,13 +71,13 @@ func (app *concreteLists) Add(key string, values ...interface{}) int {
 	}
 
 	//if the list is unique:
-	if app.isUnique {
+	if app.IsUnique {
 		list = helpers.MakeUnique(list...)
 	}
 
 	//save:
 	retObj.Obj = list
-	app.objs.Save(&retObj)
+	app.Objs.Save(&retObj)
 	return len(list) - beginLength
 }
 
@@ -106,7 +106,7 @@ func (app *concreteLists) Del(key string, values ...interface{}) int {
 	}
 
 	//replace the elements:
-	app.objs.Keys().Delete(key)
+	app.Objs.Keys().Delete(key)
 	return beginLength - app.Add(key, elements...)
 }
 
@@ -117,7 +117,7 @@ func (app *concreteLists) Retrieve(key string, index int, amount int) []interfac
 		Obj: new([]interface{}),
 	}
 
-	amountRet := app.objs.Retrieve(&retObj)
+	amountRet := app.Objs.Retrieve(&retObj)
 	if amountRet != 1 {
 		return nil
 	}
@@ -161,7 +161,7 @@ func (app *concreteLists) Len(key string) int {
 		Obj: new([]interface{}),
 	}
 
-	amountRet := app.objs.Retrieve(&retObjs)
+	amountRet := app.Objs.Retrieve(&retObjs)
 	if amountRet != 1 {
 		return 0
 	}
@@ -184,7 +184,7 @@ func (app *concreteLists) Union(key ...string) []interface{} {
 		}
 	}
 
-	if !app.isUnique {
+	if !app.IsUnique {
 		return out
 	}
 

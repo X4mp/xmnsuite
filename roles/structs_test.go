@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	crypto "github.com/xmnservices/xmnsuite/crypto"
+	"github.com/xmnservices/xmnsuite/helpers"
 	"github.com/xmnservices/xmnsuite/lists"
 	"github.com/xmnservices/xmnsuite/users"
 )
@@ -79,6 +80,25 @@ func TestSingle_save_thenExists_thenRetrieve_thenDelete_Success(t *testing.T) {
 	singleExpected := []string{writeOnKey}
 	if !reflect.DeepEqual(retSingleWriteAccessKeys, singleExpected) {
 		t.Errorf("the returned keys are invalid")
+		return
+	}
+
+	// convert with GOB:
+	gobData, gobDataErr := helpers.GetBytes(app)
+	if gobDataErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", gobDataErr.Error())
+		return
+	}
+
+	ptr := new(concreteRoles)
+	gobErr := helpers.Marshal(gobData, ptr)
+	if gobErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", gobErr.Error())
+		return
+	}
+
+	if !app.Lists().Objects().Keys().Head().Head().Compare(ptr.Lists().Objects().Keys().Head().Head()) {
+		t.Errorf("there was an error while converting the hashtree backandforth using gob")
 		return
 	}
 

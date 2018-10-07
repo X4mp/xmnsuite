@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/xmnservices/xmnsuite/helpers"
 )
 
 func TestSingle_save_thenExists_thenRetrieve_thenDelete_Success(t *testing.T) {
@@ -52,6 +54,25 @@ func TestSingle_save_thenExists_thenRetrieve_thenDelete_Success(t *testing.T) {
 
 	//save the object:
 	app.Save(key, data)
+
+	// convert with GOB:
+	gobData, gobDataErr := helpers.GetBytes(app)
+	if gobDataErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", gobDataErr.Error())
+		return
+	}
+
+	ptr := new(concreteKeys)
+	gobErr := helpers.Marshal(gobData, ptr)
+	if gobErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", gobErr.Error())
+		return
+	}
+
+	if !app.Head().Head().Compare(ptr.Head().Head()) {
+		t.Errorf("there was an error while converting the hashtree backandforth using gob")
+		return
+	}
 
 	//the object does not exists:
 	amountExistsIsOne := app.Exists(key)
@@ -135,6 +156,25 @@ func TestSearch_Success(t *testing.T) {
 	results := app.Search("[a-z]+:[a-z_]+:[a-z-]+")
 	if !reflect.DeepEqual(shouldFind, results) {
 		t.Errorf("the returned keys are invalid.  \n\n Expected: %v, \n Returned: %v\n\n", shouldFind, results)
+		return
+	}
+
+	// convert with GOB:
+	data, dataErr := helpers.GetBytes(app)
+	if dataErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", dataErr.Error())
+		return
+	}
+
+	ptr := new(concreteKeys)
+	gobErr := helpers.Marshal(data, ptr)
+	if gobErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", gobErr.Error())
+		return
+	}
+
+	if !app.Head().Head().Compare(ptr.Head().Head()) {
+		t.Errorf("there was an error while converting the hashtree backandforth using gob")
 		return
 	}
 

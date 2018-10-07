@@ -45,14 +45,14 @@ func createStoredInstance(data interface{}) *storedInstance {
  */
 
 type concreteKeys struct {
-	head hashtree.HashTree
-	data map[string]*storedInstance
+	HD  hashtree.HashTree
+	Dat map[string]*storedInstance
 }
 
 func createConcreteKeys() Keys {
 	out := concreteKeys{
-		head: nil,
-		data: map[string]*storedInstance{},
+		HD:  nil,
+		Dat: map[string]*storedInstance{},
 	}
 
 	out.rebuildHead()
@@ -61,20 +61,20 @@ func createConcreteKeys() Keys {
 
 // Head returns the hash head
 func (app *concreteKeys) Head() hashtree.HashTree {
-	return app.head
+	return app.HD
 }
 
 // Copy copies the Keys instance
 func (app *concreteKeys) Copy() Keys {
 
 	data := map[string]*storedInstance{}
-	for keyname, oneData := range app.data {
+	for keyname, oneData := range app.Dat {
 		data[keyname] = createStoredInstance(oneData.Data)
 	}
 
 	out := concreteKeys{
-		head: nil,
-		data: data,
+		HD:  nil,
+		Dat: data,
 	}
 
 	out.rebuildHead()
@@ -84,7 +84,7 @@ func (app *concreteKeys) Copy() Keys {
 // HashTree returns the hashtree of the object at key
 func (app *concreteKeys) HashTree(key string) hashtree.HashTree {
 	if app.Exists(key) == 1 {
-		return app.data[key].HT
+		return app.Dat[key].HT
 	}
 
 	return nil
@@ -102,14 +102,14 @@ func (app *concreteKeys) HashTrees(keys ...string) []hashtree.HashTree {
 
 // Len returns the amount of objects stored
 func (app *concreteKeys) Len() int {
-	return len(app.data)
+	return len(app.Dat)
 }
 
 // Exists returns the amount of keys passed to Exists that exists
 func (app *concreteKeys) Exists(key ...string) int {
 	cpt := 0
 	for _, oneKey := range key {
-		if _, ok := app.data[oneKey]; ok {
+		if _, ok := app.Dat[oneKey]; ok {
 			cpt++
 		}
 	}
@@ -119,7 +119,7 @@ func (app *concreteKeys) Exists(key ...string) int {
 // Retrieve retrieves data at key
 func (app *concreteKeys) Retrieve(key string) interface{} {
 	if app.Exists(key) == 1 {
-		return app.data[key].Data
+		return app.Dat[key].Data
 	}
 
 	return nil
@@ -134,7 +134,7 @@ func (app *concreteKeys) Search(pattern string) []string {
 	}
 
 	out := []string{}
-	for oneKeyname := range app.data {
+	for oneKeyname := range app.Dat {
 		if !reg.MatchString(oneKeyname) {
 			continue
 		}
@@ -150,7 +150,7 @@ func (app *concreteKeys) Search(pattern string) []string {
 // Save saves data at key
 func (app *concreteKeys) Save(key string, data interface{}) {
 	//add the data:
-	app.data[key] = createStoredInstance(data)
+	app.Dat[key] = createStoredInstance(data)
 
 	//rebuild the head:
 	app.rebuildHead()
@@ -160,8 +160,8 @@ func (app *concreteKeys) Save(key string, data interface{}) {
 func (app *concreteKeys) Delete(key ...string) int {
 	cpt := 0
 	for _, oneKey := range key {
-		if _, ok := app.data[oneKey]; ok {
-			delete(app.data, oneKey)
+		if _, ok := app.Dat[oneKey]; ok {
+			delete(app.Dat, oneKey)
 			cpt++
 		}
 	}
@@ -178,7 +178,7 @@ func (app *concreteKeys) rebuildHead() {
 		[]byte("root"),
 	}
 
-	for keyname, ins := range app.data {
+	for keyname, ins := range app.Dat {
 		blks, blksErr := helpers.GetBytes(ins.Data)
 		if blksErr != nil {
 			str := fmt.Sprintf("the data could not be converted to []byte: %s", blksErr.Error())
@@ -193,5 +193,5 @@ func (app *concreteKeys) rebuildHead() {
 		Blocks: blocks,
 	})
 
-	app.head = ht
+	app.HD = ht
 }
