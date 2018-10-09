@@ -1,8 +1,6 @@
 package applications
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 
 	datastore "github.com/xmnservices/xmnsuite/datastore"
@@ -14,24 +12,27 @@ import (
  */
 
 type application struct {
-	fromIndex   int64
-	toIndex     int64
-	version     string
-	stateKey    string
-	router      routers.Router
-	store       datastore.DataStore
-	storedState *storedState
+	fromIndex int64
+	toIndex   int64
+	version   string
+	stateKey  string
+	router    routers.Router
+	db        Database
 }
 
-func createApplication(fromIndex int64, toIndex int64, version string, stateKey string, storedState *storedState, store datastore.DataStore, router routers.Router) (*application, error) {
+func createApplication(
+	fromIndex int64,
+	toIndex int64,
+	version string,
+	db Database,
+	router routers.Router,
+) (*application, error) {
 	out := application{
-		fromIndex:   fromIndex,
-		toIndex:     toIndex,
-		version:     version,
-		stateKey:    stateKey,
-		storedState: storedState,
-		store:       store,
-		router:      router,
+		fromIndex: fromIndex,
+		toIndex:   toIndex,
+		version:   version,
+		db:        db,
+		router:    router,
 	}
 
 	return &out, nil
@@ -49,25 +50,24 @@ func (app *application) ToBlockIndex() int64 {
 
 // GetBlockIndex returns the block index
 func (app *application) GetBlockIndex() int64 {
-	return app.storedState.State(app.version).Height()
+	return app.db.State(app.version).Height()
 }
 
 // Info returns the application's information
 func (app *application) Info(req InfoRequest) InfoResponse {
 	version := req.Version()
-	state := app.storedState.State(app.version)
-	size := state.Size()
-	out := createInfoResponse(size, version)
+	state := app.db.State(app.version)
+	out := createInfoResponse(version, state)
 	return out
 }
 
 // Transact tries to execute a transaction and return its response
 func (app *application) Transact(req routers.TransactionRequest) routers.TransactionResponse {
 	//execute the transaction:
-	resp := app.execTrx(app.store, req)
+	resp := app.execTrx(app.db.DataStore().DataStore(), req)
 
 	//increment the state size:
-	app.storedState.State(app.version).Increment()
+	app.db.State(app.version).Increment()
 
 	//return the response:
 	return resp
@@ -76,7 +76,7 @@ func (app *application) Transact(req routers.TransactionRequest) routers.Transac
 // CheckTransact verifies if a transaction can be executed and return its response
 func (app *application) CheckTransact(req routers.TransactionRequest) routers.TransactionResponse {
 	//copy the store:
-	store := app.store.Copy()
+	store := app.db.DataStore().DataStore().Copy()
 
 	//execute the transaction without incrementing the state size, then return the response:
 	return app.execTrx(store, req)
@@ -84,32 +84,17 @@ func (app *application) CheckTransact(req routers.TransactionRequest) routers.Tr
 
 // Commit commits the pending transactions to a block and update the application state, then return its response
 func (app *application) Commit() CommitResponse {
-	//get the current state:
-	st := app.storedState.State(app.version)
-	size := st.Size()
+	// current state:
+	curSt := app.db.State(app.version)
 
-	// get the hash from state:
-	appHash := st.Hash()
-
-	//if the size is bigger than 0, use the store head hash:
-	if size > 0 {
-		appHash = app.store.Head().Head().Get()
+	// update the state:
+	st, stErr := app.db.Update(app.version)
+	if stErr != nil {
+		panic(stErr)
 	}
 
-	//create the updated state:
-	newSt := createState(appHash, st.Height()+1, st.Size())
-	stJS, stJSErr := json.Marshal(newSt)
-	if stJSErr != nil {
-		panic(stJSErr)
-	}
-
-	//set the updated state:
-	amount := app.storedState.Set(app.stateKey, stJS)
-	if amount != 1 {
-		panic(errors.New("there was a problem while saving the state in the storedState"))
-	}
-
-	return createCommitResponse(appHash, newSt.Height())
+	// response:
+	return createCommitResponse(curSt.Hash(), st.Hash(), st.Height())
 }
 
 // Query executes a query request on the application
@@ -137,7 +122,7 @@ func (app *application) Query(req routers.QueryRequest) routers.QueryResponse {
 	}
 
 	// retrieve the query response:
-	queryResponse, queryResponseErr := retrieveFunc(app.store, from, prepHandler.Path(), prepHandler.Params(), req.Signature())
+	queryResponse, queryResponseErr := retrieveFunc(app.db.DataStore().DataStore(), from, prepHandler.Path(), prepHandler.Params(), req.Signature())
 	if queryResponseErr != nil {
 		str := fmt.Sprintf("there was an error while executing the query func: %s", queryResponseErr.Error())
 		return outputErrorFn(routers.InvalidRequest, str)

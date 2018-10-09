@@ -1,6 +1,6 @@
 [[override]]
   name = "github.com/tendermint/tendermint"
-  version = "0.23.0"
+  version = "0.25.0"
 
 [[override]]
   name = "github.com/yuin/gopher-lua"

@@ -1,6 +1,7 @@
 package tendermint
 
 import (
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -192,6 +193,7 @@ type jsonGenesis struct {
 	ChainIdentifier string           `json:"chain_id"`
 	Validators      []*jsonValidator `json:"validators"`
 	CreatedOn       time.Time        `json:"genesis_time"`
+	Path            string           `json:"path"`
 }
 
 func createJSONGenesis(gen Genesis) (*jsonGenesis, error) {
@@ -206,11 +208,16 @@ func createJSONGenesis(gen Genesis) (*jsonGenesis, error) {
 		jsValidators = append(jsValidators, oneJSValidator)
 	}
 
+	sh := sha256.New()
+	sh.Write([]byte(strings.Replace(gen.GetPath().String(), string(filepath.Separator), "-", 2)))
+	chainID := hex.EncodeToString(sh.Sum(nil))
+
 	out := jsonGenesis{
 		Head:            fmt.Sprintf("%X", gen.GetHead()),
-		ChainIdentifier: strings.Replace(gen.GetPath().String(), string(filepath.Separator), "-", 2),
+		ChainIdentifier: chainID[0:49],
 		Validators:      jsValidators,
 		CreatedOn:       gen.CreatedOn(),
+		Path:            gen.GetPath().String(),
 	}
 
 	return &out, nil
@@ -291,8 +298,7 @@ func (obj *genesis) UnmarshalJSON(data []byte) error {
 		validators = append(validators, oneValidator)
 	}
 
-	pathAsString := strings.Replace(jsGenesis.ChainIdentifier, "-", string(filepath.Separator), 2)
-	path, pathErr := createPathFromString(pathAsString)
+	path, pathErr := createPathFromString(jsGenesis.Path)
 	if pathErr != nil {
 		return pathErr
 	}

@@ -545,10 +545,13 @@ func (app *module) Spawn() (applications.Node, error) {
 
 		// create one application and put it in the list:
 		appsSlice = append(appsSlice, applications.SDKFunc.CreateApplication(applications.CreateApplicationParams{
+			Namespace:      app.ch.namespace,
+			Name:           app.ch.name,
+			ID:             app.instanceID,
 			FromBlockIndex: int64(oneApp.beginIndex),
 			ToBlockIndex:   int64(oneApp.endIndex),
 			Version:        oneApp.version,
-			DataStore:      app.ds.Get(),
+			DirPath:        app.dbPath,
 			RouterParams: routers.CreateRouterParams{
 				DataStore:  routerDS,
 				RoleKey:    routerRoleKey,

@@ -1,6 +1,8 @@
 package datastore
 
 import (
+	"path/filepath"
+
 	"github.com/xmnservices/xmnsuite/datastore/keys"
 	"github.com/xmnservices/xmnsuite/datastore/lists"
 	"github.com/xmnservices/xmnsuite/datastore/objects"
@@ -27,11 +29,44 @@ type Service interface {
 	Retrieve(filePath string) (DataStore, error)
 }
 
+// StoredDataStore represents a stored datastore
+type StoredDataStore interface {
+	DataStore() DataStore
+	Save() error
+}
+
+// ServiceParams represents the service params
+type ServiceParams struct {
+	DirPath string
+}
+
+// StoredDataStoreParams represents the StoredDataStore params
+type StoredDataStoreParams struct {
+	FilePath string
+}
+
 // SDKFunc represents the datastore SDK func
 var SDKFunc = struct {
-	Create func() DataStore
+	Create                func() DataStore
+	CreateService         func(params ServiceParams) Service
+	CreateStoredDataStore func(params StoredDataStoreParams) StoredDataStore
 }{
 	Create: func() DataStore {
 		return createConcreteDataStore()
+	},
+	CreateService: func(params ServiceParams) Service {
+		return createFileService(params.DirPath)
+	},
+	CreateStoredDataStore: func(params StoredDataStoreParams) StoredDataStore {
+		dirPath := filepath.Dir(params.FilePath)
+		fileName := filepath.Base(params.FilePath)
+		serv := createFileService(dirPath)
+		ds, dsErr := serv.Retrieve(fileName)
+		if dsErr != nil {
+			ds = createConcreteDataStore()
+		}
+
+		st := createConcreteStoredDataStore(ds, serv, fileName)
+		return st
 	},
 }

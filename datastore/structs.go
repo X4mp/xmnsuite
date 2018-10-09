@@ -10,6 +10,42 @@ import (
 )
 
 /*
+ * StoredDataStore
+ *
+ */
+
+type concreteStoredDataStore struct {
+	ds       DataStore
+	serv     Service
+	fileName string
+}
+
+func createConcreteStoredDataStore(ds DataStore, serv Service, fileName string) StoredDataStore {
+	out := concreteStoredDataStore{
+		ds:       ds,
+		serv:     serv,
+		fileName: fileName,
+	}
+
+	return &out
+}
+
+// DataStore returns the datastore
+func (app *concreteStoredDataStore) DataStore() DataStore {
+	return app.ds
+}
+
+// Save save the DataStore on disk
+func (app *concreteStoredDataStore) Save() error {
+	saveErr := app.serv.Save(app.ds, app.fileName)
+	if saveErr != nil {
+		return saveErr
+	}
+
+	return nil
+}
+
+/*
  * DataStore
  *
  */

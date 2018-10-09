@@ -19,6 +19,6 @@ func registerAmino(codec *amino.Codec) {
 			recover()
 		}()
 		codec.RegisterInterface((*crypto.PubKey)(nil), nil)
-		codec.RegisterConcrete(ed25519.PubKeyEd25519{}, ed25519.Ed25519PubKeyAminoRoute, nil)
+		codec.RegisterConcrete(ed25519.PubKeyEd25519{}, ed25519.PubKeyAminoRoute, nil)
 	}()
 }

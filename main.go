@@ -41,9 +41,9 @@ func main() {
 			Value: "./db",
 			Usage: "this is the blockchain database path",
 		},
-		cliapp.StringFlag{
+		cliapp.IntFlag{
 			Name:  "port",
-			Value: "26657",
+			Value: 26657,
 			Usage: "this is the blockchain port",
 		},
 		cliapp.StringFlag{
@@ -145,6 +145,11 @@ func main() {
 					Name:  "modules",
 					Value: "",
 					Usage: "these are the modules that are mandatory in order to run the given lua script",
+				},
+				cliapp.IntFlag{
+					Name:  "port",
+					Value: 26656,
+					Usage: "this is the blockchain port",
 				},
 			},
 			Action: func(c *cliapp.Context) error {

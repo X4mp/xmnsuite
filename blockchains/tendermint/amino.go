@@ -28,7 +28,7 @@ func Register(codec *amino.Codec) {
 			recover()
 		}()
 		codec.RegisterInterface((*tcrypto.PubKey)(nil), nil)
-		codec.RegisterConcrete(ed25519.PubKeyEd25519{}, ed25519.Ed25519PubKeyAminoRoute, nil)
+		codec.RegisterConcrete(ed25519.PubKeyEd25519{}, ed25519.PubKeyAminoRoute, nil)
 	}()
 
 	// PrivateKey
@@ -37,6 +37,6 @@ func Register(codec *amino.Codec) {
 			recover()
 		}()
 		codec.RegisterInterface((*tcrypto.PrivKey)(nil), nil)
-		codec.RegisterConcrete(ed25519.PrivKeyEd25519{}, ed25519.Ed25519PrivKeyAminoRoute, nil)
+		codec.RegisterConcrete(ed25519.PrivKeyEd25519{}, ed25519.PrivKeyAminoRoute, nil)
 	}()
 }

@@ -1,6 +1,8 @@
 package tendermint
 
 import (
+	"fmt"
+
 	types "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	applications "github.com/xmnservices/xmnsuite/blockchains/applications"
@@ -42,7 +44,7 @@ func (app *abciApplication) Info(req types.RequestInfo) types.ResponseInfo {
 	out := struct {
 		Size int64 `json:"size"`
 	}{
-		Size: resp.Size(),
+		Size: resp.State().Size(),
 	}
 
 	js, jsErr := cdc.MarshalJSON(out)
@@ -50,9 +52,21 @@ func (app *abciApplication) Info(req types.RequestInfo) types.ResponseInfo {
 		panic(js)
 	}
 
+	fmt.Printf("Info last height: %d, last AppHash: %X\n", app.blkHeight, resp.State().Hash())
+
+	if resp.State().Size() > 0 {
+		return types.ResponseInfo{
+			Data:             string(js),
+			Version:          resp.Version(),
+			LastBlockHeight:  resp.State().Height(),
+			LastBlockAppHash: resp.State().Hash(),
+		}
+	}
+
 	return types.ResponseInfo{
-		Data:    string(js),
-		Version: resp.Version(),
+		Data:            string(js),
+		Version:         resp.Version(),
+		LastBlockHeight: resp.State().Height(),
 	}
 }
 
@@ -136,6 +150,8 @@ func (app *abciApplication) Commit() types.ResponseCommit {
 
 	// update the block height:
 	app.blkHeight = resp.BlockHeight()
+
+	fmt.Printf("Commit height: %d, AppHash: %X\n", app.blkHeight, appHash)
 
 	// return the value:
 	return types.ResponseCommit{Data: appHash}

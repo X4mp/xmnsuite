@@ -8,6 +8,7 @@ import (
 	config "github.com/tendermint/tendermint/config"
 	log "github.com/tendermint/tendermint/libs/log"
 	nm "github.com/tendermint/tendermint/node"
+	"github.com/tendermint/tendermint/p2p"
 	"github.com/tendermint/tendermint/privval"
 	"github.com/tendermint/tendermint/proxy"
 	applications "github.com/xmnservices/xmnsuite/blockchains/applications"
@@ -43,7 +44,13 @@ func (obj *applicationService) Spawn(
 	conf := config.DefaultConfig().SetRoot(dirPath)
 
 	//set the custom port in the RPC ListenAddress:
-	conf.RPC.ListenAddress = fmt.Sprintf("tcp://0.0.0.0:%d", port)
+	conf.RPC.ListenAddress = fmt.Sprintf("tcp://127.0.0.1:%d", port)
+
+	// Generate the private key:
+	nodeKey, nodeKeyErr := p2p.LoadOrGenNodeKey(conf.NodeKeyFile())
+	if nodeKeyErr != nil {
+		return nil, nodeKeyErr
+	}
 
 	// create the node:
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
@@ -54,6 +61,7 @@ func (obj *applicationService) Spawn(
 	node, nodeErr := nm.NewNode(
 		conf,
 		pv,
+		nodeKey,
 		papp,
 		nm.DefaultGenesisDocProviderFunc(conf),
 		nm.DefaultDBProvider,

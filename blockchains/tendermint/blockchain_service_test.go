@@ -1,6 +1,7 @@
 package tendermint
 
 import (
+	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -16,6 +17,9 @@ func TestSave_then_retrieve_Success(t *testing.T) {
 	name := "users"
 	id := uuid.NewV4()
 	rootPath := filepath.Join("./test_files")
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
 
 	blkchain, blkchainErr := generateBlockchain(namespace, name, &id)
 	if blkchainErr != nil {

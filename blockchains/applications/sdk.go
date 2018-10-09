@@ -1,8 +1,11 @@
 package applications
 
 import (
-	datastore "github.com/xmnservices/xmnsuite/datastore"
-	objects "github.com/xmnservices/xmnsuite/datastore/objects"
+	"fmt"
+	"path/filepath"
+
+	uuid "github.com/satori/go.uuid"
+	"github.com/xmnservices/xmnsuite/datastore"
 	"github.com/xmnservices/xmnsuite/routers"
 )
 
@@ -13,13 +16,14 @@ type InfoRequest interface {
 
 // InfoResponse represents an info response
 type InfoResponse interface {
-	Size() int64
 	Version() string
+	State() State
 }
 
 // CommitResponse represents a commit response
 type CommitResponse interface {
 	AppHash() []byte
+	PrevAppHash() []byte
 	BlockHeight() int64
 }
 
@@ -63,6 +67,22 @@ type Node interface {
 	Stop() error
 }
 
+// State represents a state
+type State interface {
+	Hash() []byte
+	Height() int64
+	Size() int64
+	Increment() int64
+	Version() string
+}
+
+// Database represents the database
+type Database interface {
+	State(version string) State
+	Update(version string) (State, error)
+	DataStore() datastore.StoredDataStore
+}
+
 /*
  * SDK Params
  */
@@ -74,10 +94,13 @@ type CreateInfoRequestParams struct {
 
 // CreateApplicationParams represents the CreateApplication params
 type CreateApplicationParams struct {
+	Namespace      string
+	Name           string
+	ID             *uuid.UUID
+	DirPath        string
 	FromBlockIndex int64
 	ToBlockIndex   int64
 	Version        string
-	DataStore      datastore.DataStore
 	RouterParams   routers.CreateRouterParams
 }
 
@@ -112,15 +135,23 @@ var SDKFunc = struct {
 		// set some constant:
 		stateKey := "state-key"
 
-		// create/retrieve the stored state:
-		stateObjects := objects.SDKFunc.Create()
-		storedState, storedStateErr := retrieveOrCreateState(params.Version, stateKey, stateObjects)
-		if storedStateErr != nil {
-			panic(storedStateErr)
+		// create the filepath:
+		fileName := fmt.Sprintf("%s.%s", params.Version, "xmndb")
+		filePath := filepath.Join(params.DirPath, params.Namespace, params.Name, params.ID.String(), "application", fileName)
+
+		// create the stored ds:
+		st := datastore.SDKFunc.CreateStoredDataStore(datastore.StoredDataStoreParams{
+			FilePath: filePath,
+		})
+
+		// create the database:
+		db, dbErr := retrieveOrCreateState(params.Version, stateKey, st)
+		if dbErr != nil {
+			panic(dbErr)
 		}
 
 		//create the application:
-		app, appErr := createApplication(params.FromBlockIndex, params.ToBlockIndex, params.Version, stateKey, storedState, params.DataStore, rter)
+		app, appErr := createApplication(params.FromBlockIndex, params.ToBlockIndex, params.Version, db, rter)
 		if appErr != nil {
 			panic(appErr)
 		}

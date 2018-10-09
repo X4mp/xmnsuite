@@ -26,25 +26,25 @@ func (obj *infoRequest) Version() string {
  */
 
 type infoResponse struct {
-	Siz int64  `json:"size"`
 	Ver string `json:"version"`
+	St  State  `json:"state"`
 }
 
-func createInfoResponse(size int64, version string) InfoResponse {
+func createInfoResponse(version string, st State) InfoResponse {
 	out := infoResponse{
-		Siz: size,
 		Ver: version,
+		St:  st,
 	}
 
 	return &out
 }
 
-// Size returns the blockchain size
-func (obj *infoResponse) Size() int64 {
-	return obj.Siz
-}
-
 // Version returns the blockchain version
 func (obj *infoResponse) Version() string {
 	return obj.Ver
+}
+
+// State returns the state
+func (obj *infoResponse) State() State {
+	return obj.St
 }

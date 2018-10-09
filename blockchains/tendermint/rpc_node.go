@@ -49,7 +49,20 @@ func (app *rpcNode) Start() error {
 // Stop stops the node
 func (app *rpcNode) Stop() error {
 	err := app.node.Stop()
-	return err
+	if err != nil {
+		return err
+	}
+
+	for {
+		if !app.node.IsRunning() {
+			return nil
+		}
+
+		fmt.Println("node still running, waiting...")
+		time.Sleep(time.Second)
+	}
+
+	return nil
 }
 
 func (app *rpcNode) waitForRPC() {

@@ -37,7 +37,6 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 	id := uuid.NewV4()
 	version := "2018.04.29"
 	privKey := ed25519.GenPrivKey()
-	store := datastore.SDKFunc.Create()
 	fromPrivKey := crypto.SDKFunc.GenPK()
 	fromPubKey := fromPrivKey.PublicKey()
 
@@ -50,10 +49,13 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 
 	// create application:
 	app := applications.SDKFunc.CreateApplication(applications.CreateApplicationParams{
+		Namespace:      namespace,
+		Name:           name,
+		ID:             &id,
 		FromBlockIndex: 0,
 		ToBlockIndex:   -1,
 		Version:        version,
-		DataStore:      store,
+		DirPath:        rootDir,
 		RouterParams: routers.CreateRouterParams{
 			DataStore: routerDS,
 			RoleKey:   routerRoleKey,
