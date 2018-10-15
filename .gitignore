@@ -1,6 +1,7 @@
 vendor
 test_files/
 TODO.md
+TODO2.md
 credentials.json
 db
 build*
