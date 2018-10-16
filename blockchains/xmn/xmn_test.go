@@ -278,6 +278,14 @@ func TestXMN_Genesis_Success(t *testing.T) {
 
 	// create the genesis:
 	firstGen := createGenesisForTests()
+	secondGen := createGenesisForTests()
+
+	// execute the query, expects an error:
+	queryRespWithError := executeQuery(t, privKey, "/", client)
+	if queryRespWithError.Code() != routers.InvalidRequest {
+		t.Errorf("the genesis instance retrieval was expected to be invalid")
+		return
+	}
 
 	// execute the transaction:
 	trxResp := executeTransaction(t, client, firstGen, "/", privKey)
@@ -290,4 +298,11 @@ func TestXMN_Genesis_Success(t *testing.T) {
 
 	// make sure the query was successful:
 	verifyQueryResponseIsSuccessful(t, "/", queryResp, firstGen)
+
+	// execute the transaction again, expects an error:
+	trxRespWithError := executeTransaction(t, client, secondGen, "/", privKey)
+	if trxRespWithError.Check().Code() != routers.InvalidRequest {
+		t.Errorf("the genesis transaction was expected to fail because it already exists")
+		return
+	}
 }
