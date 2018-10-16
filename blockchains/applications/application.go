@@ -2,6 +2,7 @@ package applications
 
 import (
 	"fmt"
+	"log"
 
 	datastore "github.com/xmnservices/xmnsuite/datastore"
 	routers "github.com/xmnservices/xmnsuite/routers"
@@ -99,6 +100,13 @@ func (app *application) Commit() CommitResponse {
 
 // Query executes a query request on the application
 func (app *application) Query(req routers.QueryRequest) routers.QueryResponse {
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("There was an error while executing the query:", r)
+		}
+	}()
+
 	outputErrorFn := func(code int, str string) routers.QueryResponse {
 		resp := routers.SDKFunc.CreateQueryResponse(routers.CreateQueryResponseParams{
 			Code: code,
@@ -133,6 +141,13 @@ func (app *application) Query(req routers.QueryRequest) routers.QueryResponse {
 }
 
 func (app *application) execTrx(store datastore.DataStore, req routers.TransactionRequest) routers.TransactionResponse {
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("There was an error while executing the transaction:", r)
+		}
+	}()
+
 	outputErrorFn := func(code int, str string) routers.TransactionResponse {
 		trxResp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
 			Code: code,
