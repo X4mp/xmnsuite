@@ -38,15 +38,6 @@ type storedInitialDeposit struct {
 	Am         int    `json:"amount"`
 }
 
-func createStoredInitialDeposit(dep InitialDeposit) *storedInitialDeposit {
-	out := storedInitialDeposit{
-		ToWalletID: dep.To().ID().String(),
-		Am:         dep.Amount(),
-	}
-
-	return &out
-}
-
 type initialDepositService struct {
 	keyname       string
 	store         datastore.DataStore
