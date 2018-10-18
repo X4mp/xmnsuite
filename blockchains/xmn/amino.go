@@ -10,6 +10,9 @@ const (
 	// XMNSuiteApplicationsXMNWallet represents the xmnsuite xmn Wallet resource
 	XMNSuiteApplicationsXMNWallet = "xmnsuite/xmn/Wallet"
 
+	// XMNSuiteApplicationsXMNWalletPartialSet represents the xmnsuite xmn WalletPartialSet resource
+	XMNSuiteApplicationsXMNWalletPartialSet = "xmnsuite/xmn/WalletPartialSet"
+
 	// XMNSuiteApplicationsXMNUser represents the xmnsuite xmn User resource
 	XMNSuiteApplicationsXMNUser = "xmnsuite/xmn/User"
 
@@ -41,6 +44,15 @@ func Register(codec *amino.Codec) {
 		}()
 		codec.RegisterInterface((*Wallet)(nil), nil)
 		codec.RegisterConcrete(&wallet{}, XMNSuiteApplicationsXMNWallet, nil)
+	}()
+
+	// WalletPartialSet
+	func() {
+		defer func() {
+			recover()
+		}()
+		codec.RegisterInterface((*WalletPartialSet)(nil), nil)
+		codec.RegisterConcrete(&walletPartialSet{}, XMNSuiteApplicationsXMNWalletPartialSet, nil)
 	}()
 
 	// User

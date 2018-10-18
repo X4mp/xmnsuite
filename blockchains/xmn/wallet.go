@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
 	"github.com/xmnservices/xmnsuite/datastore/objects"
 )
@@ -18,22 +17,17 @@ import (
 type wallet struct {
 	WalletID *uuid.UUID `json:"id"`
 	CNeeded  string     `json:"concensus_needed"`
-	cNeeded  float64
-	Usrs     []User `json:"users"`
 }
 
 type jsonWallet struct {
 	WalletID string `json:"id"`
 	CNeeded  string `json:"concensus_needed"`
-	Usrs     []User `json:"users"`
 }
 
-func createWallet(id *uuid.UUID, concensusNeeded float64, usrs []User) Wallet {
+func createWallet(id *uuid.UUID, concensusNeeded float64) Wallet {
 	out := wallet{
 		WalletID: id,
 		CNeeded:  strconv.FormatFloat(concensusNeeded, 'f', 7, 64),
-		cNeeded:  concensusNeeded,
-		Usrs:     usrs,
 	}
 
 	return &out
@@ -46,12 +40,8 @@ func (app *wallet) ID() *uuid.UUID {
 
 // ConcensusNeeded returns the concensus needed
 func (app *wallet) ConcensusNeeded() float64 {
-	return app.cNeeded
-}
-
-// Users returns the users
-func (app *wallet) Users() []User {
-	return app.Usrs
+	cNeeded, _ := strconv.ParseFloat(app.CNeeded, 64)
+	return cNeeded
 }
 
 // MarshalJSON marshals the instance to data
@@ -59,7 +49,6 @@ func (app *wallet) MarshalJSON() ([]byte, error) {
 	return cdc.MarshalJSON(&jsonWallet{
 		WalletID: app.WalletID.String(),
 		CNeeded:  app.CNeeded,
-		Usrs:     app.Usrs,
 	})
 }
 
@@ -76,16 +65,45 @@ func (app *wallet) UnmarshalJSON(data []byte) error {
 		return walletIDErr
 	}
 
-	cNeeded, cNeededErr := strconv.ParseFloat(ptr.CNeeded, 64)
-	if cNeededErr != nil {
-		return cNeededErr
-	}
-
 	app.WalletID = &walletID
 	app.CNeeded = ptr.CNeeded
-	app.cNeeded = cNeeded
-	app.Usrs = ptr.Usrs
 	return nil
+}
+
+type walletPartialSet struct {
+	Wals  []Wallet `json:"wallets"`
+	Idx   int      `json:"index"`
+	TotAm int      `json:"total_amount"`
+}
+
+func createWalletPartialSet(wals []Wallet, idx int, totAm int) WalletPartialSet {
+	out := walletPartialSet{
+		Wals:  wals,
+		Idx:   idx,
+		TotAm: totAm,
+	}
+
+	return &out
+}
+
+// Wallets returns the wallets
+func (obj *walletPartialSet) Wallets() []Wallet {
+	return obj.Wals
+}
+
+// Index returns the index
+func (obj *walletPartialSet) Index() int {
+	return obj.Idx
+}
+
+// Amount returns the amount
+func (obj *walletPartialSet) Amount() int {
+	return len(obj.Wals)
+}
+
+// TotalAmount returns the total amount
+func (obj *walletPartialSet) TotalAmount() int {
+	return obj.TotAm
 }
 
 /*
@@ -93,12 +111,14 @@ func (app *wallet) UnmarshalJSON(data []byte) error {
  */
 
 type walletService struct {
-	store datastore.DataStore
+	keyname string
+	store   datastore.DataStore
 }
 
 func createWalletService(store datastore.DataStore) WalletService {
 	out := walletService{
-		store: store,
+		keyname: "wallets",
+		store:   store,
 	}
 
 	return &out
@@ -115,12 +135,19 @@ func (app *walletService) Save(wallet Wallet) error {
 
 	// save the object:
 	amountSaved := app.store.Objects().Save(&objects.ObjInKey{
-		Key: fmt.Sprintf("wallet:by_id:%s", wallet.ID().String()),
+		Key: fmt.Sprintf("%s:by_id:%s", app.keyname, wallet.ID().String()),
 		Obj: wallet,
 	})
 
 	if amountSaved != 1 {
 		return errors.New("there was an error while saving the Wallet instance")
+	}
+
+	// add the wallet to the list:
+	amountAdded := app.store.Sets().Add(app.keyname, wallet.ID().String())
+	if amountAdded != 1 {
+		str := fmt.Sprintf("there was an error while saving the Wallet ID (%s) to the wallets set (wallets)", wallet.ID().String())
+		return errors.New(str)
 	}
 
 	return nil
@@ -156,11 +183,42 @@ func (app *walletService) SaveDeleteWalletRequestVote(obj DeleteWalletRequestVot
 	return nil
 }
 
+// Retrieve retrieves a list of wallets
+func (app *walletService) Retrieve(index int, amount int) (WalletPartialSet, error) {
+	// retrieve wallet uuids:
+	ids := app.store.Sets().Retrieve(app.keyname, index, amount)
+
+	// retrieve the wallets:
+	wallets := []Wallet{}
+	for _, oneIDAsString := range ids {
+		// cast the ID:
+		id, idErr := uuid.FromString(oneIDAsString.(string))
+		if idErr != nil {
+			str := fmt.Sprintf("there is an element (%s) in the wallets set (keyname: wallets) that is not a valid wallet UUID", oneIDAsString)
+			return nil, errors.New(str)
+		}
+
+		wal, walErr := app.RetrieveByID(&id)
+		if walErr != nil {
+			return nil, walErr
+		}
+
+		wallets = append(wallets, wal)
+	}
+
+	// retrieve the total amount of elements in the keyname:
+	totalAmount := app.store.Sets().Len(app.keyname)
+
+	// return:
+	out := createWalletPartialSet(wallets, index, totalAmount)
+	return out, nil
+}
+
 // RetrieveByID retrieves a wallet by ID
 func (app *walletService) RetrieveByID(id *uuid.UUID) (Wallet, error) {
 	// create the retriever criteria:
 	obj := objects.ObjInKey{
-		Key: fmt.Sprintf("wallet:by_id:%s", id.String()),
+		Key: fmt.Sprintf("%s:by_id:%s", app.keyname, id.String()),
 		Obj: new(wallet),
 	}
 
@@ -172,7 +230,7 @@ func (app *walletService) RetrieveByID(id *uuid.UUID) (Wallet, error) {
 	}
 
 	// cast the instance:
-	if wal, ok := obj.Obj.(*wallet); ok {
+	if wal, ok := obj.Obj.(Wallet); ok {
 		return wal, nil
 	}
 
@@ -207,34 +265,4 @@ func (app *walletService) RetrieveDelWalletRequests(index int, amount int) ([]De
 // RetrieveDelWalletRequestsByWalletID retrieves a delete-user-from-wallet-requests by walletID
 func (app *walletService) RetrieveDelWalletRequestsByWalletID(id *uuid.UUID) (DelWalletRequests, error) {
 	return nil, nil
-}
-
-/*
- * User
- */
-
-type user struct {
-	PKey  string `json:"pubkey"`
-	Shres int    `json:"shares"`
-}
-
-func createUser(pubKey crypto.PublicKey, shares int) User {
-	out := user{
-		PKey:  pubKey.String(),
-		Shres: shares,
-	}
-
-	return &out
-}
-
-// PubKey returns the PublicKey
-func (app *user) PubKey() crypto.PublicKey {
-	return crypto.SDKFunc.CreatePubKey(crypto.CreatePubKeyParams{
-		PubKeyAsString: app.PKey,
-	})
-}
-
-// Shares returns the shares
-func (app *user) Shares() int {
-	return app.Shres
 }

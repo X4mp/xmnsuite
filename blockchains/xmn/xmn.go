@@ -11,11 +11,11 @@ import (
 )
 
 type dependencies struct {
-	genService GenesisService
+	genService    GenesisService
+	walletService WalletService
 }
 
 func createXMN(
-	genService GenesisService,
 	namespace string,
 	name string,
 	id *uuid.UUID,
@@ -41,6 +41,9 @@ func createXMN(
 			RtesParams: []routers.CreateRouteParams{
 				saveGenesis(),
 				retrieveGenesis(),
+				saveWallet(),
+				retrieveWallets(),
+				retrieveWalletByID(),
 			},
 		},
 	})
@@ -53,9 +56,12 @@ func createXMN(
  */
 func createDependencies(store datastore.DataStore) *dependencies {
 	walletService := createWalletService(store)
-	genesisService := createGenesisService(store, walletService)
+	tokService := createTokenService(store)
+	intiialDepositService := createInitialDepositService(store, walletService)
+	genesisService := createGenesisService(store, walletService, tokService, intiialDepositService)
 	out := dependencies{
-		genService: genesisService,
+		genService:    genesisService,
+		walletService: walletService,
 	}
 
 	return &out
@@ -128,6 +134,146 @@ func retrieveGenesis() routers.CreateRouteParams {
 
 			// convert the genesis to json:
 			js, jsErr := cdc.MarshalJSON(retGen)
+			if jsErr != nil {
+				return nil, jsErr
+			}
+
+			// return the response:
+			resp := routers.SDKFunc.CreateQueryResponse(routers.CreateQueryResponseParams{
+				Code:  routers.IsSuccessful,
+				Log:   "success",
+				Key:   path,
+				Value: js,
+			})
+
+			return resp, nil
+		},
+	}
+}
+
+/*
+ * Save Wallet
+ */
+
+func saveWallet() routers.CreateRouteParams {
+	return routers.CreateRouteParams{
+		Pattern: "/wallets",
+		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
+
+			// create dependencies:
+			dependencies := createDependencies(store)
+
+			// retrieve the genesis:
+			gen, genErr := dependencies.genService.Retrieve()
+			if genErr != nil {
+				return nil, genErr
+			}
+
+			// unmarshal data:
+			wal := new(wallet)
+			jsErr := cdc.UnmarshalJSON(data, wal)
+			if jsErr != nil {
+				return nil, jsErr
+			}
+
+			// save the wallet instance:
+			saveWalletErr := dependencies.walletService.Save(wal)
+			if saveWalletErr != nil {
+				return nil, saveWalletErr
+			}
+
+			// convert the wallet to json:
+			jsData, jsDataErr := cdc.MarshalJSON(wal)
+			if jsDataErr != nil {
+				return nil, jsDataErr
+			}
+
+			// create the gaz price:
+			gazUsed := int(unsafe.Sizeof(jsData)) * gen.GazPricePerKb()
+
+			// return the response:
+			resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
+				Code:    routers.IsSuccessful,
+				Log:     "success",
+				GazUsed: int64(gazUsed),
+				Tags: map[string][]byte{
+					path: jsData,
+				},
+			})
+
+			return resp, nil
+		},
+	}
+}
+
+/*
+ * Retrieve Wallets
+ */
+func retrieveWallets() routers.CreateRouteParams {
+	return routers.CreateRouteParams{
+		Pattern: "/wallets",
+		QueryTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (routers.QueryResponse, error) {
+			// create dependencies:
+			dependencies := createDependencies(store)
+
+			// retrieve the wallets:
+			index := fetchIndex(params)
+			amount := fetchAmount(params)
+			wals, walsErr := dependencies.walletService.Retrieve(index, amount)
+			if walsErr != nil {
+				return nil, walsErr
+			}
+
+			// convert the wallets to json:
+			js, jsErr := cdc.MarshalJSON(wals)
+			if jsErr != nil {
+				return nil, jsErr
+			}
+
+			// return the response:
+			resp := routers.SDKFunc.CreateQueryResponse(routers.CreateQueryResponseParams{
+				Code:  routers.IsSuccessful,
+				Log:   "success",
+				Key:   path,
+				Value: js,
+			})
+
+			return resp, nil
+		},
+	}
+}
+
+/*
+ * Retrieve Wallet By ID
+ */
+func retrieveWalletByID() routers.CreateRouteParams {
+	return routers.CreateRouteParams{
+		Pattern: "/wallets/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
+		QueryTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (routers.QueryResponse, error) {
+			// create dependencies:
+			dependencies := createDependencies(store)
+
+			// create the ID:
+			id, idErr := uuid.FromString(fetchParam(params, "id"))
+			if idErr != nil {
+				return nil, idErr
+			}
+
+			// retrieve the wallet by ID:
+			wal, walsErr := dependencies.walletService.RetrieveByID(&id)
+			if walsErr != nil {
+				resp := routers.SDKFunc.CreateQueryResponse(routers.CreateQueryResponseParams{
+					Code:  routers.NotFound,
+					Log:   "not found",
+					Key:   path,
+					Value: []byte(""),
+				})
+
+				return resp, nil
+			}
+
+			// convert the wallets to json:
+			js, jsErr := cdc.MarshalJSON(wal)
 			if jsErr != nil {
 				return nil, jsErr
 			}

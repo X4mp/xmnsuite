@@ -14,10 +14,35 @@ import (
 type Genesis interface {
 	GazPricePerKb() int
 	MaxAmountOfValidators() int
-	Developers() Wallet
 	Deposit() InitialDeposit
 	Token() Token
 }
+
+// GenesisService represents the init service
+type GenesisService interface {
+	Save(obj Genesis) error
+	Retrieve() (Genesis, error)
+}
+
+/*
+ * InitialDeposit
+ */
+
+// InitialDeposit represents the initial deposit
+type InitialDeposit interface {
+	To() Wallet
+	Amount() int
+}
+
+// InitialDepositService represents the initial deposit service
+type InitialDepositService interface {
+	Retrieve() (InitialDeposit, error)
+	Save(initialDep InitialDeposit) error
+}
+
+/*
+ * Token
+ */
 
 // Token represents the token
 type Token interface {
@@ -26,16 +51,10 @@ type Token interface {
 	Description() string
 }
 
-// InitialDeposit represents an initial deposit
-type InitialDeposit interface {
-	To() Wallet
-	Amount() int
-}
-
-// GenesisService represents the init service
-type GenesisService interface {
-	Save(obj Genesis) error
-	Retrieve() (Genesis, error)
+// TokenService represents the token service
+type TokenService interface {
+	Retrieve() (Token, error)
+	Save(tok Token) error
 }
 
 /*
@@ -46,13 +65,14 @@ type GenesisService interface {
 type Wallet interface {
 	ID() *uuid.UUID
 	ConcensusNeeded() float64
-	Users() []User
 }
 
-// User represents a user
-type User interface {
-	PubKey() crypto.PublicKey
-	Shares() int
+// WalletPartialSet represents a wallet partial set
+type WalletPartialSet interface {
+	Wallets() []Wallet
+	Index() int
+	Amount() int
+	TotalAmount() int
 }
 
 // AddUserToWalletRequests represents a wallet with its current add-user-request + votes
@@ -124,6 +144,7 @@ type WalletService interface {
 	SaveDeleteUserFromWalletRequestVote(obj DelUserFromWalletRequestVote) error
 	SaveDeleteWalletRequest(obj DeleteWalletRequest) error
 	SaveDeleteWalletRequestVote(obj DeleteWalletRequestVote) error
+	Retrieve(index int, amount int) (WalletPartialSet, error)
 	RetrieveByID(id *uuid.UUID) (Wallet, error)
 	RetrieveAddUserToWalletRequests(index int, amount int) ([]AddUserToWalletRequests, error)
 	RetrieveAddUserToWalletRequestsByWalletID(id *uuid.UUID) (AddUserToWalletRequests, error)
@@ -131,6 +152,30 @@ type WalletService interface {
 	RetrieveDelUserFromWalletRequestsByWalletID(id *uuid.UUID) (DelUserFromWalletRequests, error)
 	RetrieveDelWalletRequests(index int, amount int) ([]DelWalletRequests, error)
 	RetrieveDelWalletRequestsByWalletID(id *uuid.UUID) (DelWalletRequests, error)
+}
+
+/*
+ * User
+ */
+
+// User represents a user
+type User interface {
+	PubKey() crypto.PublicKey
+	Shares() int
+	Wallet() Wallet
+}
+
+// UserPartialSet represents the user partial set
+type UserPartialSet interface {
+	Users() []User
+	Index() int
+	Amount() int
+	TotalAmount() int
+}
+
+// UserService represents a user service
+type UserService interface {
+	RetrieveByWalletID(walletID *uuid.UUID, index int, amount int)
 }
 
 /*

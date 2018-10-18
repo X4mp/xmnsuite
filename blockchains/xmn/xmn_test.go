@@ -32,20 +32,17 @@ func createXMNForTests(
 	routerRoleKey := "router-role-key"
 
 	// datastore:
-	store := datastore.SDKFunc.Create()
 	routerDS := datastore.SDKFunc.Create()
 
 	// enable our user to write on the right routes:
 	routerDS.Users().Insert(privKey.PublicKey())
 	routerDS.Roles().Add(routerRoleKey, privKey.PublicKey())
 	routerDS.Roles().EnableWriteAccess(routerRoleKey, "/")
-
-	// services:
-	walletService := createWalletService(store)
-	genService := createGenesisService(store, walletService)
+	routerDS.Roles().EnableWriteAccess(routerRoleKey, "/wallets")
+	routerDS.Roles().EnableWriteAccess(routerRoleKey, "/wallets/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>")
 
 	// create application:
-	xmn := createXMN(genService, namespace, name, id, fromBlockIndex, toBlockIndex, version, rootPath, routerDS, routerRoleKey)
+	xmn := createXMN(namespace, name, id, fromBlockIndex, toBlockIndex, version, rootPath, routerDS, routerRoleKey)
 	return xmn
 }
 
@@ -141,7 +138,7 @@ func executeTransaction(
 	// sign the resource:
 	sig := privKey.Sign(res.Hash())
 
-	// save the message:
+	// save the instance:
 	trxResp, trxRespErr := client.Transact(routers.SDKFunc.CreateTransactionRequest(routers.CreateTransactionRequestParams{
 		Res: res,
 		Sig: sig,
@@ -179,7 +176,7 @@ func executeQuery(t *testing.T, privKey crypto.PrivateKey, queryPath string, cli
 	return queryResp
 }
 
-func verifyClientTransactionResponseIsSuccessful(t *testing.T, ins interface{}, trxResp applications.ClientTransactionResponse, gazPricePerKb int) {
+func verifyClientTransactionResponseIsSuccessful(t *testing.T, path string, ins interface{}, trxResp applications.ClientTransactionResponse, gazPricePerKb int) {
 	// convert to json:
 	js, jsErr := cdc.MarshalJSON(ins)
 	if jsErr != nil {
@@ -211,14 +208,14 @@ func verifyClientTransactionResponseIsSuccessful(t *testing.T, ins interface{}, 
 
 	// verify the tags:
 	retTrxTags := trxResp.Transaction().Tags()
-	expectedTags := map[string][]byte{fmt.Sprintf("/"): js}
+	expectedTags := map[string][]byte{fmt.Sprintf(path): js}
 	if !reflect.DeepEqual(retTrxTags, expectedTags) {
 		t.Errorf("the returned tags are invalid")
 		return
 	}
 }
 
-func verifyQueryResponseIsSuccessful(t *testing.T, queryPath string, queryResp routers.QueryResponse, ins interface{}) {
+func verifyQueryResponseIsSuccessful(t *testing.T, empty interface{}, queryPath string, queryResp routers.QueryResponse, ins interface{}) {
 	// convert to json:
 	js, jsErr := cdc.MarshalJSON(ins)
 	if jsErr != nil {
@@ -228,7 +225,7 @@ func verifyQueryResponseIsSuccessful(t *testing.T, queryPath string, queryResp r
 
 	retQueryCode := queryResp.Code()
 	if retQueryCode != routers.IsSuccessful {
-		t.Errorf("the query was expected to be successful")
+		t.Errorf("the query was expected to be successful: %s", queryResp.Log())
 		return
 	}
 
@@ -245,8 +242,7 @@ func verifyQueryResponseIsSuccessful(t *testing.T, queryPath string, queryResp r
 	}
 
 	retQueryValue := queryResp.Value()
-	queryGenesis := new(genesis)
-	unJsErr := cdc.UnmarshalJSON(retQueryValue, queryGenesis)
+	unJsErr := cdc.UnmarshalJSON(retQueryValue, empty)
 	if unJsErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", unJsErr.Error())
 		return
@@ -258,10 +254,64 @@ func verifyQueryResponseIsSuccessful(t *testing.T, queryPath string, queryResp r
 	}
 }
 
+func saveGenesisIsSuccessful(t *testing.T, gen Genesis, privKey crypto.PrivateKey, client applications.Client) {
+	// retrieve the wallets, should have 0 wallet:
+	queryWithZeroWallets := executeQuery(t, privKey, "/wallets", client)
+	if queryWithZeroWallets == nil {
+		return
+	}
+
+	zeoWallets := new(walletPartialSet)
+	zeroWalletsErr := cdc.UnmarshalJSON(queryWithZeroWallets.Value(), zeoWallets)
+	if zeroWalletsErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", zeroWalletsErr.Error())
+		return
+	}
+
+	if zeoWallets.TotalAmount() != 0 {
+		t.Errorf("the total amount was expected to be 0, %d returned", zeoWallets.TotalAmount())
+		return
+	}
+
+	// execute the query, expects an error:
+	queryRespWithError := executeQuery(t, privKey, "/", client)
+	if queryRespWithError.Code() != routers.InvalidRequest {
+		t.Errorf("the genesis instance retrieval was expected to be invalid")
+		return
+	}
+
+	// execute the transaction:
+	trxResp := executeTransaction(t, client, gen, "/", privKey)
+	if trxResp == nil {
+		return
+	}
+
+	// verify that the transaction was successful:
+	verifyClientTransactionResponseIsSuccessful(t, "/", gen, trxResp, gen.GazPricePerKb())
+
+	// retrieve the wallets, should have the genesis wallets:
+	query := executeQuery(t, privKey, "/wallets", client)
+	if query == nil {
+		return
+	}
+
+	wallets := new(walletPartialSet)
+	walletsErr := cdc.UnmarshalJSON(query.Value(), wallets)
+	if walletsErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", walletsErr.Error())
+		return
+	}
+
+	if wallets.TotalAmount() != 1 {
+		t.Errorf("the total amount was expected to be 1, %d returned", wallets.TotalAmount())
+		return
+	}
+}
+
 func TestXMN_Genesis_Success(t *testing.T) {
 	//variables:
-	namespace := "xsuite"
-	name := "users"
+	namespace := "xmn"
+	name := "core"
 	id := uuid.NewV4()
 	rootPath := filepath.Join("./test_files")
 	privKey := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
@@ -280,29 +330,90 @@ func TestXMN_Genesis_Success(t *testing.T) {
 	firstGen := createGenesisForTests()
 	secondGen := createGenesisForTests()
 
-	// execute the query, expects an error:
-	queryRespWithError := executeQuery(t, privKey, "/", client)
-	if queryRespWithError.Code() != routers.InvalidRequest {
-		t.Errorf("the genesis instance retrieval was expected to be invalid")
-		return
-	}
-
-	// execute the transaction:
-	trxResp := executeTransaction(t, client, firstGen, "/", privKey)
-
-	// verify that the transaction was successful:
-	verifyClientTransactionResponseIsSuccessful(t, firstGen, trxResp, firstGen.GazPricePerKb())
+	// save the first genesis instance successfully:
+	saveGenesisIsSuccessful(t, firstGen, privKey, client)
 
 	// execute the query:
 	queryResp := executeQuery(t, privKey, "/", client)
+	if queryResp == nil {
+		return
+	}
 
 	// make sure the query was successful:
-	verifyQueryResponseIsSuccessful(t, "/", queryResp, firstGen)
+	verifyQueryResponseIsSuccessful(t, new(genesis), "/", queryResp, firstGen)
 
 	// execute the transaction again, expects an error:
 	trxRespWithError := executeTransaction(t, client, secondGen, "/", privKey)
 	if trxRespWithError.Check().Code() != routers.InvalidRequest {
 		t.Errorf("the genesis transaction was expected to fail because it already exists")
+		return
+	}
+}
+
+func TestXMN_wallet_Success(t *testing.T) {
+	//variables:
+	namespace := "xmn"
+	name := "core"
+	id := uuid.NewV4()
+	rootPath := filepath.Join("./test_files")
+	privKey := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// create application:
+	xmn := createXMNForTests(namespace, name, &id, rootPath, privKey)
+
+	// start the blockchain:
+	node, client := startBlockchain(t, xmn, namespace, name, &id, rootPath)
+	defer node.Stop()
+
+	// create the wallets path:
+	walletPath := "/wallets"
+
+	// create the genesis:
+	gen := createGenesisForTests()
+
+	// save the first genesis instance successfully:
+	saveGenesisIsSuccessful(t, gen, privKey, client)
+
+	// create wallets:
+	firstWallet := createWalletForTests()
+
+	// save the first wallet:
+	firstTrxResp := executeTransaction(t, client, firstWallet, walletPath, privKey)
+	if firstTrxResp == nil {
+		return
+	}
+
+	// verify that the transaction was successful:
+	verifyClientTransactionResponseIsSuccessful(t, walletPath, firstWallet, firstTrxResp, gen.GazPricePerKb())
+
+	// execute the query:
+	firstWalletByIDPath := filepath.Join(walletPath, firstWallet.ID().String())
+	firstQueryResp := executeQuery(t, privKey, firstWalletByIDPath, client)
+	if firstQueryResp == nil {
+		return
+	}
+
+	// make sure the query was successful:
+	verifyQueryResponseIsSuccessful(t, new(wallet), firstWalletByIDPath, firstQueryResp, firstWallet)
+
+	// retrieve the wallets, should have the new wallet in the list:
+	queryAllRep := executeQuery(t, privKey, walletPath, client)
+	if queryAllRep == nil {
+		return
+	}
+
+	wallets := new(walletPartialSet)
+	walletsErr := cdc.UnmarshalJSON(queryAllRep.Value(), wallets)
+	if walletsErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", walletsErr.Error())
+		return
+	}
+
+	if wallets.TotalAmount() != 2 {
+		t.Errorf("the total amount was expected to be 2, %d returned", wallets.TotalAmount())
 		return
 	}
 }

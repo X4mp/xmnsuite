@@ -165,6 +165,11 @@ func createRoute(roleKey string, rols roles.Roles, usrs users.Users, patternAsSt
 
 // Matches returns true if the route matches the regex, false otherwise
 func (obj *route) Matches(from crypto.PublicKey, path string) bool {
+	// if the path does not match:
+	foundStr := obj.pattern.FindString(path)
+	if foundStr != path {
+		return false
+	}
 
 	//if the route needs write access:
 	if obj.handl.IsWrite() {
@@ -174,11 +179,6 @@ func (obj *route) Matches(from crypto.PublicKey, path string) bool {
 		}
 
 		return true
-	}
-
-	foundStr := obj.pattern.FindString(path)
-	if foundStr != path {
-		return false
 	}
 
 	return true
