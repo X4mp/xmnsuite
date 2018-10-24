@@ -172,6 +172,35 @@ type UserService interface {
 }
 
 /*
+ * Pledge
+ */
+
+// Pledge represents a pledge of tokens to a wallet
+type Pledge interface {
+	ID() *uuid.UUID
+	From() Wallet
+	To() Wallet
+	Amount() int
+}
+
+// PledgePartialSet represents the pledge partial set
+type PledgePartialSet interface {
+	Pledges() []Pledge
+	Index() int
+	Amount() int
+	TotalAmount() int
+}
+
+// PledgeService represents a pledge service
+type PledgeService interface {
+	Save(pledge Pledge) error
+	RetrieveByID(id *uuid.UUID) (Pledge, error)
+	FromStoredToPledge(stored *storedPledge) (Pledge, error)
+	RetrieveByFromWalletID(fromWalletID *uuid.UUID, index int, amount int) (PledgePartialSet, error)
+	RetrieveByToWalletID(toWalletID *uuid.UUID, index int, amount int) (PledgePartialSet, error)
+}
+
+/*
  * Validator
  */
 
