@@ -12,8 +12,14 @@ import (
 
 func createWalletForTests() Wallet {
 	id := uuid.NewV4()
-	concensusNeeded := rand.Float64()
+	concensusNeeded := rand.Int()
 
+	out := createWallet(&id, concensusNeeded)
+	return out
+}
+
+func createWalletWithConcensusNeededForTests(concensusNeeded int) Wallet {
+	id := uuid.NewV4()
 	out := createWallet(&id, concensusNeeded)
 	return out
 }
@@ -25,7 +31,7 @@ func compareWalletsForTests(t *testing.T, first Wallet, second Wallet) {
 	}
 
 	if !reflect.DeepEqual(first.ConcensusNeeded(), second.ConcensusNeeded()) {
-		t.Errorf("the concensusNeeded is invalid.  Expected: %f, Returned: %f", first.ConcensusNeeded(), second.ConcensusNeeded())
+		t.Errorf("the concensusNeeded is invalid.  Expected: %d, Returned: %d", first.ConcensusNeeded(), second.ConcensusNeeded())
 		return
 	}
 }

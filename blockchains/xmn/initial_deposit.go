@@ -10,22 +10,22 @@ import (
 )
 
 type initialDeposit struct {
-	ToWallet Wallet `json:"to"`
-	Am       int    `json:"amount"`
+	ToUser User `json:"to"`
+	Am     int  `json:"amount"`
 }
 
-func createInitialDeposit(wallet Wallet, amount int) InitialDeposit {
+func createInitialDeposit(toUsr User, amount int) InitialDeposit {
 	out := initialDeposit{
-		ToWallet: wallet,
-		Am:       amount,
+		ToUser: toUsr,
+		Am:     amount,
 	}
 
 	return &out
 }
 
-// To returns the to wallet
-func (app *initialDeposit) To() Wallet {
-	return app.ToWallet
+// To returns the to user
+func (app *initialDeposit) To() User {
+	return app.ToUser
 }
 
 // Amount returns the amount
@@ -34,21 +34,23 @@ func (app *initialDeposit) Amount() int {
 }
 
 type storedInitialDeposit struct {
-	ToWalletID string `json:"to_wallet_id"`
-	Am         int    `json:"amount"`
+	ToUserID string `json:"to_user_id"`
+	Am       int    `json:"amount"`
 }
 
 type initialDepositService struct {
 	keyname       string
 	store         datastore.DataStore
 	walletService WalletService
+	userService   UserService
 }
 
-func createInitialDepositService(store datastore.DataStore, walletService WalletService) InitialDepositService {
+func createInitialDepositService(store datastore.DataStore, walletService WalletService, userService UserService) InitialDepositService {
 	out := initialDepositService{
 		keyname:       "initial-deposit",
 		store:         store,
 		walletService: walletService,
+		userService:   userService,
 	}
 
 	return &out
@@ -63,9 +65,16 @@ func (app *initialDepositService) Save(initialDep InitialDeposit) error {
 	}
 
 	// save the wallet:
-	saveWalErr := app.walletService.Save(initialDep.To())
-	if saveWalErr != nil {
-		str := fmt.Sprintf("there was an error while saving the Wallet instance, in the InitialDeposit instance: %s", saveWalErr.Error())
+	saveWalletErr := app.walletService.Save(initialDep.To().Wallet())
+	if saveWalletErr != nil {
+		str := fmt.Sprintf("there was an error while saving the Wallet instance, in the User instance, in the InitialDeposit instance: %s", saveWalletErr.Error())
+		return errors.New(str)
+	}
+
+	// save the user:
+	saveUserErr := app.userService.Save(initialDep.To())
+	if saveUserErr != nil {
+		str := fmt.Sprintf("there was an error while saving the User instance, in the InitialDeposit instance: %s", saveUserErr.Error())
 		return errors.New(str)
 	}
 
@@ -73,8 +82,8 @@ func (app *initialDepositService) Save(initialDep InitialDeposit) error {
 	amountSaved := app.store.Objects().Save(&objects.ObjInKey{
 		Key: app.keyname,
 		Obj: storedInitialDeposit{
-			ToWalletID: initialDep.To().ID().String(),
-			Am:         initialDep.Amount(),
+			ToUserID: initialDep.To().ID().String(),
+			Am:       initialDep.Amount(),
 		},
 	})
 
@@ -102,18 +111,18 @@ func (app *initialDepositService) Retrieve() (InitialDeposit, error) {
 	// cast the instance:
 	if storedTok, ok := obj.Obj.(*storedInitialDeposit); ok {
 		// cast the ID:
-		walID, walIDErr := uuid.FromString(storedTok.ToWalletID)
-		if walIDErr != nil {
-			return nil, walIDErr
+		userID, userIDErr := uuid.FromString(storedTok.ToUserID)
+		if userIDErr != nil {
+			return nil, userIDErr
 		}
 
 		// retrieve the wallet:
-		wal, walErr := app.walletService.RetrieveByID(&walID)
-		if walErr != nil {
-			return nil, walErr
+		usr, usrErr := app.userService.RetrieveByID(&userID)
+		if usrErr != nil {
+			return nil, usrErr
 		}
 
-		out := createInitialDeposit(wal, storedTok.Am)
+		out := createInitialDeposit(usr, storedTok.Am)
 		return out, nil
 	}
 

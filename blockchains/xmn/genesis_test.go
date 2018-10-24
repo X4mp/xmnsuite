@@ -17,6 +17,15 @@ func createGenesisForTests() Genesis {
 	return out
 }
 
+func createGenesisWithSharesAndConcensusForTests(shares int, concensusNeeded int) Genesis {
+	gazPricePerKb := rand.Int()
+	maxAmountOfValidators := rand.Intn(200)
+	dep := createInitialDepositWithSharesAndConcensusForTests(shares, concensusNeeded)
+	tok := createTokenForTests()
+	out := createGenesis(gazPricePerKb, maxAmountOfValidators, dep, tok)
+	return out
+}
+
 func compareGenesisForTests(t *testing.T, first Genesis, second Genesis) {
 	if first.GazPricePerKb() != second.GazPricePerKb() {
 		t.Errorf("the returned gaz price is invalid.  Expected: %d, Returned: %d", first.GazPricePerKb(), second.GazPricePerKb())
@@ -39,7 +48,8 @@ func TestGenesis_Success(t *testing.T) {
 	store := datastore.SDKFunc.Create()
 	walService := createWalletService(store)
 	tokenService := createTokenService(store)
-	initialDepService := createInitialDepositService(store, walService)
+	userService := createUserService(store, walService)
+	initialDepService := createInitialDepositService(store, walService, userService)
 	genesisService := createGenesisService(store, walService, tokenService, initialDepService)
 
 	// save the genesis:

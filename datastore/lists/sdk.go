@@ -10,7 +10,9 @@ type Lists interface {
 	Objects() objects.Objects
 	Copy() Lists
 	Add(key string, values ...interface{}) int
+	AddMul(keys []string, values ...interface{}) int
 	Del(key string, values ...interface{}) int
+	DelMul(keys []string, values ...interface{}) int
 	Retrieve(key string, index int, amount int) []interface{}
 	Len(key string) int
 	Union(key ...string) []interface{}

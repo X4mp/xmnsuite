@@ -16,6 +16,12 @@ const (
 	// XMNSuiteApplicationsXMNUser represents the xmnsuite xmn User resource
 	XMNSuiteApplicationsXMNUser = "xmnsuite/xmn/User"
 
+	// XMNSuiteApplicationsXMNUserRequest represents the xmnsuite xmn UserRequest resource
+	XMNSuiteApplicationsXMNUserRequest = "xmnsuite/xmn/UserRequest"
+
+	// XMNSuiteApplicationsXMNUserRequestVote represents the xmnsuite xmn UserRequestVote resource
+	XMNSuiteApplicationsXMNUserRequestVote = "xmnsuite/xmn/UserRequestVote"
+
 	// XMNSuiteApplicationsXMNInitialDeposit represents the xmnsuite xmn InitialDeposit resource
 	XMNSuiteApplicationsXMNInitialDeposit = "xmnsuite/xmn/InitialDeposit"
 
@@ -62,6 +68,24 @@ func Register(codec *amino.Codec) {
 		}()
 		codec.RegisterInterface((*User)(nil), nil)
 		codec.RegisterConcrete(&user{}, XMNSuiteApplicationsXMNUser, nil)
+	}()
+
+	// UserRequest
+	func() {
+		defer func() {
+			recover()
+		}()
+		codec.RegisterInterface((*UserRequest)(nil), nil)
+		codec.RegisterConcrete(&userRequest{}, XMNSuiteApplicationsXMNUserRequest, nil)
+	}()
+
+	// UserRequestVote
+	func() {
+		defer func() {
+			recover()
+		}()
+		codec.RegisterInterface((*UserRequestVote)(nil), nil)
+		codec.RegisterConcrete(&userRequestVote{}, XMNSuiteApplicationsXMNUserRequestVote, nil)
 	}()
 
 	// InitialDeposit

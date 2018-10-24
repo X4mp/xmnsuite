@@ -12,6 +12,23 @@ import (
  * Helper func
  */
 
+// GetUniqueValue returns the unique value the map contains.  If the values are not the same, -1 is returned
+func GetUniqueValue(elements map[string]int) int {
+	lastElement := -1
+	for _, oneElement := range elements {
+		if lastElement == -1 {
+			lastElement = oneElement
+			continue
+		}
+
+		if lastElement != oneElement {
+			return -1
+		}
+	}
+
+	return lastElement
+}
+
 // MakeUnique makes the elements unique
 func MakeUnique(elements ...interface{}) []interface{} {
 	unique := []interface{}{}

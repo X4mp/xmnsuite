@@ -9,9 +9,16 @@ import (
 )
 
 func createInitialDepositForTests() InitialDeposit {
-	wallet := createWalletForTests()
+	usr := createUserForTests()
 	amount := rand.Int()
-	out := createInitialDeposit(wallet, amount)
+	out := createInitialDeposit(usr, amount)
+	return out
+}
+
+func createInitialDepositWithSharesAndConcensusForTests(shares int, concensusNeeded int) InitialDeposit {
+	usr := createUserWithSharesAndConcensusNeededForTests(shares, concensusNeeded)
+	amount := rand.Int()
+	out := createInitialDeposit(usr, amount)
 	return out
 }
 
@@ -21,7 +28,7 @@ func compareInitialDepositForTests(t *testing.T, first InitialDeposit, second In
 		return
 	}
 
-	compareWalletsForTests(t, first.To(), second.To())
+	compareUserForTests(t, first.To(), second.To())
 }
 
 func TestInitialDeposit_Success(t *testing.T) {
@@ -30,7 +37,8 @@ func TestInitialDeposit_Success(t *testing.T) {
 	// create service:
 	store := datastore.SDKFunc.Create()
 	walletService := createWalletService(store)
-	serv := createInitialDepositService(store, walletService)
+	userService := createUserService(store, walletService)
+	serv := createInitialDepositService(store, walletService, userService)
 
 	// save:
 	saveErr := serv.Save(initialDep)

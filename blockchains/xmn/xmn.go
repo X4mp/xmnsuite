@@ -11,8 +11,11 @@ import (
 )
 
 type dependencies struct {
-	genService    GenesisService
-	walletService WalletService
+	store              datastore.DataStore
+	genService         GenesisService
+	walletService      WalletService
+	userService        UserService
+	userRequestService UserRequestService
 }
 
 func createXMN(
@@ -44,6 +47,9 @@ func createXMN(
 				saveWallet(),
 				retrieveWallets(),
 				retrieveWalletByID(),
+				saveUserRequest(),
+				saveUserRequestVote(),
+				retrieveUserByID(),
 			},
 		},
 	})
@@ -57,11 +63,16 @@ func createXMN(
 func createDependencies(store datastore.DataStore) *dependencies {
 	walletService := createWalletService(store)
 	tokService := createTokenService(store)
-	intiialDepositService := createInitialDepositService(store, walletService)
+	userService := createUserService(store, walletService)
+	intiialDepositService := createInitialDepositService(store, walletService, userService)
 	genesisService := createGenesisService(store, walletService, tokService, intiialDepositService)
+	userRequestService := createUserRequestService(store, walletService)
 	out := dependencies{
-		genService:    genesisService,
-		walletService: walletService,
+		store:              store,
+		genService:         genesisService,
+		walletService:      walletService,
+		userRequestService: userRequestService,
+		userService:        userService,
 	}
 
 	return &out
@@ -274,6 +285,188 @@ func retrieveWalletByID() routers.CreateRouteParams {
 
 			// convert the wallets to json:
 			js, jsErr := cdc.MarshalJSON(wal)
+			if jsErr != nil {
+				return nil, jsErr
+			}
+
+			// return the response:
+			resp := routers.SDKFunc.CreateQueryResponse(routers.CreateQueryResponseParams{
+				Code:  routers.IsSuccessful,
+				Log:   "success",
+				Key:   path,
+				Value: js,
+			})
+
+			return resp, nil
+		},
+	}
+}
+
+/*
+ * Save UserRequest
+ */
+func saveUserRequest() routers.CreateRouteParams {
+	return routers.CreateRouteParams{
+		Pattern: "/user-requests",
+		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
+			// create dependencies:
+			dependencies := createDependencies(store)
+
+			// convert the data to a storedUserRequest:
+			ptr := new(storedUserRequest)
+			unJsErr := cdc.UnmarshalJSON(data, ptr)
+			if unJsErr != nil {
+				return nil, unJsErr
+			}
+
+			// convert the stored instance to a UserRequest:
+			req, reqErr := dependencies.userRequestService.FromStoredToUserRequest(ptr)
+			if reqErr != nil {
+				return nil, reqErr
+			}
+
+			// save the request:
+			saveErr := dependencies.userRequestService.Save(req)
+			if saveErr != nil {
+				return nil, saveErr
+			}
+
+			// convert the request to json:
+			jsData, jsDataErr := cdc.MarshalJSON(req)
+			if jsDataErr != nil {
+				return nil, jsDataErr
+			}
+
+			// retrieve the genesis:
+			gen, genErr := dependencies.genService.Retrieve()
+			if genErr != nil {
+				return nil, genErr
+			}
+
+			// create the gaz price:
+			gazUsed := int(unsafe.Sizeof(jsData)) * gen.GazPricePerKb()
+
+			// return the response:
+			resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
+				Code:    routers.IsSuccessful,
+				Log:     "success",
+				GazUsed: int64(gazUsed),
+				Tags: map[string][]byte{
+					path: jsData,
+				},
+			})
+
+			return resp, nil
+		},
+	}
+}
+
+/*
+ * Save UserRequestVote
+ */
+func saveUserRequestVote() routers.CreateRouteParams {
+	return routers.CreateRouteParams{
+		Pattern: "/user-request-votes",
+		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
+			// create dependencies:
+			dependencies := createDependencies(store)
+
+			// convert the data to a storedUserRequestVote:
+			ptr := new(storedUserRequestVote)
+			unJsErr := cdc.UnmarshalJSON(data, ptr)
+			if unJsErr != nil {
+				return nil, unJsErr
+			}
+
+			// cast the UserRequest ID:
+			reqID, reqIDErr := uuid.FromString(ptr.ReqID)
+			if reqIDErr != nil {
+				return nil, reqIDErr
+			}
+
+			// retrieve the UserRequest:
+			retReq, retReqErr := dependencies.userRequestService.RetrieveByID(&reqID)
+			if retReqErr != nil {
+				return nil, retReqErr
+			}
+
+			// create the UserRequestVoteService:
+			concensusNeeded := retReq.User().Wallet().ConcensusNeeded()
+			userRequestVoteService := createUserRequestVoteService(concensusNeeded, dependencies.store, dependencies.userRequestService, dependencies.userService)
+
+			// convert the stored instance to a UserRequestVote:
+			vote, voteErr := userRequestVoteService.FromStoredToUserRequestVote(ptr)
+			if voteErr != nil {
+				return nil, voteErr
+			}
+
+			// save the vote:
+			saveErr := userRequestVoteService.Save(vote)
+			if saveErr != nil {
+				return nil, saveErr
+			}
+
+			// convert the request to json:
+			jsData, jsDataErr := cdc.MarshalJSON(vote)
+			if jsDataErr != nil {
+				return nil, jsDataErr
+			}
+
+			// retrieve the genesis:
+			gen, genErr := dependencies.genService.Retrieve()
+			if genErr != nil {
+				return nil, genErr
+			}
+
+			// create the gaz price:
+			gazUsed := int(unsafe.Sizeof(jsData)) * gen.GazPricePerKb()
+
+			// return the response:
+			resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
+				Code:    routers.IsSuccessful,
+				Log:     "success",
+				GazUsed: int64(gazUsed),
+				Tags: map[string][]byte{
+					path: jsData,
+				},
+			})
+
+			return resp, nil
+		},
+	}
+}
+
+/*
+ * Retrieve User By ID
+ */
+func retrieveUserByID() routers.CreateRouteParams {
+	return routers.CreateRouteParams{
+		Pattern: "/users/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
+		QueryTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (routers.QueryResponse, error) {
+			// create dependencies:
+			dependencies := createDependencies(store)
+
+			// create the ID:
+			id, idErr := uuid.FromString(fetchParam(params, "id"))
+			if idErr != nil {
+				return nil, idErr
+			}
+
+			// retrieve the user by ID:
+			usr, usrErr := dependencies.userService.RetrieveByID(&id)
+			if usrErr != nil {
+				resp := routers.SDKFunc.CreateQueryResponse(routers.CreateQueryResponseParams{
+					Code:  routers.NotFound,
+					Log:   "not found",
+					Key:   path,
+					Value: []byte(""),
+				})
+
+				return resp, nil
+			}
+
+			// convert the user to json:
+			js, jsErr := cdc.MarshalJSON(usr)
 			if jsErr != nil {
 				return nil, jsErr
 			}

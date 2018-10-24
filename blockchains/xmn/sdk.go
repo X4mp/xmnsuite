@@ -30,7 +30,7 @@ type GenesisService interface {
 
 // InitialDeposit represents the initial deposit
 type InitialDeposit interface {
-	To() Wallet
+	To() User
 	Amount() int
 }
 
@@ -64,7 +64,7 @@ type TokenService interface {
 // Wallet represents a wallet
 type Wallet interface {
 	ID() *uuid.UUID
-	ConcensusNeeded() float64
+	ConcensusNeeded() int
 }
 
 // WalletPartialSet represents a wallet partial set
@@ -75,83 +75,72 @@ type WalletPartialSet interface {
 	TotalAmount() int
 }
 
-// AddUserToWalletRequests represents a wallet with its current add-user-request + votes
-type AddUserToWalletRequests interface {
-	Wallet() Wallet
-	Req() AddUserToWalletRequest
-	Votes() []AddUserToWalletRequestVote
-	IsApproved() (bool, bool)
-}
-
-// AddUserToWalletRequest represents an add-user-request
-type AddUserToWalletRequest interface {
-	ID() *uuid.UUID
-	Wallet() Wallet
-	User() User
-}
-
-// AddUserToWalletRequestVote represents an add-user-to-wallet-request-vote
-type AddUserToWalletRequestVote interface {
-	Request() AddUserToWalletRequest
-	IsAccepted() bool
-}
-
-// DelUserFromWalletRequests represents a wallet with its current delete-user-request + votes
-type DelUserFromWalletRequests interface {
-	Wallet() Wallet
-	Req() DelUserFromWalletRequest
-	Votes() []DelUserFromWalletRequestVote
-	IsApproved() (bool, bool)
-}
-
-// DelUserFromWalletRequest represents a delete-user-from-wallet-request
-type DelUserFromWalletRequest interface {
-	ID() *uuid.UUID
-	User() User
-}
-
-// DelUserFromWalletRequestVote represents a delete-user-from-wallet-request-vote
-type DelUserFromWalletRequestVote interface {
-	Request() DelUserFromWalletRequest
-	IsAccepted() bool
-}
-
-// DeleteWalletRequest represents a delete-wallet-request
-type DeleteWalletRequest interface {
-	Wallet() Wallet
-}
-
-// DeleteWalletRequestVote represents a delete-wallet-request-vote
-type DeleteWalletRequestVote interface {
-	Request() DeleteWalletRequest
-	IsAccepted() bool
-}
-
-// DelWalletRequests represents a wallet with its current delete-request + votes
-type DelWalletRequests interface {
-	Wallet() Wallet
-	Req() DeleteWalletRequest
-	Votes() []DeleteWalletRequestVote
-	IsApproved() (bool, bool)
-}
-
 // WalletService represents the wallet service
 type WalletService interface {
 	Save(wallet Wallet) error
-	SaveAddUserToWalletRequest(obj AddUserToWalletRequest) error
-	SaveAddUserToWalletRequestVote(obj AddUserToWalletRequestVote) error
-	SaveDeleteUserFromWalletRequest(obj DelUserFromWalletRequest) error
-	SaveDeleteUserFromWalletRequestVote(obj DelUserFromWalletRequestVote) error
-	SaveDeleteWalletRequest(obj DeleteWalletRequest) error
-	SaveDeleteWalletRequestVote(obj DeleteWalletRequestVote) error
 	Retrieve(index int, amount int) (WalletPartialSet, error)
 	RetrieveByID(id *uuid.UUID) (Wallet, error)
-	RetrieveAddUserToWalletRequests(index int, amount int) ([]AddUserToWalletRequests, error)
-	RetrieveAddUserToWalletRequestsByWalletID(id *uuid.UUID) (AddUserToWalletRequests, error)
-	RetrieveDelUserFromWalletRequests(index int, amount int) ([]DelUserFromWalletRequests, error)
-	RetrieveDelUserFromWalletRequestsByWalletID(id *uuid.UUID) (DelUserFromWalletRequests, error)
-	RetrieveDelWalletRequests(index int, amount int) ([]DelWalletRequests, error)
-	RetrieveDelWalletRequestsByWalletID(id *uuid.UUID) (DelWalletRequests, error)
+}
+
+/*
+ * UserRequest
+ */
+
+// UserRequest represents a user request
+type UserRequest interface {
+	User() User
+}
+
+// UserRequestPartialSet represents the user request partial set
+type UserRequestPartialSet interface {
+	Requests() []UserRequest
+	Index() int
+	Amount() int
+	TotalAmount() int
+}
+
+// UserRequestService represents a user request service
+type UserRequestService interface {
+	Save(req UserRequest) error
+	Delete(req UserRequest) error
+	RetrieveByID(id *uuid.UUID) (UserRequest, error)
+	FromStoredToUserRequest(req *storedUserRequest) (UserRequest, error)
+	RetrieveByPubkeyAndWalletID(pubKey crypto.PublicKey, walletID *uuid.UUID) (UserRequest, error)
+	RetrieveByWalletID(walletID *uuid.UUID, index int, amount int) (UserRequestPartialSet, error)
+	RetrieveByPubKey(pubKey crypto.PublicKey, index int, amount int) (UserRequestPartialSet, error)
+}
+
+/*
+ * UserRequestVote
+ */
+
+// UserRequestVote represents a user request vote
+type UserRequestVote interface {
+	ID() *uuid.UUID
+	Request() UserRequest
+	Voter() User
+	IsApproved() bool
+}
+
+// UserRequestVotePartialSet represents the user request vote partial set
+type UserRequestVotePartialSet interface {
+	UserRequestVotes() []UserRequestVote
+	Index() int
+	Amount() int
+	TotalAmount() int
+}
+
+// UserRequestVoteService represents a user request vote service
+type UserRequestVoteService interface {
+	Save(vote UserRequestVote) error
+	Delete(vote UserRequestVote) error
+	RetrieveByID(id *uuid.UUID) (UserRequestVote, error)
+	FromStoredToUserRequestVote(vote *storedUserRequestVote) (UserRequestVote, error)
+	RetrieveByVoterIDAndUserRequestID(voterID *uuid.UUID, requestID *uuid.UUID) (UserRequestVote, error)
+	RetrieveByUserRequestID(requestID *uuid.UUID, index int, amount int) (UserRequestVotePartialSet, error)
+	RetrieveByRequesterWalletID(walletID *uuid.UUID, index int, amount int) (UserRequestVotePartialSet, error)
+	RetrieveByVoterID(voterID *uuid.UUID, index int, amount int) (UserRequestVotePartialSet, error)
+	RetrieveByVoterWalletID(walletID *uuid.UUID, index int, amount int) (UserRequestVotePartialSet, error)
 }
 
 /*
@@ -160,6 +149,7 @@ type WalletService interface {
 
 // User represents a user
 type User interface {
+	ID() *uuid.UUID
 	PubKey() crypto.PublicKey
 	Shares() int
 	Wallet() Wallet
@@ -175,7 +165,10 @@ type UserPartialSet interface {
 
 // UserService represents a user service
 type UserService interface {
-	RetrieveByWalletID(walletID *uuid.UUID, index int, amount int)
+	Save(usr User) error
+	RetrieveByID(id *uuid.UUID) (User, error)
+	RetrieveByWalletID(walletID *uuid.UUID, index int, amount int) (UserPartialSet, error)
+	RetrieveByPubKey(pubKey crypto.PublicKey, index int, amount int) (UserPartialSet, error)
 }
 
 /*
@@ -187,7 +180,6 @@ type Validator interface {
 	ID() *uuid.UUID
 	Wallet() Wallet
 	PubKey() tcrypto.PubKey
-	Pow() int
 }
 
 // ValidatorService represents the validator service

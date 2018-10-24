@@ -40,6 +40,9 @@ func createXMNForTests(
 	routerDS.Roles().EnableWriteAccess(routerRoleKey, "/")
 	routerDS.Roles().EnableWriteAccess(routerRoleKey, "/wallets")
 	routerDS.Roles().EnableWriteAccess(routerRoleKey, "/wallets/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>")
+	routerDS.Roles().EnableWriteAccess(routerRoleKey, "/user-requests")
+	routerDS.Roles().EnableWriteAccess(routerRoleKey, "/user-request-votes")
+	routerDS.Roles().EnableWriteAccess(routerRoleKey, "/users/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>")
 
 	// create application:
 	xmn := createXMN(namespace, name, id, fromBlockIndex, toBlockIndex, version, rootPath, routerDS, routerRoleKey)
@@ -416,4 +419,93 @@ func TestXMN_wallet_Success(t *testing.T) {
 		t.Errorf("the total amount was expected to be 2, %d returned", wallets.TotalAmount())
 		return
 	}
+}
+
+func TestXMN_user_Success(t *testing.T) {
+	//variables:
+	namespace := "xmn"
+	name := "core"
+	id := uuid.NewV4()
+	rootPath := filepath.Join("./test_files")
+	privKey := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// create application:
+	xmn := createXMNForTests(namespace, name, &id, rootPath, privKey)
+
+	// start the blockchain:
+	node, client := startBlockchain(t, xmn, namespace, name, &id, rootPath)
+	defer node.Stop()
+
+	// create the paths:
+	walletPath := "/wallets"
+	userRequestPath := "/user-requests"
+	userRequestVotePath := "/user-request-votes"
+	userPath := "/users"
+
+	// create the genesis:
+	shares := 20
+	concensusNeeded := 20
+	gen := createGenesisWithSharesAndConcensusForTests(shares, concensusNeeded)
+
+	// save the first genesis instance successfully:
+	saveGenesisIsSuccessful(t, gen, privKey, client)
+
+	// create wallets:
+	firstWallet := createWalletForTests()
+
+	// save the first wallet:
+	saveWalletTrxResp := executeTransaction(t, client, firstWallet, walletPath, privKey)
+	if saveWalletTrxResp == nil {
+		return
+	}
+
+	// verify that the transaction was successful:
+	verifyClientTransactionResponseIsSuccessful(t, walletPath, firstWallet, saveWalletTrxResp, gen.GazPricePerKb())
+
+	// create user request:
+	requestUsr := createUserWithWalletForTests(gen.Deposit().To().Wallet())
+	userReq := createUserRequest(requestUsr)
+	storedUserReq := createStoredUserRequest(userReq.User())
+
+	// save user request:
+	saveUsrReqTrxResp := executeTransaction(t, client, storedUserReq, userRequestPath, privKey)
+	if saveUsrReqTrxResp == nil {
+		return
+	}
+
+	// verify that the transaction was successful:
+	verifyClientTransactionResponseIsSuccessful(t, userRequestPath, userReq, saveUsrReqTrxResp, gen.GazPricePerKb())
+
+	// create first user request vote:
+	firstVote := createUserRequestVoteWithUserRequestAndVoterForTests(userReq, gen.Deposit().To(), true)
+	storedFirstVote := createStoredUserRequestVote(firstVote)
+
+	// save first vote:
+	saveVoteTrxResp := executeTransaction(t, client, storedFirstVote, userRequestVotePath, privKey)
+	if saveVoteTrxResp == nil {
+		return
+	}
+
+	// verify that the transaction was successful:
+	verifyClientTransactionResponseIsSuccessful(t, userRequestVotePath, firstVote, saveVoteTrxResp, gen.GazPricePerKb())
+
+	// retrieve the user by ID:
+	userByIDPath := fmt.Sprintf("%s/%s", userPath, firstVote.Request().User().ID().String())
+	queryUserResp := executeQuery(t, privKey, userByIDPath, client)
+	if queryUserResp == nil {
+		return
+	}
+
+	ptr := new(user)
+	unUsrErr := cdc.UnmarshalJSON(queryUserResp.Value(), ptr)
+	if unUsrErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", unUsrErr.Error())
+		return
+	}
+
+	// compare the users:
+	compareUserForTests(t, firstVote.Request().User(), ptr)
 }

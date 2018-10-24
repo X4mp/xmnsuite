@@ -81,7 +81,17 @@ func (app *concreteLists) Add(key string, values ...interface{}) int {
 	return len(list) - beginLength
 }
 
-// Del deletes the passed values from the list, then return the amount of deleted elements
+// AddMul add values to a multiple keys, and returns the amount of elements added to all keys.
+func (app *concreteLists) AddMul(keys []string, values ...interface{}) int {
+	amounts := map[string]int{}
+	for _, oneKey := range keys {
+		amounts[oneKey] = app.Add(oneKey, values...)
+	}
+
+	return helpers.GetUniqueValue(amounts)
+}
+
+// Del deletes the passed values from the key, then return the amount of deleted elements
 func (app *concreteLists) Del(key string, values ...interface{}) int {
 	elements := app.Retrieve(key, 0, -1)
 	beginLength := len(elements)
@@ -108,6 +118,16 @@ func (app *concreteLists) Del(key string, values ...interface{}) int {
 	//replace the elements:
 	app.Objs.Keys().Delete(key)
 	return beginLength - app.Add(key, elements...)
+}
+
+// DelMul deletes the passed values from the keys, then return the amount of deleted elements from all keys
+func (app *concreteLists) DelMul(keys []string, values ...interface{}) int {
+	amounts := map[string]int{}
+	for _, oneKey := range keys {
+		amounts[oneKey] = app.Del(oneKey, values...)
+	}
+
+	return helpers.GetUniqueValue(amounts)
 }
 
 // Retrieve retrieves a subset of the stored list

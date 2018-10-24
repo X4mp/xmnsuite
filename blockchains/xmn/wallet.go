@@ -3,31 +3,26 @@ package xmn
 import (
 	"errors"
 	"fmt"
-	"strconv"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/datastore"
 	"github.com/xmnservices/xmnsuite/datastore/objects"
 )
 
-/*
- * Wallet
- */
-
 type wallet struct {
 	WalletID *uuid.UUID `json:"id"`
-	CNeeded  string     `json:"concensus_needed"`
+	CNeeded  int        `json:"concensus_needed"`
 }
 
 type jsonWallet struct {
 	WalletID string `json:"id"`
-	CNeeded  string `json:"concensus_needed"`
+	CNeeded  int    `json:"concensus_needed"`
 }
 
-func createWallet(id *uuid.UUID, concensusNeeded float64) Wallet {
+func createWallet(id *uuid.UUID, concensusNeeded int) Wallet {
 	out := wallet{
 		WalletID: id,
-		CNeeded:  strconv.FormatFloat(concensusNeeded, 'f', 7, 64),
+		CNeeded:  concensusNeeded,
 	}
 
 	return &out
@@ -39,35 +34,8 @@ func (app *wallet) ID() *uuid.UUID {
 }
 
 // ConcensusNeeded returns the concensus needed
-func (app *wallet) ConcensusNeeded() float64 {
-	cNeeded, _ := strconv.ParseFloat(app.CNeeded, 64)
-	return cNeeded
-}
-
-// MarshalJSON marshals the instance to data
-func (app *wallet) MarshalJSON() ([]byte, error) {
-	return cdc.MarshalJSON(&jsonWallet{
-		WalletID: app.WalletID.String(),
-		CNeeded:  app.CNeeded,
-	})
-}
-
-// UnmarshalJSON unmarshals the data to an instance
-func (app *wallet) UnmarshalJSON(data []byte) error {
-	ptr := new(jsonWallet)
-	jsErr := cdc.UnmarshalJSON(data, ptr)
-	if jsErr != nil {
-		return jsErr
-	}
-
-	walletID, walletIDErr := uuid.FromString(ptr.WalletID)
-	if walletIDErr != nil {
-		return walletIDErr
-	}
-
-	app.WalletID = &walletID
-	app.CNeeded = ptr.CNeeded
-	return nil
+func (app *wallet) ConcensusNeeded() int {
+	return app.CNeeded
 }
 
 type walletPartialSet struct {
@@ -153,36 +121,6 @@ func (app *walletService) Save(wallet Wallet) error {
 	return nil
 }
 
-// SaveAddUserToWalletRequest saves an  add-user-to-wallet request
-func (app *walletService) SaveAddUserToWalletRequest(obj AddUserToWalletRequest) error {
-	return nil
-}
-
-// SaveAddUserToWalletRequestVote saves an  add-user-to-wallet-request vote
-func (app *walletService) SaveAddUserToWalletRequestVote(obj AddUserToWalletRequestVote) error {
-	return nil
-}
-
-// SaveDeleteUserFromWalletRequest saves a  delete-user-from-wallet request
-func (app *walletService) SaveDeleteUserFromWalletRequest(obj DelUserFromWalletRequest) error {
-	return nil
-}
-
-// SaveDeleteUserFromWalletRequestVote saves a  delete-user-from-wallet-request vote
-func (app *walletService) SaveDeleteUserFromWalletRequestVote(obj DelUserFromWalletRequestVote) error {
-	return nil
-}
-
-// SaveDeleteWalletRequest saves a  delete-wallet request
-func (app *walletService) SaveDeleteWalletRequest(obj DeleteWalletRequest) error {
-	return nil
-}
-
-// SaveDeleteWalletRequestVote saves a  delete-wallet-request vote
-func (app *walletService) SaveDeleteWalletRequestVote(obj DeleteWalletRequestVote) error {
-	return nil
-}
-
 // Retrieve retrieves a list of wallets
 func (app *walletService) Retrieve(index int, amount int) (WalletPartialSet, error) {
 	// retrieve wallet uuids:
@@ -235,34 +173,4 @@ func (app *walletService) RetrieveByID(id *uuid.UUID) (Wallet, error) {
 	}
 
 	return nil, errors.New("the retrieved data cannot be casted to a Wallet instance")
-}
-
-// RetrieveAddUserToWalletRequests retrieves the add-user-to-wallet requests
-func (app *walletService) RetrieveAddUserToWalletRequests(index int, amount int) ([]AddUserToWalletRequests, error) {
-	return nil, nil
-}
-
-// RetrieveAddUserToWalletRequestsByWalletID retrieves an add-user-to-wallet-requests by ID
-func (app *walletService) RetrieveAddUserToWalletRequestsByWalletID(id *uuid.UUID) (AddUserToWalletRequests, error) {
-	return nil, nil
-}
-
-// RetrieveDelUserFromWalletRequests retrieves the delete-user-from-wallet-requests
-func (app *walletService) RetrieveDelUserFromWalletRequests(index int, amount int) ([]DelUserFromWalletRequests, error) {
-	return nil, nil
-}
-
-// RetrieveDelUserFromWalletRequestsByWalletID retrieves a delete-user-from-wallet-requests by walletID
-func (app *walletService) RetrieveDelUserFromWalletRequestsByWalletID(id *uuid.UUID) (DelUserFromWalletRequests, error) {
-	return nil, nil
-}
-
-// RetrieveDelWalletRequests retrieves the delete-user-from-wallet-requests
-func (app *walletService) RetrieveDelWalletRequests(index int, amount int) ([]DelWalletRequests, error) {
-	return nil, nil
-}
-
-// RetrieveDelWalletRequestsByWalletID retrieves a delete-user-from-wallet-requests by walletID
-func (app *walletService) RetrieveDelWalletRequestsByWalletID(id *uuid.UUID) (DelWalletRequests, error) {
-	return nil, nil
 }

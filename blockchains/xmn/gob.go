@@ -17,10 +17,16 @@ func RegisterGob() {
 
 	// genesis:
 	gob.Register(&genesis{})
+
+	// token:
 	gob.Register(&token{})
+
+	// initial deposit:
 	gob.Register(&initialDeposit{})
 
 	// wallet:
 	gob.Register(&wallet{})
+
+	// user:
 	gob.Register(&user{})
 }
