@@ -2,6 +2,7 @@ vendor
 test_files/
 TODO.md
 TODO2.md
+ARTIQOX.md
 credentials.json
 db
 build*

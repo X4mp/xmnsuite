@@ -1,0 +1,57 @@
+package deposit
+
+import (
+	"testing"
+
+	"github.com/xmnservices/xmnsuite/blockchains/framework/user"
+	"github.com/xmnservices/xmnsuite/blockchains/framework/wallet"
+	"github.com/xmnservices/xmnsuite/datastore"
+	"github.com/xmnservices/xmnsuite/tests"
+)
+
+func TestDeposit_Success(t *testing.T) {
+	initialDep := CreateDepositForTests()
+
+	// create service:
+	store := datastore.SDKFunc.Create()
+	walletService := wallet.SDKFunc.CreateService(wallet.CreateServiceParams{
+		Store: store,
+	})
+
+	userService := user.SDKFunc.CreateService(user.CreateServiceParams{
+		Store:         store,
+		WalletService: walletService,
+	})
+
+	serv := createDepositService(store, walletService, userService)
+
+	// save:
+	saveErr := serv.Save(initialDep)
+	if saveErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", saveErr.Error())
+		return
+	}
+
+	// save again, returns error:
+	saveAgainErr := serv.Save(CreateDepositForTests())
+	if saveAgainErr == nil {
+		t.Errorf("the returned error was expected to be an error, nil returned")
+		return
+	}
+
+	// retrieve the token:
+	retInitialDep, retInitialDepErr := serv.Retrieve()
+	if retInitialDepErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", retInitialDepErr.Error())
+		return
+	}
+
+	// compare the elements:
+	CompareDepositForTests(t, initialDep, retInitialDep)
+
+	empty := new(deposit)
+	tests.ConvertToBinary(t, initialDep, empty, cdc)
+
+	anotherEmpty := new(deposit)
+	tests.ConvertToJSON(t, initialDep, anotherEmpty, cdc)
+}

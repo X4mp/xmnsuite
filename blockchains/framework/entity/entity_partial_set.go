@@ -1,0 +1,53 @@
+package entity
+
+import (
+	"errors"
+	"fmt"
+)
+
+type entityPartialSet struct {
+	Ins   []Entity `json:"entities"`
+	Idx   int      `json:"index"`
+	TotAm int      `json:"total_amount"`
+}
+
+func createEntityPartialSet(ins []Entity, index int, totalAmount int) (PartialSet, error) {
+	if index < 0 {
+		str := fmt.Sprintf("the index (%d) cannot be smaller than 0", index)
+		return nil, errors.New(str)
+	}
+
+	minAmount := (index + len(ins))
+	if totalAmount < minAmount {
+		str := fmt.Sprintf("the totalAmount (%d) cannot be smaller than the index + the length of the instances (%d)", totalAmount, minAmount)
+		return nil, errors.New(str)
+	}
+
+	out := entityPartialSet{
+		Ins:   ins,
+		Idx:   index,
+		TotAm: totalAmount,
+	}
+
+	return &out, nil
+}
+
+// Instances returns the instances
+func (obj *entityPartialSet) Instances() []Entity {
+	return obj.Ins
+}
+
+// Index returns the index
+func (obj *entityPartialSet) Index() int {
+	return obj.Idx
+}
+
+// Amount returns the amount
+func (obj *entityPartialSet) Amount() int {
+	return len(obj.Ins)
+}
+
+// TotalAmount returns the totalAmount
+func (obj *entityPartialSet) TotalAmount() int {
+	return obj.TotAm
+}

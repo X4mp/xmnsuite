@@ -54,9 +54,12 @@ func (app *concreteRoles) EnableWriteAccess(key string, keyPatterns ...string) i
 	lst := []interface{}{}
 	for _, onePattern := range keyPatterns {
 		_, regErr := regexp.Compile(onePattern)
-		if regErr == nil {
-			lst = append(lst, onePattern)
+		if regErr != nil {
+			str := fmt.Sprintf("there was an error while compiling regex pattern (%s), while enabling write access: %s", onePattern, regErr.Error())
+			panic(errors.New(str))
 		}
+
+		lst = append(lst, onePattern)
 	}
 
 	return app.Lists().Add(writeAccessKey, lst...)

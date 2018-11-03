@@ -47,6 +47,11 @@ type CreateSigParams struct {
 	SigAsString string
 }
 
+// CreateRingSigParams represents the CreateRingSig params
+type CreateRingSigParams struct {
+	RingSigAsString string
+}
+
 // EncryptParams represents the Encrypt params
 type EncryptParams struct {
 	Pass []byte
@@ -61,12 +66,13 @@ type DecryptParams struct {
 
 // SDKFunc represents the crypto SDK func
 var SDKFunc = struct {
-	GenPK        func() PrivateKey
-	CreatePK     func(params CreatePKParams) PrivateKey
-	CreatePubKey func(params CreatePubKeyParams) PublicKey
-	CreateSig    func(params CreateSigParams) Signature
-	Encrypt      func(params EncryptParams) string
-	Decrypt      func(params DecryptParams) []byte
+	GenPK         func() PrivateKey
+	CreatePK      func(params CreatePKParams) PrivateKey
+	CreatePubKey  func(params CreatePubKeyParams) PublicKey
+	CreateSig     func(params CreateSigParams) Signature
+	CreateRingSig func(params CreateRingSigParams) RingSignature
+	Encrypt       func(params EncryptParams) string
+	Decrypt       func(params DecryptParams) []byte
 }{
 	GenPK: func() PrivateKey {
 		return createPrivateKey()
@@ -101,6 +107,14 @@ var SDKFunc = struct {
 		}
 
 		return sig
+	},
+	CreateRingSig: func(params CreateRingSigParams) RingSignature {
+		ringSig, ringSigErr := createRingSignatureFromString(params.RingSigAsString)
+		if ringSigErr != nil {
+			panic(ringSigErr)
+		}
+
+		return ringSig
 	},
 	Encrypt: func(params EncryptParams) string {
 		out, outErr := encrypt(params.Pass, params.Msg)

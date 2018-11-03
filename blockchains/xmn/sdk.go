@@ -7,168 +7,125 @@ import (
 )
 
 /*
- * Genesis
+ * TransferRequest
  */
 
-// Genesis represents the genesis instance
-type Genesis interface {
-	GazPricePerKb() int
-	MaxAmountOfValidators() int
-	Deposit() InitialDeposit
-	Token() Token
+// TransferRequest represents a transfer request of token
+type TransferRequest interface {
+	From() User
+	Amount() string
+	PubKey() crypto.PublicKey
+	Reason() string
 }
 
-// GenesisService represents the init service
-type GenesisService interface {
-	Save(obj Genesis) error
-	Retrieve() (Genesis, error)
-}
-
-/*
- * InitialDeposit
- */
-
-// InitialDeposit represents the initial deposit
-type InitialDeposit interface {
-	To() User
-	Amount() int
-}
-
-// InitialDepositService represents the initial deposit service
-type InitialDepositService interface {
-	Retrieve() (InitialDeposit, error)
-	Save(initialDep InitialDeposit) error
-}
-
-/*
- * Token
- */
-
-// Token represents the token
-type Token interface {
-	Symbol() string
-	Name() string
-	Description() string
-}
-
-// TokenService represents the token service
-type TokenService interface {
-	Retrieve() (Token, error)
-	Save(tok Token) error
-}
-
-/*
- * Wallet
- */
-
-// Wallet represents a wallet
-type Wallet interface {
+// SignedTransferRequest represents a signed transfer request
+type SignedTransferRequest interface {
 	ID() *uuid.UUID
-	ConcensusNeeded() int
+	Request() TransferRequest
+	Signature() crypto.RingSignature
 }
 
-// WalletPartialSet represents a wallet partial set
-type WalletPartialSet interface {
-	Wallets() []Wallet
+// SignedTransferRequestPartialSet represents the signed transfer partial set
+type SignedTransferRequestPartialSet interface {
+	Requests() []SignedTransferRequest
 	Index() int
 	Amount() int
 	TotalAmount() int
 }
 
-// WalletService represents the wallet service
-type WalletService interface {
-	Save(wallet Wallet) error
-	Retrieve(index int, amount int) (WalletPartialSet, error)
-	RetrieveByID(id *uuid.UUID) (Wallet, error)
+// SignedTransferRequestService represents the signed transfer request service
+type SignedTransferRequestService interface {
+	Save(req SignedTransferRequest) error
+	RetrieveByID(id *uuid.UUID) (SignedTransferRequest, error)
+	RetrieveByFromWalletID(fromWalletID *uuid.UUID, index int, amount int) (SignedTransferRequestPartialSet, error)
 }
 
 /*
- * UserRequest
+ * TransferRequestVote
  */
 
-// UserRequest represents a user request
-type UserRequest interface {
-	User() User
-}
-
-// UserRequestPartialSet represents the user request partial set
-type UserRequestPartialSet interface {
-	Requests() []UserRequest
-	Index() int
-	Amount() int
-	TotalAmount() int
-}
-
-// UserRequestService represents a user request service
-type UserRequestService interface {
-	Save(req UserRequest) error
-	Delete(req UserRequest) error
-	RetrieveByID(id *uuid.UUID) (UserRequest, error)
-	FromStoredToUserRequest(req *storedUserRequest) (UserRequest, error)
-	RetrieveByPubkeyAndWalletID(pubKey crypto.PublicKey, walletID *uuid.UUID) (UserRequest, error)
-	RetrieveByWalletID(walletID *uuid.UUID, index int, amount int) (UserRequestPartialSet, error)
-	RetrieveByPubKey(pubKey crypto.PublicKey, index int, amount int) (UserRequestPartialSet, error)
-}
-
-/*
- * UserRequestVote
- */
-
-// UserRequestVote represents a user request vote
-type UserRequestVote interface {
+// TransferRequestVote represents a transfer request vote
+type TransferRequestVote interface {
 	ID() *uuid.UUID
-	Request() UserRequest
+	Request() SignedTransferRequest
 	Voter() User
 	IsApproved() bool
 }
 
-// UserRequestVotePartialSet represents the user request vote partial set
-type UserRequestVotePartialSet interface {
-	UserRequestVotes() []UserRequestVote
+// TransferRequestVotePartialSet represents the transfer request vote partial set
+type TransferRequestVotePartialSet interface {
+	Votes() []TransferRequestVote
 	Index() int
 	Amount() int
 	TotalAmount() int
 }
 
-// UserRequestVoteService represents a user request vote service
-type UserRequestVoteService interface {
-	Save(vote UserRequestVote) error
-	Delete(vote UserRequestVote) error
-	RetrieveByID(id *uuid.UUID) (UserRequestVote, error)
-	FromStoredToUserRequestVote(vote *storedUserRequestVote) (UserRequestVote, error)
-	RetrieveByVoterIDAndUserRequestID(voterID *uuid.UUID, requestID *uuid.UUID) (UserRequestVote, error)
-	RetrieveByUserRequestID(requestID *uuid.UUID, index int, amount int) (UserRequestVotePartialSet, error)
-	RetrieveByRequesterWalletID(walletID *uuid.UUID, index int, amount int) (UserRequestVotePartialSet, error)
-	RetrieveByVoterID(voterID *uuid.UUID, index int, amount int) (UserRequestVotePartialSet, error)
-	RetrieveByVoterWalletID(walletID *uuid.UUID, index int, amount int) (UserRequestVotePartialSet, error)
+// TransferRequestVoteService represents a transfer request vote service
+type TransferRequestVoteService interface {
+	Save(vote TransferRequestVote) error
+	Delete(vote TransferRequestVote) error
+	RetrieveByID(id *uuid.UUID) (TransferRequestVote, error)
+	//FromStoredToUserRequestVote(vote *storedUserRequestVote) (UserRequestVote, error)
+	RetrieveByVoterIDAndTransferRequestID(voterID *uuid.UUID, requestID *uuid.UUID) (TransferRequestVote, error)
+	RetrieveByTransferRequestID(requestID *uuid.UUID, index int, amount int) (TransferRequestVotePartialSet, error)
+	RetrieveByRequesterWalletID(walletID *uuid.UUID, index int, amount int) (TransferRequestVotePartialSet, error)
+	RetrieveByVoterID(voterID *uuid.UUID, index int, amount int) (TransferRequestVotePartialSet, error)
+	RetrieveByVoterWalletID(walletID *uuid.UUID, index int, amount int) (TransferRequestVotePartialSet, error)
 }
 
 /*
- * User
+ * Transfer
  */
 
-// User represents a user
-type User interface {
+// Transfer represents a transfer of token that can be claimed
+type Transfer interface {
 	ID() *uuid.UUID
+	Amount() int
+	Content() string
 	PubKey() crypto.PublicKey
-	Shares() int
-	Wallet() Wallet
 }
 
-// UserPartialSet represents the user partial set
-type UserPartialSet interface {
-	Users() []User
+// TransferPartialSet represents a transfer partial set
+type TransferPartialSet interface {
+	Transfers() []Transfer
 	Index() int
 	Amount() int
 	TotalAmount() int
 }
 
-// UserService represents a user service
-type UserService interface {
-	Save(usr User) error
-	RetrieveByID(id *uuid.UUID) (User, error)
-	RetrieveByWalletID(walletID *uuid.UUID, index int, amount int) (UserPartialSet, error)
-	RetrieveByPubKey(pubKey crypto.PublicKey, index int, amount int) (UserPartialSet, error)
+// TransferService represents a transfer service
+type TransferService interface {
+	Save(trx Transfer) error
+	Retrieve(index int, amount int) (TransferPartialSet, error)
+	RetrieveByID(id *uuid.UUID) (Transfer, error)
+	RetrieveByPublicKey(pubKey crypto.PublicKey) (Transfer, error)
+}
+
+/*
+ * TransferClaim
+ */
+
+// TransferClaim represents a claim of transfer
+type TransferClaim interface {
+	ID() *uuid.UUID
+	DepositTo() Wallet
+	SignedContent() crypto.RingSignature
+	Amount() int
+}
+
+// TransferClaimPartialSet represents a TransferClaimPartialSet instance
+type TransferClaimPartialSet interface {
+	Claims() []TransferClaim
+	Index() int
+	Amount() int
+	TotalAmount() int
+}
+
+// TransferClaimService represents the TransferClaimService
+type TransferClaimService interface {
+	Save(claim TransferClaim) error
+	RetrieveByID(id *uuid.UUID) (TransferClaim, error)
+	RetrieveByToWalletID(toWalletID *uuid.UUID, index int, amount int) (TransferClaimPartialSet, error)
 }
 
 /*
@@ -194,10 +151,20 @@ type PledgePartialSet interface {
 // PledgeService represents a pledge service
 type PledgeService interface {
 	Save(pledge Pledge) error
+	Populate(stored *storedPledge) (Pledge, error)
 	RetrieveByID(id *uuid.UUID) (Pledge, error)
-	FromStoredToPledge(stored *storedPledge) (Pledge, error)
 	RetrieveByFromWalletID(fromWalletID *uuid.UUID, index int, amount int) (PledgePartialSet, error)
 	RetrieveByToWalletID(toWalletID *uuid.UUID, index int, amount int) (PledgePartialSet, error)
+}
+
+/*
+ * Balance
+ */
+
+// PledgeBalanceService represents the pledge balance service
+type PledgeBalanceService interface {
+	RetrieveByFromWalletID(fromWalletID *uuid.UUID, index int, amount int) (int, error)
+	RetrieveByToWalletID(toWalletID *uuid.UUID, index int, amount int) (int, error)
 }
 
 /*

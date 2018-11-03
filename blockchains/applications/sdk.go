@@ -1,9 +1,6 @@
 package applications
 
 import (
-	"fmt"
-	"path/filepath"
-
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/datastore"
 	"github.com/xmnservices/xmnsuite/routers"
@@ -101,6 +98,7 @@ type CreateApplicationParams struct {
 	FromBlockIndex int64
 	ToBlockIndex   int64
 	Version        string
+	Store          datastore.StoredDataStore
 	RouterParams   routers.CreateRouterParams
 }
 
@@ -136,16 +134,16 @@ var SDKFunc = struct {
 		stateKey := "state-key"
 
 		// create the filepath:
-		fileName := fmt.Sprintf("%s.%s", params.Version, "xmndb")
-		filePath := filepath.Join(params.DirPath, params.Namespace, params.Name, params.ID.String(), "application", fileName)
+		//fileName := fmt.Sprintf("%s.%s", params.Version, "xmndb")
+		//filePath := filepath.Join(params.DirPath, params.Namespace, params.Name, params.ID.String(), "application", fileName)
 
 		// create the stored ds:
-		st := datastore.SDKFunc.CreateStoredDataStore(datastore.StoredDataStoreParams{
+		/*st := datastore.SDKFunc.CreateStoredDataStore(datastore.StoredDataStoreParams{
 			FilePath: filePath,
-		})
+		})*/
 
 		// create the database:
-		db, dbErr := retrieveOrCreateState(params.Version, stateKey, st)
+		db, dbErr := retrieveOrCreateState(params.Version, stateKey, params.Store)
 		if dbErr != nil {
 			panic(dbErr)
 		}
