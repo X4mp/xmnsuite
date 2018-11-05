@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
+	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/framework/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/framework/wallet"
 )
@@ -13,6 +14,7 @@ import (
 type Withdrawal interface {
 	ID() *uuid.UUID
 	From() wallet.Wallet
+	Token() token.Token
 	Amount() int
 }
 
@@ -20,6 +22,7 @@ type Withdrawal interface {
 type CreateParams struct {
 	ID     *uuid.UUID
 	From   wallet.Wallet
+	Tok    token.Token
 	Amount int
 }
 
@@ -36,7 +39,7 @@ var SDKFunc = struct {
 	CreateRepresentation func(params CreateRepresentationParams) entity.Representation
 }{
 	Create: func(params CreateParams) Withdrawal {
-		out := createWithdrawal(params.ID, params.From, params.Amount)
+		out := createWithdrawal(params.ID, params.From, params.Tok, params.Amount)
 		return out
 	},
 	CreateMetaData: func() entity.MetaData {

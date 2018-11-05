@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
+	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/framework/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/framework/wallet"
 )
@@ -28,6 +29,11 @@ func createMetaData() entity.MetaData {
 					return nil, fromWalletIDErr
 				}
 
+				tokenID, tokenIDErr := uuid.FromString(storable.TokenID)
+				if tokenIDErr != nil {
+					return nil, tokenIDErr
+				}
+
 				// retrieve the wallet:
 				walletMetaData := wallet.SDKFunc.CreateMetaData()
 				walletIns, walletInsErr := rep.RetrieveByID(walletMetaData, &fromWalletID)
@@ -35,9 +41,21 @@ func createMetaData() entity.MetaData {
 					return nil, walletInsErr
 				}
 
+				// retrieve the token:
+				tokenMetaData := token.SDKFunc.CreateMetaData()
+				tokenIns, tokenInsErr := rep.RetrieveByID(tokenMetaData, &tokenID)
+				if tokenInsErr != nil {
+					return nil, tokenInsErr
+				}
+
 				if wal, ok := walletIns.(wallet.Wallet); ok {
-					out := createWithdrawal(&id, wal, storable.Amount)
-					return out, nil
+					if tok, ok := tokenIns.(token.Token); ok {
+						out := createWithdrawal(&id, wal, tok, storable.Amount)
+						return out, nil
+					}
+
+					str := fmt.Sprintf("the entity (ID: %s) is not a valid Token instance", tokenID.String())
+					return nil, errors.New(str)
 				}
 
 				str := fmt.Sprintf("the entity (ID: %s) is not a valid Wallet instance", fromWalletID.String())
