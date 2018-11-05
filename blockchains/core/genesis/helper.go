@@ -6,7 +6,6 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/deposit"
-	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/framework/entity"
 )
 
@@ -29,11 +28,6 @@ func createMetaData() entity.MetaData {
 					return nil, initialDepIDErr
 				}
 
-				tokID, tokIDErr := uuid.FromString(storable.TokenID)
-				if tokIDErr != nil {
-					return nil, tokIDErr
-				}
-
 				// retrieve the initial deposit:
 				depositMet := deposit.SDKFunc.CreateMetaData()
 				depIns, depInsErr := rep.RetrieveByID(depositMet, &initialDepID)
@@ -41,21 +35,9 @@ func createMetaData() entity.MetaData {
 					return nil, depInsErr
 				}
 
-				// retrieve the token:
-				tokMet := token.SDKFunc.CreateMetaData()
-				tokIns, tokInsErr := rep.RetrieveByID(tokMet, &tokID)
-				if tokInsErr != nil {
-					return nil, tokInsErr
-				}
-
 				if deposit, ok := depIns.(deposit.Deposit); ok {
-					if tok, ok := tokIns.(token.Token); ok {
-						out := createGenesis(&id, storable.GzPricePerKb, storable.MxAmountOfValidators, deposit, tok)
-						return out, nil
-					}
-
-					str := fmt.Sprintf("the entity (ID: %s) is not a valid Token instance", tokID.String())
-					return nil, errors.New(str)
+					out := createGenesis(&id, storable.GzPricePerKb, storable.MxAmountOfValidators, deposit)
+					return out, nil
 				}
 
 				str := fmt.Sprintf("the entity (ID: %s) is not a valid InitialDeposit instance", initialDepID.String())

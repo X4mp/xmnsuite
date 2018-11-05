@@ -5,7 +5,6 @@ type storableGenesis struct {
 	GzPricePerKb         int    `json:"gaz_price_per_kb"`
 	MxAmountOfValidators int    `json:"max_amount_of_validators"`
 	InitialDepositID     string `json:"initial_deposit_id"`
-	TokenID              string `json:"token_id"`
 }
 
 func createStorableGenesis(gen Genesis) *storableGenesis {
@@ -14,7 +13,6 @@ func createStorableGenesis(gen Genesis) *storableGenesis {
 		GzPricePerKb:         gen.GazPricePerKb(),
 		MxAmountOfValidators: gen.MaxAmountOfValidators(),
 		InitialDepositID:     gen.Deposit().ID().String(),
-		TokenID:              gen.Token().ID().String(),
 	}
 
 	return &out

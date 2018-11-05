@@ -3,7 +3,6 @@ package genesis
 import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/deposit"
-	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 )
 
 /*
@@ -15,16 +14,14 @@ type genesis struct {
 	GzPricePerKb         int             `json:"gaz_price_per_kb"`
 	MxAmountOfValidators int             `json:"max_amount_of_validators"`
 	Dep                  deposit.Deposit `json:"deposit"`
-	Tok                  token.Token     `json:"token"`
 }
 
-func createGenesis(id *uuid.UUID, gazPricePerKb int, maxAmountOfValidators int, dep deposit.Deposit, tok token.Token) Genesis {
+func createGenesis(id *uuid.UUID, gazPricePerKb int, maxAmountOfValidators int, dep deposit.Deposit) Genesis {
 	out := genesis{
 		UUID:                 id,
 		GzPricePerKb:         gazPricePerKb,
 		MxAmountOfValidators: maxAmountOfValidators,
 		Dep:                  dep,
-		Tok:                  tok,
 	}
 
 	return &out
@@ -48,9 +45,4 @@ func (app *genesis) MaxAmountOfValidators() int {
 // Deposit returns the initial deposit
 func (app *genesis) Deposit() deposit.Deposit {
 	return app.Dep
-}
-
-// Token returns the token
-func (app *genesis) Token() token.Token {
-	return app.Tok
 }

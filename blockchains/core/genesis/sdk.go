@@ -6,7 +6,6 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/deposit"
-	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/framework/entity"
 )
 
@@ -16,7 +15,6 @@ type Genesis interface {
 	GazPricePerKb() int
 	MaxAmountOfValidators() int
 	Deposit() deposit.Deposit
-	Token() token.Token
 }
 
 // Service represents the Genesis service
@@ -28,8 +26,6 @@ type Service interface {
 type CreateRepresentationParams struct {
 	InitialDepositMetaData       entity.MetaData
 	InitialDepositRepresentation entity.Representation
-	TokenMetaData                entity.MetaData
-	TokenRepresentation          entity.Representation
 }
 
 // SDKFunc represents the Genesis SDK func
@@ -72,7 +68,6 @@ var SDKFunc = struct {
 
 				if gen, ok := ins.(Genesis); ok {
 					saveIfNotExists(params.InitialDepositMetaData, params.InitialDepositRepresentation, gen.Deposit())
-					saveIfNotExists(params.TokenMetaData, params.TokenRepresentation, gen.Token())
 					return nil
 				}
 
