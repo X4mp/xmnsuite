@@ -4,8 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math"
-	"math/rand"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/balance"
@@ -52,50 +50,31 @@ func (app *service) Save(ins Transfer) error {
 	}
 
 	// retrieve the balance:
-	balance, balanceErr := app.balanceRepository.RetrieveByWalletAndToken(ins.From(), ins.Token())
+	withdr := ins.Withdrawal()
+	balance, balanceErr := app.balanceRepository.RetrieveByWalletAndToken(withdr.From(), withdr.Token())
 	if balanceErr != nil {
-		str := fmt.Sprintf("there was an error while retrieving the balance of the Wallet (ID: %s), for the Token (ID: %s): %s", ins.From().ID().String(), ins.Token().ID().String(), balanceErr.Error())
+		str := fmt.Sprintf("there was an error while retrieving the balance of the Wallet (ID: %s), for the Token (ID: %s): %s", withdr.From().ID().String(), withdr.Token().ID().String(), balanceErr.Error())
 		return errors.New(str)
 	}
 
 	// make sure the balance is bigger than the transfer:
-	if balance.Amount() < ins.Amount() {
-		str := fmt.Sprintf("the balance of the wallet (ID: %s) for the token (ID: %s) is %d, but the transfer needed %d", balance.On().ID().String(), balance.Of().ID().String(), balance.Amount(), ins.Amount())
+	if balance.Amount() < withdr.Amount() {
+		str := fmt.Sprintf("the balance of the wallet (ID: %s) for the token (ID: %s) is %d, but the transfer needed %d", balance.On().ID().String(), balance.Of().ID().String(), balance.Amount(), withdr.Amount())
 		return errors.New(str)
 	}
 
-	// create multiple withdrawals to make them harder to link with the transfer:
-	compoundedAmount := 0
-	withdrawals := []withdrawal.Withdrawal{}
-	totalAmount := ins.Amount()
-	amountOfWithdrawals := rand.Int() % 20
-	amountPerWithdrawal := int(math.Ceil(float64(totalAmount / amountOfWithdrawals)))
-	for i := 0; i < amountOfWithdrawals; i++ {
+	// execute the withdrawal:
+	wID := uuid.NewV4()
+	withIns := withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+		ID:     &wID,
+		From:   withdr.From(),
+		Amount: withdr.Amount(),
+	})
 
-		// find the right amount to withdraw:
-		amount := amountPerWithdrawal
-		if (compoundedAmount + amount) > totalAmount {
-			amount = totalAmount - compoundedAmount
-		}
-
-		// create the instance:
-		wID := uuid.NewV4()
-		withdrawals = append(withdrawals, withdrawal.SDKFunc.Create(withdrawal.CreateParams{
-			ID:     &wID,
-			From:   ins.From(),
-			Amount: amount,
-		}))
-
-		// compound the amount:
-		compoundedAmount += amount
-	}
-
-	// save the withdrawals instances:
-	for _, oneWithdrawal := range withdrawals {
-		saveErr := app.service.Save(oneWithdrawal, app.withdrawalRepresentation)
-		if saveErr != nil {
-			log.Printf("there was an error while saving a Withdrawal instance: %s", saveErr.Error())
-		}
+	// save the withdrawal instance:
+	saveWithdraErr := app.service.Save(withIns, app.withdrawalRepresentation)
+	if saveWithdraErr != nil {
+		log.Printf("there was an error while saving a Withdrawal instance: %s", saveWithdraErr.Error())
 	}
 
 	// save thre tranfer instance:

@@ -2,17 +2,14 @@ package transfer
 
 import (
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/token"
-	"github.com/xmnservices/xmnsuite/blockchains/framework/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/withdrawal"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 
 // Transfer represents a transfer of token that can be claimed
 type Transfer interface {
 	ID() *uuid.UUID
-	From() wallet.Wallet
-	Token() token.Token
-	Amount() int
+	Withdrawal() withdrawal.Withdrawal
 	Content() string
 	PubKey() crypto.PublicKey
 }
