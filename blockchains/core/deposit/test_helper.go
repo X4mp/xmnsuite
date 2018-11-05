@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	uuid "github.com/satori/go.uuid"
+	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/framework/wallet"
 )
 
@@ -12,8 +13,9 @@ import (
 func CreateDepositForTests() Deposit {
 	id := uuid.NewV4()
 	wal := wallet.CreateWalletForTests()
+	tok := token.CreateTokenForTests()
 	amount := rand.Int()
-	out := createDeposit(&id, wal, amount)
+	out := createDeposit(&id, wal, tok, amount)
 	return out
 }
 

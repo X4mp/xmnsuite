@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
+	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/framework/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/framework/wallet"
 )
@@ -13,6 +14,7 @@ import (
 type Deposit interface {
 	ID() *uuid.UUID
 	To() wallet.Wallet
+	Token() token.Token
 	Amount() int
 }
 

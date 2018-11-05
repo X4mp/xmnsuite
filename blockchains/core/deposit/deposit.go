@@ -2,19 +2,22 @@ package deposit
 
 import (
 	uuid "github.com/satori/go.uuid"
+	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/framework/wallet"
 )
 
 type deposit struct {
 	UUID     *uuid.UUID    `json:"id"`
 	ToWallet wallet.Wallet `json:"to"`
+	Tok      token.Token   `json:"token"`
 	Am       int           `json:"amount"`
 }
 
-func createDeposit(id *uuid.UUID, toWallet wallet.Wallet, amount int) Deposit {
+func createDeposit(id *uuid.UUID, toWallet wallet.Wallet, tok token.Token, amount int) Deposit {
 	out := deposit{
 		UUID:     id,
 		ToWallet: toWallet,
+		Tok:      tok,
 		Am:       amount,
 	}
 
@@ -29,6 +32,11 @@ func (app *deposit) ID() *uuid.UUID {
 // To returns the to user
 func (app *deposit) To() wallet.Wallet {
 	return app.ToWallet
+}
+
+// Token returns the token
+func (app *deposit) Token() token.Token {
+	return app.Tok
 }
 
 // Amount returns the amount
