@@ -6,7 +6,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/token"
-	"github.com/xmnservices/xmnsuite/blockchains/framework/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 )
 
 // CreateDepositForTests creates an Deposit for tests

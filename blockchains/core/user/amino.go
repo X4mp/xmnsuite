@@ -2,7 +2,7 @@ package user
 
 import (
 	amino "github.com/tendermint/go-amino"
-	wallet "github.com/xmnservices/xmnsuite/blockchains/framework/wallet"
+	wallet "github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 	applications "github.com/xmnservices/xmnsuite/routers"
 )
 

@@ -7,7 +7,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	tcrypto "github.com/tendermint/tendermint/crypto"
-	"github.com/xmnservices/xmnsuite/blockchains/framework/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 )
 
 // Link represents a blockchain link

@@ -1,24 +1,20 @@
-package user
+package wallet
 
 import (
 	"errors"
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/framework/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/framework/wallet"
-	"github.com/xmnservices/xmnsuite/crypto"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 )
 
-// User represents a user
-type User interface {
+// Wallet represents a wallet
+type Wallet interface {
 	ID() *uuid.UUID
-	PubKey() crypto.PublicKey
-	Shares() int
-	Wallet() wallet.Wallet
+	ConcensusNeeded() int
 }
 
-// SDKFunc represents the User SDK func
+// SDKFunc represents the Wallet SDK func
 var SDKFunc = struct {
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
@@ -30,17 +26,17 @@ var SDKFunc = struct {
 		return entity.SDKFunc.CreateRepresentation(entity.CreateRepresentationParams{
 			Met: createMetaData(),
 			ToStorable: func(ins entity.Entity) (interface{}, error) {
-				if usr, ok := ins.(User); ok {
-					out := createStorableUser(usr)
+				if wallet, ok := ins.(Wallet); ok {
+					out := createStoredWallet(wallet)
 					return out, nil
 				}
 
-				str := fmt.Sprintf("the given entity (ID: %s) is not a valid User instance", ins.ID().String())
+				str := fmt.Sprintf("the given entity (ID: %s) is not a valid Wallet instance", ins.ID().String())
 				return nil, errors.New(str)
 			},
 			Keynames: func(ins entity.Entity) ([]string, error) {
 				return []string{
-					retrieveAllUserKeyname(),
+					retrieveAllWalletKeyname(),
 				}, nil
 			},
 		})

@@ -2,7 +2,7 @@ package token
 
 import (
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/framework/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 )
 
 func retrieveAllTokensKeyname() string {

@@ -3,7 +3,7 @@ package wallet
 import (
 	"testing"
 
-	"github.com/xmnservices/xmnsuite/blockchains/framework/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/datastore"
 	"github.com/xmnservices/xmnsuite/tests"
 )

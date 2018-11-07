@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/framework/request"
-	"github.com/xmnservices/xmnsuite/blockchains/framework/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/request"
+	"github.com/xmnservices/xmnsuite/blockchains/core/user"
 )
 
 type vote struct {

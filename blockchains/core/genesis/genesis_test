@@ -6,8 +6,8 @@ import (
 
 	initial "github.com/xmnservices/xmnsuite/blockchains/core/initial_deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/token"
-	"github.com/xmnservices/xmnsuite/blockchains/framework/user"
-	"github.com/xmnservices/xmnsuite/blockchains/framework/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 	"github.com/xmnservices/xmnsuite/datastore"
 	"github.com/xmnservices/xmnsuite/tests"
 )

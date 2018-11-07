@@ -7,7 +7,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/xmnservices/xmnsuite/blockchains/core/pledge"
-	"github.com/xmnservices/xmnsuite/blockchains/framework/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 )
 
 func retrieveAllValidatorsKeyname() string {

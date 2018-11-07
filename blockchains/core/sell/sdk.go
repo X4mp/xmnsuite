@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/external"
 	"github.com/xmnservices/xmnsuite/blockchains/core/pledge"
-	"github.com/xmnservices/xmnsuite/blockchains/framework/entity"
 )
 
 // Wish is an external wanted proposition

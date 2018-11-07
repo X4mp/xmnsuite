@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/link"
-	"github.com/xmnservices/xmnsuite/blockchains/framework/entity"
 )
 
 func retrieveAllExternalsKeyname() string {

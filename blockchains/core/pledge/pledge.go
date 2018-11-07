@@ -3,7 +3,7 @@ package pledge
 import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/withdrawal"
-	"github.com/xmnservices/xmnsuite/blockchains/framework/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 )
 
 type pledge struct {

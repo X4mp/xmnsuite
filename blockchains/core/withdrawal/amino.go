@@ -2,7 +2,7 @@ package withdrawal
 
 import (
 	amino "github.com/tendermint/go-amino"
-	"github.com/xmnservices/xmnsuite/blockchains/framework/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/user"
 )
 
 const (

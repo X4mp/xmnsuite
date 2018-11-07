@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/framework/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/framework/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/user"
 )
 
 func retrieveAllRequestsKeyname() string {
