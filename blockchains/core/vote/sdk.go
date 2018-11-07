@@ -24,6 +24,14 @@ type Service interface {
 	Save(ins Vote) error
 }
 
+// CreateParams represents the Create params
+type CreateParams struct {
+	ID         *uuid.UUID
+	Request    request.Request
+	Voter      user.User
+	IsApproved bool
+}
+
 // CreateMetaDataParams represents the CreateMetaData params
 type CreateMetaDataParams struct {
 	Met entity.MetaData
@@ -36,9 +44,18 @@ type CreateRepresentationParams struct {
 
 // SDKFunc represents the vote SDK func
 var SDKFunc = struct {
+	Create               func(params CreateParams) Vote
 	CreateMetaData       func(params CreateMetaDataParams) entity.MetaData
 	CreateRepresentation func(params CreateRepresentationParams) entity.Representation
 }{
+	Create: func(params CreateParams) Vote {
+		out, outErr := createVote(params.ID, params.Request, params.Voter, params.IsApproved)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
+	},
 	CreateMetaData: func(params CreateMetaDataParams) entity.MetaData {
 		return createMetaData(params.Met)
 	},
