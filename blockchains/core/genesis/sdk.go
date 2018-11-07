@@ -22,6 +22,11 @@ type Service interface {
 	Save(ins Genesis) error
 }
 
+// Repository represents the Genesis repository
+type Repository interface {
+	Retrieve() (Genesis, error)
+}
+
 // CreateRepresentationParams represents the CreateRepresentation params
 type CreateRepresentationParams struct {
 	InitialDepositMetaData       entity.MetaData
