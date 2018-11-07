@@ -16,6 +16,13 @@ type Request interface {
 	New() entity.Entity
 }
 
+// CreateParams represents the create params
+type CreateParams struct {
+	ID        *uuid.UUID
+	FromUser  user.User
+	NewEntity entity.Entity
+}
+
 // CreateMetaDataParams represents the CreateMetaData params
 type CreateMetaDataParams struct {
 	Met entity.MetaData
@@ -28,9 +35,14 @@ type CreateRepresentationParams struct {
 
 // SDKFunc represents the request SDK func
 var SDKFunc = struct {
+	Create               func(params CreateParams) Request
 	CreateMetaData       func(params CreateMetaDataParams) entity.MetaData
 	CreateRepresentation func(params CreateRepresentationParams) entity.Representation
 }{
+	Create: func(params CreateParams) Request {
+		out := createRequest(params.ID, params.FromUser, params.NewEntity)
+		return out
+	},
 	CreateMetaData: func(params CreateMetaDataParams) entity.MetaData {
 		return createMetaData(params.Met)
 	},

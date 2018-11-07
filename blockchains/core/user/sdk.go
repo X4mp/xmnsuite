@@ -18,6 +18,11 @@ type User interface {
 	Wallet() wallet.Wallet
 }
 
+// Repository represents the user repository
+type Repository interface {
+	RetrieveByPubKey(pubKey crypto.PublicKey) (User, error)
+}
+
 // SDKFunc represents the User SDK func
 var SDKFunc = struct {
 	CreateMetaData       func() entity.MetaData
