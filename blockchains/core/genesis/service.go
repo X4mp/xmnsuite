@@ -1,25 +1,20 @@
 package genesis
 
 import (
-	"errors"
-	"fmt"
-
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 )
 
 type service struct {
-	repository        entity.Repository
+	repository        Repository
 	service           entity.Service
 	genRepresentation entity.Representation
-	genMetaData       entity.MetaData
 }
 
-func createService(serv entity.Service, repository entity.Repository, genRepresentation entity.Representation, genMetaData entity.MetaData) Service {
+func createService(serv entity.Service, rep Repository, genRepresentation entity.Representation) Service {
 	out := service{
-		repository:        repository,
+		repository:        rep,
 		service:           serv,
 		genRepresentation: genRepresentation,
-		genMetaData:       genMetaData,
 	}
 
 	return &out
@@ -28,10 +23,9 @@ func createService(serv entity.Service, repository entity.Repository, genReprese
 // Save saves an InitialDeposit instance
 func (app *service) Save(ins Genesis) error {
 	// if there is already a gensis instance, return an error:
-	retGen, retGenErr := app.repository.RetrieveByIntersectKeynames(app.genMetaData, []string{keyname()})
+	_, retGenErr := app.repository.Retrieve()
 	if retGenErr == nil {
-		str := fmt.Sprintf("an genesis instance has already been created (ID: %s)", retGen.ID().String())
-		return errors.New(str)
+		return retGenErr
 	}
 
 	// save the genesis instance:

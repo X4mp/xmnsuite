@@ -41,7 +41,7 @@ func createMetaData(met entity.MetaData) entity.MetaData {
 
 				// retrieve the request:
 				reqMet := request.SDKFunc.CreateMetaData(request.CreateMetaDataParams{
-					Met: met,
+					EntityMetaData: met,
 				})
 
 				reqIns, reqInsErr := rep.RetrieveByID(reqMet, &reqID)
@@ -89,5 +89,32 @@ func createMetaData(met entity.MetaData) entity.MetaData {
 
 		},
 		EmptyStorable: new(storableVote),
+	})
+}
+
+func createRepresentation(met entity.MetaData) entity.Representation {
+	return entity.SDKFunc.CreateRepresentation(entity.CreateRepresentationParams{
+		Met: createMetaData(met),
+		ToStorable: func(ins entity.Entity) (interface{}, error) {
+			if vote, ok := ins.(Vote); ok {
+				out := createStorableVote(vote)
+				return out, nil
+			}
+
+			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Vote instance", ins.ID().String())
+			return nil, errors.New(str)
+		},
+		Keynames: func(ins entity.Entity) ([]string, error) {
+			if vote, ok := ins.(Vote); ok {
+				base := retrieveAllVotesKeyname()
+				return []string{
+					base,
+					retrieveVotesByRequestIDKeyname(vote.Request().ID()),
+					fmt.Sprintf("%s:by_voter_id:%s", base, vote.Voter().ID().String()),
+				}, nil
+			}
+
+			return nil, errors.New("the given entity is not a valid Vote instance")
+		},
 	})
 }

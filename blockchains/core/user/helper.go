@@ -14,6 +14,11 @@ func retrieveAllUserKeyname() string {
 	return "users"
 }
 
+func retrieveUserByPubKeyKeyname(pubKey crypto.PublicKey) string {
+	base := retrieveAllUserKeyname()
+	return fmt.Sprintf("%s:by_public_key:%s", base, pubKey.String())
+}
+
 func createMetaData() entity.MetaData {
 	return entity.SDKFunc.CreateMetaData(entity.CreateMetaDataParams{
 		Name: "User",

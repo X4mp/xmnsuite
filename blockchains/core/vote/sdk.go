@@ -1,9 +1,6 @@
 package vote
 
 import (
-	"errors"
-	"fmt"
-
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
@@ -34,12 +31,20 @@ type CreateParams struct {
 
 // CreateMetaDataParams represents the CreateMetaData params
 type CreateMetaDataParams struct {
-	Met entity.MetaData
+	RequestMetaData entity.MetaData
 }
 
 // CreateRepresentationParams represents the CreateRepresentation params
 type CreateRepresentationParams struct {
-	Met entity.MetaData
+	RequestMetaData entity.MetaData
+}
+
+// CreateServiceParams represents the CreateService params
+type CreateServiceParams struct {
+	EntityRepository        entity.Repository
+	EntityService           entity.Service
+	RequestRepresentation   entity.Representation
+	NewEntityRepresentation entity.Representation
 }
 
 // SDKFunc represents the vote SDK func
@@ -47,6 +52,7 @@ var SDKFunc = struct {
 	Create               func(params CreateParams) Vote
 	CreateMetaData       func(params CreateMetaDataParams) entity.MetaData
 	CreateRepresentation func(params CreateRepresentationParams) entity.Representation
+	CreateService        func(params CreateServiceParams) Service
 }{
 	Create: func(params CreateParams) Vote {
 		out, outErr := createVote(params.ID, params.Request, params.Voter, params.IsApproved)
@@ -57,32 +63,14 @@ var SDKFunc = struct {
 		return out
 	},
 	CreateMetaData: func(params CreateMetaDataParams) entity.MetaData {
-		return createMetaData(params.Met)
+		return createMetaData(params.RequestMetaData)
 	},
 	CreateRepresentation: func(params CreateRepresentationParams) entity.Representation {
-		return entity.SDKFunc.CreateRepresentation(entity.CreateRepresentationParams{
-			Met: createMetaData(params.Met),
-			ToStorable: func(ins entity.Entity) (interface{}, error) {
-				if vote, ok := ins.(Vote); ok {
-					out := createStorableVote(vote)
-					return out, nil
-				}
-
-				str := fmt.Sprintf("the given entity (ID: %s) is not a valid Vote instance", ins.ID().String())
-				return nil, errors.New(str)
-			},
-			Keynames: func(ins entity.Entity) ([]string, error) {
-				if vote, ok := ins.(Vote); ok {
-					base := retrieveAllVotesKeyname()
-					return []string{
-						base,
-						retrieveVotesByRequestIDKeyname(vote.Request().ID()),
-						fmt.Sprintf("%s:by_voter_id:%s", base, vote.Voter().ID().String()),
-					}, nil
-				}
-
-				return nil, errors.New("the given entity is not a valid Vote instance")
-			},
-		})
+		return createRepresentation(params.RequestMetaData)
+	},
+	CreateService: func(params CreateServiceParams) Service {
+		voteRepresentation := createRepresentation(params.RequestRepresentation.MetaData())
+		out := createVoteService(params.EntityRepository, params.EntityService, voteRepresentation, params.RequestRepresentation, params.NewEntityRepresentation)
+		return out
 	},
 }

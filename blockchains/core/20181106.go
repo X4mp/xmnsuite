@@ -8,9 +8,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request"
-	"github.com/xmnservices/xmnsuite/blockchains/core/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 	"github.com/xmnservices/xmnsuite/crypto"
@@ -23,26 +21,16 @@ type incomingVote struct {
 }
 
 type core20181108 struct {
-	metaDatas         map[string]entity.MetaData
-	representations   map[string]entity.Representation
-	entityService     entity.Service
-	entityRepository  entity.Repository
-	genesisRepository genesis.Repository
-	userRepository    user.Repository
-	voteService       vote.Service
+	entityRepresentations  map[string]entity.Representation
+	requestRepresentations map[string]entity.Representation
 }
 
-func createCore20181108(store datastore.DataStore) *core20181108 {
+func createCore20181108() *core20181108 {
 	out := core20181108{
-		metaDatas: map[string]entity.MetaData{
-			"wallet": wallet.SDKFunc.CreateMetaData(),
-		},
-		representations: map[string]entity.Representation{
+		entityRepresentations: map[string]entity.Representation{
 			"wallet": wallet.SDKFunc.CreateRepresentation(),
 		},
-		entityService: entity.SDKFunc.CreateService(entity.CreateServiceParams{
-			Store: store,
-		}),
+		requestRepresentations: map[string]entity.Representation{},
 	}
 
 	return &out
@@ -55,13 +43,12 @@ func create20181106(
 	fromBlockIndex int64,
 	toBlockIndex int64,
 	rootDir string,
-	routerDS datastore.DataStore,
 	routerRoleKey string,
-	ds datastore.DataStore,
+	ds datastore.StoredDataStore,
 ) applications.Application {
 
 	// create core:
-	core := createCore20181108(ds)
+	core := createCore20181108()
 
 	// create application:
 	version := "2018.11.06"
@@ -73,13 +60,15 @@ func create20181106(
 		ToBlockIndex:   toBlockIndex,
 		Version:        version,
 		DirPath:        rootDir,
+		Store:          ds,
 		RouterParams: routers.CreateRouterParams{
-			DataStore: routerDS,
+			DataStore: ds.DataStore(),
 			RoleKey:   routerRoleKey,
 			RtesParams: []routers.CreateRouteParams{
 				core.saveEntity(),
 				core.retrieveEntityByID(),
 				core.saveRequest(),
+				core.saveRequestVote(),
 			},
 		},
 	})
@@ -92,8 +81,11 @@ func (app *core20181108) saveEntity() routers.CreateRouteParams {
 		Pattern: "/<name|[a-z-]+>",
 		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
 
+			// create the dependencies:
+			dep := createDependencies(store)
+
 			// retrieve the genesis:
-			gen, genErr := app.genesisRepository.Retrieve()
+			gen, genErr := dep.genesisRepository.Retrieve()
 			if genErr != nil {
 				str := fmt.Sprintf("there was an error while retrieving the Gensis instance: %s", genErr.Error())
 				return nil, errors.New(str)
@@ -102,22 +94,26 @@ func (app *core20181108) saveEntity() routers.CreateRouteParams {
 			// retrieve the name:
 			if name, ok := params["name"]; ok {
 				// retrieve the entity representation:
-				if representation, ok := app.representations[name]; ok {
-					// unmarshal the data:
-					ptr := representation.MetaData().CopyStorable()
-					jsErr := cdc.UnmarshalJSON(data, ptr)
-					if jsErr != nil {
-						return nil, jsErr
+				if representation, ok := app.entityRepresentations[name]; ok {
+					// converts the data to an entity:
+					ins, insErr := representation.MetaData().ToEntity()(dep.entityRepository, data)
+					if insErr != nil {
+						return nil, insErr
 					}
 
 					// save the entity:
-					saveErr := app.entityService.Save(ptr.(entity.Entity), representation)
+					saveErr := dep.entityService.Save(ins, representation)
 					if saveErr != nil {
 						return nil, saveErr
 					}
 
 					// convert to json:
-					jsData, jsDataErr := cdc.MarshalJSON(ptr)
+					storable, storableErr := representation.ToStorable()(ins)
+					if storableErr != nil {
+						return nil, storableErr
+					}
+
+					jsData, jsDataErr := cdc.MarshalJSON(storable)
 					if jsDataErr != nil {
 						return nil, jsDataErr
 					}
@@ -151,10 +147,14 @@ func (app *core20181108) retrieveEntityByID() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
 		Pattern: "/<name|[a-z-]+>/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
 		QueryTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (routers.QueryResponse, error) {
+
+			// create the dependencies:
+			dep := createDependencies(store)
+
 			// retrieve the name:
 			if name, ok := params["name"]; ok {
 				// retrieve the entity metadata:
-				if metadata, ok := app.metaDatas[name]; ok {
+				if representation, ok := app.entityRepresentations[name]; ok {
 					// parse the id:
 					id, idErr := uuid.FromString(params["id"])
 					if idErr != nil {
@@ -162,7 +162,8 @@ func (app *core20181108) retrieveEntityByID() routers.CreateRouteParams {
 					}
 
 					// retrieve the entity instance:
-					retIns, retInsErr := app.entityRepository.RetrieveByID(metadata, &id)
+					metaData := representation.MetaData()
+					retIns, retInsErr := dep.entityRepository.RetrieveByID(metaData, &id)
 					if retInsErr != nil {
 						return nil, retInsErr
 					}
@@ -198,15 +199,18 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 		Pattern: "/<name|[a-z-]+>/request/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
 		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
 
+			// create the dependencies:
+			dep := createDependencies(store)
+
 			// retrieve the genesis:
-			gen, genErr := app.genesisRepository.Retrieve()
+			gen, genErr := dep.genesisRepository.Retrieve()
 			if genErr != nil {
 				str := fmt.Sprintf("there was an error while retrieving the Gensis instance: %s", genErr.Error())
 				return nil, errors.New(str)
 			}
 
 			// retrieve the from user:
-			fromUser, fromUserErr := app.userRepository.RetrieveByPubKey(from)
+			fromUser, fromUserErr := dep.userRepository.RetrieveByPubKey(from)
 			if fromUserErr != nil {
 				str := fmt.Sprintf("the from user (pubKey: %s) could not be found", from.String())
 				return nil, errors.New(str)
@@ -215,7 +219,7 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 			// retrieve the name:
 			if name, ok := params["name"]; ok {
 				// retrieve the entity representation:
-				if representation, ok := app.representations[name]; ok {
+				if representation, ok := app.requestRepresentations[name]; ok {
 					if requestIDAsString, ok := params["id"]; ok {
 						requestID, requestIDErr := uuid.FromString(requestIDAsString)
 						if requestIDErr != nil {
@@ -223,22 +227,21 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 						}
 
 						// unmarshal the data:
-						ptr := representation.MetaData().CopyStorable()
-						jsErr := cdc.UnmarshalJSON(data, ptr)
-						if jsErr != nil {
-							return nil, jsErr
+						ins, insErr := representation.MetaData().ToEntity()(dep.entityRepository, data)
+						if insErr != nil {
+							return nil, insErr
 						}
 
 						// build the request:
 						req := request.SDKFunc.Create(request.CreateParams{
 							ID:        &requestID,
 							FromUser:  fromUser,
-							NewEntity: ptr.(entity.Entity),
+							NewEntity: ins,
 						})
 
 						// save the request:
-						saveErr := app.entityService.Save(req, request.SDKFunc.CreateRepresentation(request.CreateRepresentationParams{
-							Met: representation.MetaData(),
+						saveErr := dep.entityService.Save(req, request.SDKFunc.CreateRepresentation(request.CreateRepresentationParams{
+							EntityMetaData: representation.MetaData(),
 						}))
 
 						if saveErr != nil {
@@ -246,7 +249,12 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 						}
 
 						// convert to json:
-						jsData, jsDataErr := cdc.MarshalJSON(req)
+						storable, storableErr := representation.ToStorable()(ins)
+						if storableErr != nil {
+							return nil, storableErr
+						}
+
+						jsData, jsDataErr := cdc.MarshalJSON(storable)
 						if jsDataErr != nil {
 							return nil, jsDataErr
 						}
@@ -283,16 +291,18 @@ func (app *core20181108) saveRequestVote() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
 		Pattern: "/<name|[a-z-]+>/request/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>/vote/<voteID|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
 		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
+			// create the dependencies:
+			dep := createDependencies(store)
 
 			// retrieve the genesis:
-			gen, genErr := app.genesisRepository.Retrieve()
+			gen, genErr := dep.genesisRepository.Retrieve()
 			if genErr != nil {
 				str := fmt.Sprintf("there was an error while retrieving the Gensis instance: %s", genErr.Error())
 				return nil, errors.New(str)
 			}
 
 			// retrieve the from user:
-			fromUser, fromUserErr := app.userRepository.RetrieveByPubKey(from)
+			fromUser, fromUserErr := dep.userRepository.RetrieveByPubKey(from)
 			if fromUserErr != nil {
 				str := fmt.Sprintf("the from user (pubKey: %s) could not be found", from.String())
 				return nil, errors.New(str)
@@ -308,7 +318,7 @@ func (app *core20181108) saveRequestVote() routers.CreateRouteParams {
 			// retrieve the name:
 			if name, ok := params["name"]; ok {
 				// retireve the representation:
-				if representation, ok := app.representations[name]; ok {
+				if representation, ok := app.requestRepresentations[name]; ok {
 					// retrieve the requestID:
 					if requestIDAsString, ok := params["id"]; ok {
 						requestID, requestIDErr := uuid.FromString(requestIDAsString)
@@ -323,8 +333,8 @@ func (app *core20181108) saveRequestVote() routers.CreateRouteParams {
 							}
 
 							// retrieve the request:
-							req, reqErr := app.entityRepository.RetrieveByID(request.SDKFunc.CreateMetaData(request.CreateMetaDataParams{
-								Met: representation.MetaData(),
+							req, reqErr := dep.entityRepository.RetrieveByID(request.SDKFunc.CreateMetaData(request.CreateMetaDataParams{
+								EntityMetaData: representation.MetaData(),
 							}), &requestID)
 
 							if reqErr != nil {
@@ -332,7 +342,7 @@ func (app *core20181108) saveRequestVote() routers.CreateRouteParams {
 							}
 
 							// create the vote:
-							vote := vote.SDKFunc.Create(vote.CreateParams{
+							voteIns := vote.SDKFunc.Create(vote.CreateParams{
 								ID:         &voteID,
 								Request:    req.(request.Request),
 								Voter:      fromUser,
@@ -340,13 +350,27 @@ func (app *core20181108) saveRequestVote() routers.CreateRouteParams {
 							})
 
 							// save the vote:
-							saveErr := app.voteService.Save(vote)
+							voteService := vote.SDKFunc.CreateService(vote.CreateServiceParams{
+								EntityRepository: dep.entityRepository,
+								EntityService:    dep.entityService,
+								RequestRepresentation: request.SDKFunc.CreateRepresentation(request.CreateRepresentationParams{
+									EntityMetaData: representation.MetaData(),
+								}),
+								NewEntityRepresentation: representation,
+							})
+
+							saveErr := voteService.Save(voteIns)
 							if saveErr != nil {
 								return nil, saveErr
 							}
 
 							// convert to json:
-							jsData, jsDataErr := cdc.MarshalJSON(vote)
+							storable, storableErr := representation.ToStorable()(voteIns)
+							if storableErr != nil {
+								return nil, storableErr
+							}
+
+							jsData, jsDataErr := cdc.MarshalJSON(storable)
 							if jsDataErr != nil {
 								return nil, jsDataErr
 							}

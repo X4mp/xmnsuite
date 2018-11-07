@@ -12,17 +12,21 @@ type voteService struct {
 	repository              entity.Repository
 	service                 entity.Service
 	voteRepresentation      entity.Representation
-	voteMetaData            entity.MetaData
 	requestRepresentation   entity.Representation
 	newEntityRepresentation entity.Representation
 }
 
-func createVoteService(repository entity.Repository, service entity.Service, voteRepresentation entity.Representation, voteMetaData entity.MetaData, requestRepresentation entity.Representation, newEntityRepresentation entity.Representation) Service {
+func createVoteService(
+	repository entity.Repository,
+	service entity.Service,
+	voteRepresentation entity.Representation,
+	requestRepresentation entity.Representation,
+	newEntityRepresentation entity.Representation,
+) Service {
 	out := voteService{
 		repository:              repository,
 		service:                 service,
 		voteRepresentation:      voteRepresentation,
-		voteMetaData:            voteMetaData,
 		requestRepresentation:   requestRepresentation,
 		newEntityRepresentation: newEntityRepresentation,
 	}
@@ -42,7 +46,7 @@ func (app *voteService) Save(vote Vote) error {
 	req := vote.Request()
 	reqID := req.ID()
 	keyname := retrieveVotesByRequestIDKeyname(reqID)
-	votes, votesErr := app.repository.RetrieveSetByKeyname(app.voteMetaData, keyname, 0, -1)
+	votes, votesErr := app.repository.RetrieveSetByKeyname(app.voteRepresentation.MetaData(), keyname, 0, -1)
 	if votesErr != nil {
 		str := fmt.Sprintf("there was an error while retrieving the vote partial set related to the Request (ID: %s): %s", reqID.String(), votesErr.Error())
 		return errors.New(str)

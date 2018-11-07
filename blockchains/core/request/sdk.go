@@ -25,12 +25,12 @@ type CreateParams struct {
 
 // CreateMetaDataParams represents the CreateMetaData params
 type CreateMetaDataParams struct {
-	Met entity.MetaData
+	EntityMetaData entity.MetaData
 }
 
 // CreateRepresentationParams represents the CreateRepresentation params
 type CreateRepresentationParams struct {
-	Met entity.MetaData
+	EntityMetaData entity.MetaData
 }
 
 // SDKFunc represents the request SDK func
@@ -44,11 +44,11 @@ var SDKFunc = struct {
 		return out
 	},
 	CreateMetaData: func(params CreateMetaDataParams) entity.MetaData {
-		return createMetaData(params.Met)
+		return createMetaData(params.EntityMetaData)
 	},
 	CreateRepresentation: func(params CreateRepresentationParams) entity.Representation {
 		return entity.SDKFunc.CreateRepresentation(entity.CreateRepresentationParams{
-			Met: createMetaData(params.Met),
+			Met: createMetaData(params.EntityMetaData),
 			ToStorable: func(ins entity.Entity) (interface{}, error) {
 				if req, ok := ins.(Request); ok {
 					out, outErr := createStorableRequest(req)

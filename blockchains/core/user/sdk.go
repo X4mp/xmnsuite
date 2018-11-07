@@ -23,11 +23,22 @@ type Repository interface {
 	RetrieveByPubKey(pubKey crypto.PublicKey) (User, error)
 }
 
+// CreateRepositoryParams represents the CreateRepository params
+type CreateRepositoryParams struct {
+	EntityRepository entity.Repository
+}
+
 // SDKFunc represents the User SDK func
 var SDKFunc = struct {
+	CreateRepository     func(params CreateRepositoryParams) Repository
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 }{
+	CreateRepository: func(params CreateRepositoryParams) Repository {
+		userMetaData := createMetaData()
+		out := createRepository(userMetaData, params.EntityRepository)
+		return out
+	},
 	CreateMetaData: func() entity.MetaData {
 		return createMetaData()
 	},
@@ -44,9 +55,16 @@ var SDKFunc = struct {
 				return nil, errors.New(str)
 			},
 			Keynames: func(ins entity.Entity) ([]string, error) {
-				return []string{
-					retrieveAllUserKeyname(),
-				}, nil
+				if usr, ok := ins.(User); ok {
+					return []string{
+						retrieveAllUserKeyname(),
+						retrieveUserByPubKeyKeyname(usr.PubKey()),
+					}, nil
+				}
+
+				str := fmt.Sprintf("the given entity (ID: %s) is not a valid User instance", ins.ID().String())
+				return nil, errors.New(str)
+
 			},
 		})
 	},

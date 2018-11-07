@@ -133,15 +133,6 @@ var SDKFunc = struct {
 		// set some constant:
 		stateKey := "state-key"
 
-		// create the filepath:
-		//fileName := fmt.Sprintf("%s.%s", params.Version, "xmndb")
-		//filePath := filepath.Join(params.DirPath, params.Namespace, params.Name, params.ID.String(), "application", fileName)
-
-		// create the stored ds:
-		/*st := datastore.SDKFunc.CreateStoredDataStore(datastore.StoredDataStoreParams{
-			FilePath: filePath,
-		})*/
-
 		// create the database:
 		db, dbErr := retrieveOrCreateState(params.Version, stateKey, params.Store)
 		if dbErr != nil {

@@ -11,15 +11,16 @@ func createApplications(
 	name string,
 	id *uuid.UUID,
 	rootDir string,
-	routerDS datastore.DataStore,
 	routerRoleKey string,
-	ds datastore.DataStore,
-) []applications.Application {
+	ds datastore.StoredDataStore,
+) applications.Applications {
 
-	// create the first application:
-	apps := []applications.Application{
-		create20181106(namespace, name, id, 0, -1, rootDir, routerDS, routerRoleKey, ds),
-	}
+	// create the applications:
+	apps := applications.SDKFunc.CreateApplications(applications.CreateApplicationsParams{
+		Apps: []applications.Application{
+			create20181106(namespace, name, id, 0, -1, rootDir, routerRoleKey, ds),
+		},
+	})
 
 	return apps
 }

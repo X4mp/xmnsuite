@@ -27,6 +27,11 @@ type Repository interface {
 	Retrieve() (Genesis, error)
 }
 
+// CreateRepositoryParams represents the CreateRepository params
+type CreateRepositoryParams struct {
+	EntityRepository entity.Repository
+}
+
 // CreateRepresentationParams represents the CreateRepresentation params
 type CreateRepresentationParams struct {
 	InitialDepositMetaData       entity.MetaData
@@ -35,9 +40,15 @@ type CreateRepresentationParams struct {
 
 // SDKFunc represents the Genesis SDK func
 var SDKFunc = struct {
+	CreateRepository     func(params CreateRepositoryParams) Repository
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func(params CreateRepresentationParams) entity.Representation
 }{
+	CreateRepository: func(params CreateRepositoryParams) Repository {
+		met := createMetaData()
+		out := createRepository(params.EntityRepository, met)
+		return out
+	},
 	CreateMetaData: func() entity.MetaData {
 		return createMetaData()
 	},
