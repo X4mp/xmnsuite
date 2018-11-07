@@ -7,7 +7,9 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
+	"github.com/xmnservices/xmnsuite/blockchains/core/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
@@ -21,14 +23,24 @@ type incomingVote struct {
 }
 
 type core20181108 struct {
+	genesisRepresentation  entity.Representation
 	entityRepresentations  map[string]entity.Representation
 	requestRepresentations map[string]entity.Representation
 }
 
 func createCore20181108() *core20181108 {
+
+	walletRepresentation := wallet.SDKFunc.CreateRepresentation()
+	depositRepresentation := deposit.SDKFunc.CreateRepresentation(deposit.CreateRepresentationParams{
+		WalletRepresentation: walletRepresentation,
+	})
+
 	out := core20181108{
+		genesisRepresentation: genesis.SDKFunc.CreateRepresentation(genesis.CreateRepresentationParams{
+			DepositRepresentation: depositRepresentation,
+		}),
 		entityRepresentations: map[string]entity.Representation{
-			"wallet": wallet.SDKFunc.CreateRepresentation(),
+			"wallet": walletRepresentation,
 		},
 		requestRepresentations: map[string]entity.Representation{},
 	}
@@ -44,8 +56,15 @@ func create20181106(
 	toBlockIndex int64,
 	rootDir string,
 	routerRoleKey string,
+	rootPubKey crypto.PublicKey,
 	ds datastore.StoredDataStore,
 ) applications.Application {
+
+	// enable the root user to have write access to the genesis route:
+	store := ds.DataStore()
+	store.Users().Insert(rootPubKey)
+	store.Roles().Add(routerRoleKey, rootPubKey)
+	store.Roles().EnableWriteAccess(routerRoleKey, "/genesis")
 
 	// create core:
 	core := createCore20181108()
@@ -65,6 +84,7 @@ func create20181106(
 			DataStore: ds.DataStore(),
 			RoleKey:   routerRoleKey,
 			RtesParams: []routers.CreateRouteParams{
+				core.saveGenesis(),
 				core.saveEntity(),
 				core.retrieveEntityByID(),
 				core.saveRequest(),
@@ -74,6 +94,55 @@ func create20181106(
 	})
 
 	return app
+}
+
+func (app *core20181108) saveGenesis() routers.CreateRouteParams {
+	return routers.CreateRouteParams{
+		Pattern: "/genesis",
+		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
+
+			// create the dependencies:
+			dep := createDependencies(store)
+
+			// converts the data to an entity:
+			ins, insErr := app.genesisRepresentation.MetaData().ToEntity()(dep.entityRepository, data)
+			if insErr != nil {
+				return nil, insErr
+			}
+
+			// save the entity:
+			saveErr := dep.entityService.Save(ins, app.genesisRepresentation)
+			if saveErr != nil {
+				return nil, saveErr
+			}
+
+			// convert to json:
+			storable, storableErr := app.genesisRepresentation.ToStorable()(ins)
+			if storableErr != nil {
+				return nil, storableErr
+			}
+
+			jsData, jsDataErr := cdc.MarshalJSON(storable)
+			if jsDataErr != nil {
+				return nil, jsDataErr
+			}
+
+			// there is no gaz cost for the genesis:
+			gazUsed := 0
+
+			// return the response:
+			resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
+				Code:    routers.IsSuccessful,
+				Log:     "success",
+				GazUsed: int64(gazUsed),
+				Tags: map[string][]byte{
+					path: jsData,
+				},
+			})
+
+			return resp, nil
+		},
+	}
 }
 
 func (app *core20181108) saveEntity() routers.CreateRouteParams {

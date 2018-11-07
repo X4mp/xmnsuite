@@ -9,6 +9,7 @@ import (
 	tcrypto "github.com/tendermint/tendermint/crypto"
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
 	"github.com/xmnservices/xmnsuite/blockchains/tendermint"
+	"github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
 
@@ -35,11 +36,8 @@ func spawnBlockchain(
 	rootDirPath string,
 	port int,
 	pk tcrypto.PrivKey,
+	rootPubKey crypto.PublicKey,
 ) (applications.Node, error) {
-	// create the paths:
-	blockchainPath := filepath.Join(rootDirPath, "blockchain")
-	entitiesDBPath := filepath.Join(rootDirPath, "entities")
-
 	blkchain := tendermint.SDKFunc.CreateBlockchain(tendermint.CreateBlockchainParams{
 		Namespace: namespace,
 		Name:      name,
@@ -57,19 +55,19 @@ func spawnBlockchain(
 	}
 
 	// create the datastore:
-	entitiesDS := datastore.SDKFunc.CreateStoredDataStore(datastore.StoredDataStoreParams{
-		FilePath: entitiesDBPath,
+	store := datastore.SDKFunc.CreateStoredDataStore(datastore.StoredDataStoreParams{
+		FilePath: filepath.Join(rootDirPath, "db.xmn"),
 	})
 
 	// create the applications:
 	routerRoleKey := "router-role"
-	apps := createApplications(namespace, name, id, rootDirPath, routerRoleKey, entitiesDS)
+	apps := createApplications(namespace, name, id, rootDirPath, routerRoleKey, rootPubKey, store)
 
 	// create the application service:
 	appService := tendermint.SDKFunc.CreateApplicationService()
 
 	// spawn the node:
-	node, nodeErr := appService.Spawn(port, blockchainPath, blkchain, apps)
+	node, nodeErr := appService.Spawn(port, rootDirPath, blkchain, apps)
 	if nodeErr != nil {
 		return nil, nodeErr
 	}

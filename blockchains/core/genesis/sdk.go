@@ -34,8 +34,7 @@ type CreateRepositoryParams struct {
 
 // CreateRepresentationParams represents the CreateRepresentation params
 type CreateRepresentationParams struct {
-	InitialDepositMetaData       entity.MetaData
-	InitialDepositRepresentation entity.Representation
+	DepositRepresentation entity.Representation
 }
 
 // SDKFunc represents the Genesis SDK func
@@ -70,7 +69,8 @@ var SDKFunc = struct {
 				}, nil
 			},
 			Sync: func(rep entity.Repository, service entity.Service, ins entity.Entity) error {
-				saveIfNotExists := func(metaData entity.MetaData, representation entity.Representation, ins entity.Entity) error {
+				saveIfNotExists := func(representation entity.Representation, ins entity.Entity) error {
+					metaData := representation.MetaData()
 					_, retDepErr := rep.RetrieveByID(metaData, ins.ID())
 					if retDepErr != nil {
 						saveErr := service.Save(ins, representation)
@@ -83,7 +83,7 @@ var SDKFunc = struct {
 				}
 
 				if gen, ok := ins.(Genesis); ok {
-					saveIfNotExists(params.InitialDepositMetaData, params.InitialDepositRepresentation, gen.Deposit())
+					saveIfNotExists(params.DepositRepresentation, gen.Deposit())
 					return nil
 				}
 

@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"strings"
 )
 
 type retrievalMetaData struct {
 	name        string
+	keyname     string
 	toEntity    ToEntity
 	empStorable interface{}
 }
@@ -21,6 +23,7 @@ func createMetaData(name string, toEntity ToEntity, empStorable interface{}) (Me
 
 	out := retrievalMetaData{
 		name:        name,
+		keyname:     strings.ToLower(name),
 		toEntity:    toEntity,
 		empStorable: empStorable,
 	}
@@ -31,6 +34,11 @@ func createMetaData(name string, toEntity ToEntity, empStorable interface{}) (Me
 // Name returns the name
 func (obj *retrievalMetaData) Name() string {
 	return obj.name
+}
+
+// Keyname returns the keyname
+func (obj *retrievalMetaData) Keyname() string {
+	return obj.keyname
 }
 
 // ToEntity returns the ToEntity func

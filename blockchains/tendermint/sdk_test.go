@@ -47,6 +47,11 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 	routerDS.Roles().Add(routerRoleKey, fromPubKey)
 	routerDS.Roles().EnableWriteAccess(routerRoleKey, "/messages")
 
+	// create the datastore:
+	ds := datastore.SDKFunc.CreateStoredDataStore(datastore.StoredDataStoreParams{
+		FilePath: filepath.Join(rootDir, "db.xmn"),
+	})
+
 	// create application:
 	app := applications.SDKFunc.CreateApplication(applications.CreateApplicationParams{
 		Namespace:      namespace,
@@ -56,6 +61,7 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 		ToBlockIndex:   -1,
 		Version:        version,
 		DirPath:        rootDir,
+		Store:          ds,
 		RouterParams: routers.CreateRouterParams{
 			DataStore: routerDS,
 			RoleKey:   routerRoleKey,

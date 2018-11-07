@@ -2,6 +2,8 @@ package entity
 
 import (
 	uuid "github.com/satori/go.uuid"
+	"github.com/xmnservices/xmnsuite/blockchains/applications"
+	"github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
 	"github.com/xmnservices/xmnsuite/routers"
 )
@@ -26,6 +28,7 @@ type Entity interface {
 // MetaData represents the metadata
 type MetaData interface {
 	Name() string
+	Keyname() string
 	ToEntity() ToEntity
 	CopyStorable() interface{}
 }
@@ -97,6 +100,18 @@ type CreateServiceParams struct {
 	Store datastore.DataStore
 }
 
+// CreateSDKRepositoryParams represents the CreateSDKRepository params
+type CreateSDKRepositoryParams struct {
+	PK     crypto.PrivateKey
+	Client applications.Client
+}
+
+// CreateSDKServiceParams represents the CreateSDKService params
+type CreateSDKServiceParams struct {
+	PK     crypto.PrivateKey
+	Client applications.Client
+}
+
 // CreateControllersParams represents the Controllers params
 type CreateControllersParams struct {
 	Met                      MetaData
@@ -114,6 +129,8 @@ var SDKFunc = struct {
 	CreateRepository     func(params CreateRepositoryParams) Repository
 	CreateService        func(params CreateServiceParams) Service
 	CreateControllers    func(params CreateControllersParams) Controllers
+	CreateSDKRepository  func(params CreateSDKRepositoryParams) Repository
+	CreateSDKService     func(params CreateSDKServiceParams) Service
 }{
 	CreateMetaData: func(params CreateMetaDataParams) MetaData {
 		met, metErr := createMetaData(params.Name, params.ToEntity, params.EmptyStorable)
@@ -161,6 +178,14 @@ var SDKFunc = struct {
 			params.RouterRoleKey,
 		)
 
+		return out
+	},
+	CreateSDKRepository: func(params CreateSDKRepositoryParams) Repository {
+		out := createSDKRepository(params.PK, params.Client)
+		return out
+	},
+	CreateSDKService: func(params CreateSDKServiceParams) Service {
+		out := createSDKService(params.PK, params.Client)
 		return out
 	},
 }

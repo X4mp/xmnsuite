@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 )
 
@@ -20,7 +20,6 @@ type Deposit interface {
 
 // CreateRepresentationParams represents the CreateRepresentation params
 type CreateRepresentationParams struct {
-	WalletMetaData       entity.MetaData
 	WalletRepresentation entity.Representation
 }
 
@@ -61,7 +60,7 @@ var SDKFunc = struct {
 				if deposit, ok := ins.(Deposit); ok {
 					// try to retrieve the wallet:
 					toUser := deposit.To()
-					_, retToUserErr := rep.RetrieveByID(params.WalletMetaData, toUser.ID())
+					_, retToUserErr := rep.RetrieveByID(params.WalletRepresentation.MetaData(), toUser.ID())
 					if retToUserErr != nil {
 						// save the wallet:
 						saveErr := service.Save(toUser, params.WalletRepresentation)
