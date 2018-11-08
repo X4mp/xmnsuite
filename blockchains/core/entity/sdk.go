@@ -20,6 +20,12 @@ type Keynames func(ins Entity) ([]string, error)
 // Sync syncs the sub entities with the database.  Can be used to store the sub entities in the database, before storing the current entity
 type Sync func(rep Repository, service Service, ins Entity) error
 
+// Normalize normalized an entity
+type Normalize func(ins Entity) (interface{}, error)
+
+// Denormalize denormalize an entity
+type Denormalize func(ins interface{}) (Entity, error)
+
 // Entity represents an entity instance
 type Entity interface {
 	ID() *uuid.UUID
@@ -30,6 +36,8 @@ type MetaData interface {
 	Name() string
 	Keyname() string
 	ToEntity() ToEntity
+	Normalize() Normalize
+	Denormalize() Denormalize
 	CopyStorable() interface{}
 }
 
@@ -79,6 +87,8 @@ type Controllers interface {
 type CreateMetaDataParams struct {
 	Name          string
 	ToEntity      ToEntity
+	Normalize     Normalize
+	Denormalize   Denormalize
 	EmptyStorable interface{}
 }
 
@@ -133,7 +143,7 @@ var SDKFunc = struct {
 	CreateSDKService     func(params CreateSDKServiceParams) Service
 }{
 	CreateMetaData: func(params CreateMetaDataParams) MetaData {
-		met, metErr := createMetaData(params.Name, params.ToEntity, params.EmptyStorable)
+		met, metErr := createMetaData(params.Name, params.ToEntity, params.Normalize, params.Denormalize, params.EmptyStorable)
 		if metErr != nil {
 			panic(metErr)
 		}

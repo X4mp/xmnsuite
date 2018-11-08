@@ -1,9 +1,6 @@
 package token
 
 import (
-	"errors"
-	"fmt"
-
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 )
@@ -16,6 +13,10 @@ type Token interface {
 	Description() string
 }
 
+// Normalized represents the normalized Token
+type Normalized interface {
+}
+
 // SDKFunc represents the Token SDK func
 var SDKFunc = struct {
 	CreateMetaData       func() entity.MetaData
@@ -26,16 +27,8 @@ var SDKFunc = struct {
 	},
 	CreateRepresentation: func() entity.Representation {
 		return entity.SDKFunc.CreateRepresentation(entity.CreateRepresentationParams{
-			Met: createMetaData(),
-			ToStorable: func(ins entity.Entity) (interface{}, error) {
-				if tok, ok := ins.(Token); ok {
-					out := createStorableToken(tok)
-					return out, nil
-				}
-
-				str := fmt.Sprintf("the given entity (ID: %s) is not a valid Token instance", ins.ID().String())
-				return nil, errors.New(str)
-			},
+			Met:        createMetaData(),
+			ToStorable: toData,
 			Keynames: func(ins entity.Entity) ([]string, error) {
 				return []string{
 					retrieveAllTokensKeyname(),

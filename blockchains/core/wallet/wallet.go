@@ -18,6 +18,16 @@ func createWallet(id *uuid.UUID, concensusNeeded int) Wallet {
 	return &out
 }
 
+func createWalletFromStorable(storable *storableWallet) (Wallet, error) {
+	id, idErr := uuid.FromString(storable.ID)
+	if idErr != nil {
+		return nil, idErr
+	}
+
+	out := createWallet(&id, storable.CNeeded)
+	return out, nil
+}
+
 // ID returns the ID
 func (app *wallet) ID() *uuid.UUID {
 	return app.UUID

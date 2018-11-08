@@ -1,9 +1,6 @@
 package genesis
 
 import (
-	"errors"
-	"fmt"
-
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
@@ -15,6 +12,10 @@ type Genesis interface {
 	GazPricePerKb() int
 	MaxAmountOfValidators() int
 	Deposit() deposit.Deposit
+}
+
+// Normalized represents the normalized Genesis instance
+type Normalized interface {
 }
 
 // Service represents the Genesis service
@@ -32,64 +33,38 @@ type CreateRepositoryParams struct {
 	EntityRepository entity.Repository
 }
 
-// CreateRepresentationParams represents the CreateRepresentation params
-type CreateRepresentationParams struct {
-	DepositRepresentation entity.Representation
+// CreateServiceParams represents the CreateService params
+type CreateServiceParams struct {
+	EntityService    entity.Service
+	EntityRepository entity.Repository
 }
 
 // SDKFunc represents the Genesis SDK func
 var SDKFunc = struct {
 	CreateRepository     func(params CreateRepositoryParams) Repository
+	CreateService        func(params CreateServiceParams) Service
 	CreateMetaData       func() entity.MetaData
-	CreateRepresentation func(params CreateRepresentationParams) entity.Representation
+	CreateRepresentation func() entity.Representation
 }{
 	CreateRepository: func(params CreateRepositoryParams) Repository {
 		met := createMetaData()
 		out := createRepository(params.EntityRepository, met)
 		return out
 	},
+	CreateService: func(params CreateServiceParams) Service {
+		depositRepresentation := deposit.SDKFunc.CreateRepresentation()
+
+		met := createMetaData()
+		repository := createRepository(params.EntityRepository, met)
+		rep := representation(depositRepresentation)
+		out := createService(params.EntityService, params.EntityRepository, repository, rep)
+		return out
+	},
 	CreateMetaData: func() entity.MetaData {
 		return createMetaData()
 	},
-	CreateRepresentation: func(params CreateRepresentationParams) entity.Representation {
-		return entity.SDKFunc.CreateRepresentation(entity.CreateRepresentationParams{
-			Met: createMetaData(),
-			ToStorable: func(ins entity.Entity) (interface{}, error) {
-				if gen, ok := ins.(Genesis); ok {
-					out := createStorableGenesis(gen)
-					return out, nil
-				}
-
-				str := fmt.Sprintf("the given entity (ID: %s) is not a valid Genesis instance", ins.ID().String())
-				return nil, errors.New(str)
-			},
-			Keynames: func(ins entity.Entity) ([]string, error) {
-				return []string{
-					keyname(),
-				}, nil
-			},
-			Sync: func(rep entity.Repository, service entity.Service, ins entity.Entity) error {
-				saveIfNotExists := func(representation entity.Representation, ins entity.Entity) error {
-					metaData := representation.MetaData()
-					_, retDepErr := rep.RetrieveByID(metaData, ins.ID())
-					if retDepErr != nil {
-						saveErr := service.Save(ins, representation)
-						if saveErr != nil {
-							return saveErr
-						}
-					}
-
-					return nil
-				}
-
-				if gen, ok := ins.(Genesis); ok {
-					saveIfNotExists(params.DepositRepresentation, gen.Deposit())
-					return nil
-				}
-
-				str := fmt.Sprintf("the given entity (ID: %s) is not a valid Genesis instance", ins.ID().String())
-				return errors.New(str)
-			},
-		})
+	CreateRepresentation: func() entity.Representation {
+		depositRepresentation := deposit.SDKFunc.CreateRepresentation()
+		return representation(depositRepresentation)
 	},
 }

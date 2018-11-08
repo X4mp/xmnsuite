@@ -43,15 +43,16 @@ func (app *repository) RetrieveByIntersectKeynames(met MetaData, keynames []stri
 // RetrieveByID retrieves an Entity instance by ID
 func (app *repository) RetrieveByID(met MetaData, id *uuid.UUID) (Entity, error) {
 	// create the retriever criteria:
+	key := keynameByID(met.Keyname(), id)
 	obj := objects.ObjInKey{
-		Key: keynameByID(met.Name(), id),
+		Key: key,
 		Obj: met.CopyStorable(),
 	}
 
 	// retrieve the instance:
 	amountRet := app.store.Objects().Retrieve(&obj)
 	if amountRet != 1 {
-		str := fmt.Sprintf("there was an error while retrieving the %s instance", met.Name())
+		str := fmt.Sprintf("there was an error while retrieving the %s instance, on keyname: %s", met.Name(), key)
 		return nil, errors.New(str)
 	}
 

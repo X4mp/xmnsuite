@@ -18,20 +18,19 @@ type Deposit interface {
 	Amount() int
 }
 
-// CreateRepresentationParams represents the CreateRepresentation params
-type CreateRepresentationParams struct {
-	WalletRepresentation entity.Representation
+// Normalized represents the normalized deposit
+type Normalized interface {
 }
 
 // SDKFunc represents the Deposit SDK func
 var SDKFunc = struct {
 	CreateMetaData       func() entity.MetaData
-	CreateRepresentation func(params CreateRepresentationParams) entity.Representation
+	CreateRepresentation func() entity.Representation
 }{
 	CreateMetaData: func() entity.MetaData {
 		return createMetaData()
 	},
-	CreateRepresentation: func(params CreateRepresentationParams) entity.Representation {
+	CreateRepresentation: func() entity.Representation {
 		return entity.SDKFunc.CreateRepresentation(entity.CreateRepresentationParams{
 			Met: createMetaData(),
 			ToStorable: func(ins entity.Entity) (interface{}, error) {
@@ -57,17 +56,34 @@ var SDKFunc = struct {
 
 			},
 			Sync: func(rep entity.Repository, service entity.Service, ins entity.Entity) error {
+
+				walletRepresentation := wallet.SDKFunc.CreateRepresentation()
+				tokRepresentation := token.SDKFunc.CreateRepresentation()
+
 				if deposit, ok := ins.(Deposit); ok {
 					// try to retrieve the wallet:
-					toUser := deposit.To()
-					_, retToUserErr := rep.RetrieveByID(params.WalletRepresentation.MetaData(), toUser.ID())
-					if retToUserErr != nil {
+					toWallet := deposit.To()
+					_, retToWalletErr := rep.RetrieveByID(walletRepresentation.MetaData(), toWallet.ID())
+					if retToWalletErr != nil {
 						// save the wallet:
-						saveErr := service.Save(toUser, params.WalletRepresentation)
+						saveErr := service.Save(toWallet, walletRepresentation)
 						if saveErr != nil {
 							return saveErr
 						}
 					}
+
+					// try to retrieve the token:
+					tok := deposit.Token()
+					_, retTokErr := rep.RetrieveByID(tokRepresentation.MetaData(), tok.ID())
+					if retTokErr != nil {
+						// save the token:
+						saveErr := service.Save(tok, tokRepresentation)
+						if saveErr != nil {
+							return saveErr
+						}
+					}
+
+					return nil
 				}
 
 				str := fmt.Sprintf("the given entity (ID: %s) is not a valid Deposit instance", ins.ID().String())

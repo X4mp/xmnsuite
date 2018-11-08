@@ -3,15 +3,14 @@ package core
 import (
 	"math/rand"
 	"net"
+	"os"
 	"path/filepath"
 	"testing"
 
 	uuid "github.com/satori/go.uuid"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/xmnservices/xmnsuite/blockchains/core/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/genesis"
-	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 
@@ -26,7 +25,7 @@ func TestSaveGenesis_thenRetrieveByID_Success(t *testing.T) {
 	nodePK := ed25519.GenPrivKey()
 	ip := net.ParseIP("127.0.0.1")
 	defer func() {
-		//os.RemoveAll(rootPath)
+		os.RemoveAll(rootPath)
 	}()
 
 	// spawn the blockchain:
@@ -50,11 +49,7 @@ func TestSaveGenesis_thenRetrieveByID_Success(t *testing.T) {
 	genIns := genesis.CreateGenesisForTests()
 
 	// create the representation:
-	representation := genesis.SDKFunc.CreateRepresentation(genesis.CreateRepresentationParams{
-		DepositRepresentation: deposit.SDKFunc.CreateRepresentation(deposit.CreateRepresentationParams{
-			WalletRepresentation: wallet.SDKFunc.CreateRepresentation(),
-		}),
-	})
+	representation := genesis.SDKFunc.CreateRepresentation()
 
 	// create the entity service:
 	entityService := entity.SDKFunc.CreateSDKService(entity.CreateSDKServiceParams{

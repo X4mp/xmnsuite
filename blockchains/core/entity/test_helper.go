@@ -48,8 +48,29 @@ func CreateMetaDataForTests() MetaData {
 		return nil, errors.New("invalid")
 	}
 
+	normalize := func(ins Entity) (interface{}, error) {
+		obj := ins.(*testEntity)
+		return &storableTestEntity{
+			ID:   obj.ID().String(),
+			Name: obj.Name(),
+		}, nil
+	}
+
+	denormalize := func(ins interface{}) (Entity, error) {
+		if casted, ok := ins.(*storableTestEntity); ok {
+			id, idErr := uuid.FromString(casted.ID)
+			if idErr != nil {
+				return nil, idErr
+			}
+
+			return createTestEntity(&id, casted.Name), nil
+		}
+
+		return nil, errors.New("invalid")
+	}
+
 	// execute:
-	met, _ := createMetaData(name, toEntity, empStorable)
+	met, _ := createMetaData(name, toEntity, normalize, denormalize, empStorable)
 	return met
 }
 

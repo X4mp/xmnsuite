@@ -3,13 +3,15 @@ package genesis
 import (
 	amino "github.com/tendermint/go-amino"
 	deposit "github.com/xmnservices/xmnsuite/blockchains/core/deposit"
-	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 )
 
 const (
 
 	// XMNSuiteApplicationsXMNGenesis represents the xmnsuite xmn Genesis resource
 	XMNSuiteApplicationsXMNGenesis = "xmnsuite/xmn/Genesis"
+
+	// XMNSuiteApplicationsXMNNormalizedGenesis represents the xmnsuite xmn Normalized Genesis resource
+	XMNSuiteApplicationsXMNNormalizedGenesis = "xmnsuite/xmn/Normalized/Genesis"
 )
 
 var cdc = amino.NewCodec()
@@ -22,7 +24,6 @@ func init() {
 func Register(codec *amino.Codec) {
 	// Dependencies
 	deposit.Register(codec)
-	token.Register(codec)
 
 	// Genesis
 	func() {
@@ -31,5 +32,14 @@ func Register(codec *amino.Codec) {
 		}()
 		codec.RegisterInterface((*Genesis)(nil), nil)
 		codec.RegisterConcrete(&genesis{}, XMNSuiteApplicationsXMNGenesis, nil)
+	}()
+
+	// Normalized
+	func() {
+		defer func() {
+			recover()
+		}()
+		codec.RegisterInterface((*Normalized)(nil), nil)
+		codec.RegisterConcrete(&normalizedGenesis{}, XMNSuiteApplicationsXMNNormalizedGenesis, nil)
 	}()
 }

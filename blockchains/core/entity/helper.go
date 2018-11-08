@@ -3,14 +3,12 @@ package entity
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	uuid "github.com/satori/go.uuid"
 )
 
-func keynameByID(name string, id *uuid.UUID) string {
-	lower := strings.ToLower(name)
-	return fmt.Sprintf("%s:by_id:%s", lower, id.String())
+func keynameByID(keyname string, id *uuid.UUID) string {
+	return fmt.Sprintf("%s:by_id:%s", keyname, id.String())
 }
 
 func fetchIntFromParams(params map[string]string, keyname string, def int) int {

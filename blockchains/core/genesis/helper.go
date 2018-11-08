@@ -40,7 +40,7 @@ func createMetaData() entity.MetaData {
 					return out, nil
 				}
 
-				str := fmt.Sprintf("the entity (ID: %s) is not a valid InitialDeposit instance", initialDepID.String())
+				str := fmt.Sprintf("the entity (ID: %s) is not a valid Genesis instance", initialDepID.String())
 				return nil, errors.New(str)
 			}
 
@@ -48,15 +48,78 @@ func createMetaData() entity.MetaData {
 				return fromStorableToEntity(storable)
 			}
 
-			ptr := new(storableGenesis)
-			jsErr := cdc.UnmarshalJSON(data.([]byte), ptr)
-			if jsErr != nil {
-				return nil, jsErr
+			if dataAsBytes, ok := data.([]byte); ok {
+				ptr := new(normalizedGenesis)
+				jsErr := cdc.UnmarshalJSON(dataAsBytes, ptr)
+				if jsErr != nil {
+					return nil, jsErr
+				}
+
+				return createGenesisFromNormalized(ptr)
 			}
 
-			return fromStorableToEntity(ptr)
+			str := fmt.Sprintf("the given data does not represent a Genesis instance: %s", data)
+			return nil, errors.New(str)
 
 		},
+		Normalize: func(ins entity.Entity) (interface{}, error) {
+			if gen, ok := ins.(Genesis); ok {
+				out, outErr := createNormalizedGenesis(gen)
+				if outErr != nil {
+					return nil, outErr
+				}
+
+				return out, nil
+			}
+
+			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Genesis instance", ins.ID().String())
+			return nil, errors.New(str)
+		},
+		Denormalize: func(ins interface{}) (entity.Entity, error) {
+			if normalized, ok := ins.(*normalizedGenesis); ok {
+				return createGenesisFromNormalized(normalized)
+			}
+
+			return nil, errors.New("the given normalized instance cannot be converted to a Genesis instance")
+		},
 		EmptyStorable: new(storableGenesis),
+	})
+}
+
+func representation(depositRepresentation entity.Representation) entity.Representation {
+	return entity.SDKFunc.CreateRepresentation(entity.CreateRepresentationParams{
+		Met: createMetaData(),
+		ToStorable: func(ins entity.Entity) (interface{}, error) {
+			if gen, ok := ins.(Genesis); ok {
+				out := createStorableGenesis(gen)
+				return out, nil
+			}
+
+			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Genesis instance", ins.ID().String())
+			return nil, errors.New(str)
+		},
+		Keynames: func(ins entity.Entity) ([]string, error) {
+			return []string{
+				keyname(),
+			}, nil
+		},
+		Sync: func(rep entity.Repository, service entity.Service, ins entity.Entity) error {
+			if gen, ok := ins.(Genesis); ok {
+				dep := gen.Deposit()
+				metaData := depositRepresentation.MetaData()
+				_, retDepErr := rep.RetrieveByID(metaData, dep.ID())
+				if retDepErr != nil {
+					saveErr := service.Save(dep, depositRepresentation)
+					if saveErr != nil {
+						return saveErr
+					}
+				}
+
+				return nil
+			}
+
+			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Genesis instance", ins.ID().String())
+			return errors.New(str)
+		},
 	})
 }

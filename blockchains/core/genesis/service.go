@@ -6,14 +6,16 @@ import (
 
 type service struct {
 	repository        Repository
-	service           entity.Service
+	entityRepository  entity.Repository
+	entityService     entity.Service
 	genRepresentation entity.Representation
 }
 
-func createService(serv entity.Service, rep Repository, genRepresentation entity.Representation) Service {
+func createService(serv entity.Service, entityRepository entity.Repository, rep Repository, genRepresentation entity.Representation) Service {
 	out := service{
 		repository:        rep,
-		service:           serv,
+		entityService:     serv,
+		entityRepository:  entityRepository,
 		genRepresentation: genRepresentation,
 	}
 
@@ -29,7 +31,7 @@ func (app *service) Save(ins Genesis) error {
 	}
 
 	// save the genesis instance:
-	saveErr := app.service.Save(ins, app.genRepresentation)
+	saveErr := app.entityService.Save(ins, app.genRepresentation)
 	if saveErr != nil {
 		return saveErr
 	}

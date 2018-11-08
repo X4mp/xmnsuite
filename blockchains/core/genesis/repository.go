@@ -25,8 +25,8 @@ func createRepository(rep entity.Repository, genMetaData entity.MetaData) Reposi
 func (app *repository) Retrieve() (Genesis, error) {
 	// if there is already a gensis instance, return an error:
 	retGen, retGenErr := app.repository.RetrieveByIntersectKeynames(app.genMetaData, []string{keyname()})
-	if retGenErr == nil {
-		str := fmt.Sprintf("an genesis instance has already been created (ID: %s)", retGen.ID().String())
+	if retGenErr != nil {
+		str := fmt.Sprintf("there was an error while retrieving the Genesis nstance: %s", retGenErr.Error())
 		return nil, errors.New(str)
 	}
 

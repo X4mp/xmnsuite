@@ -7,7 +7,6 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
-	"github.com/xmnservices/xmnsuite/blockchains/core/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request"
@@ -24,6 +23,7 @@ type incomingVote struct {
 
 type core20181108 struct {
 	genesisRepresentation  entity.Representation
+	entityMetaDatas        map[string]entity.MetaData
 	entityRepresentations  map[string]entity.Representation
 	requestRepresentations map[string]entity.Representation
 }
@@ -31,14 +31,12 @@ type core20181108 struct {
 func createCore20181108() *core20181108 {
 
 	walletRepresentation := wallet.SDKFunc.CreateRepresentation()
-	depositRepresentation := deposit.SDKFunc.CreateRepresentation(deposit.CreateRepresentationParams{
-		WalletRepresentation: walletRepresentation,
-	})
 
 	out := core20181108{
-		genesisRepresentation: genesis.SDKFunc.CreateRepresentation(genesis.CreateRepresentationParams{
-			DepositRepresentation: depositRepresentation,
-		}),
+		genesisRepresentation: genesis.SDKFunc.CreateRepresentation(),
+		entityMetaDatas: map[string]entity.MetaData{
+			"genesis": genesis.SDKFunc.CreateMetaData(),
+		},
 		entityRepresentations: map[string]entity.Representation{
 			"wallet": walletRepresentation,
 		},
@@ -104,43 +102,47 @@ func (app *core20181108) saveGenesis() routers.CreateRouteParams {
 			// create the dependencies:
 			dep := createDependencies(store)
 
-			// converts the data to an entity:
+			// converts the data to a genesis instance:
 			ins, insErr := app.genesisRepresentation.MetaData().ToEntity()(dep.entityRepository, data)
 			if insErr != nil {
 				return nil, insErr
 			}
 
-			// save the entity:
-			saveErr := dep.entityService.Save(ins, app.genesisRepresentation)
-			if saveErr != nil {
-				return nil, saveErr
+			if gen, ok := ins.(genesis.Genesis); ok {
+				// save the genesis instance:
+				saveErr := dep.genesisService.Save(gen)
+				if saveErr != nil {
+					return nil, saveErr
+				}
+
+				// convert to json:
+				normalized, normalizedErr := app.genesisRepresentation.MetaData().Normalize()(gen)
+				if normalizedErr != nil {
+					return nil, normalizedErr
+				}
+
+				jsData, jsDataErr := cdc.MarshalJSON(normalized)
+				if jsDataErr != nil {
+					return nil, jsDataErr
+				}
+
+				// there is no gaz cost for the genesis:
+				gazUsed := 0
+
+				// return the response:
+				resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
+					Code:    routers.IsSuccessful,
+					Log:     "success",
+					GazUsed: int64(gazUsed),
+					Tags: map[string][]byte{
+						path: jsData,
+					},
+				})
+
+				return resp, nil
 			}
 
-			// convert to json:
-			storable, storableErr := app.genesisRepresentation.ToStorable()(ins)
-			if storableErr != nil {
-				return nil, storableErr
-			}
-
-			jsData, jsDataErr := cdc.MarshalJSON(storable)
-			if jsDataErr != nil {
-				return nil, jsDataErr
-			}
-
-			// there is no gaz cost for the genesis:
-			gazUsed := 0
-
-			// return the response:
-			resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
-				Code:    routers.IsSuccessful,
-				Log:     "success",
-				GazUsed: int64(gazUsed),
-				Tags: map[string][]byte{
-					path: jsData,
-				},
-			})
-
-			return resp, nil
+			return nil, errors.New("the given data is not a normalized representation of aa Genesis instance")
 		},
 	}
 }
@@ -223,7 +225,7 @@ func (app *core20181108) retrieveEntityByID() routers.CreateRouteParams {
 			// retrieve the name:
 			if name, ok := params["name"]; ok {
 				// retrieve the entity metadata:
-				if representation, ok := app.entityRepresentations[name]; ok {
+				if metaData, ok := app.entityMetaDatas[name]; ok {
 					// parse the id:
 					id, idErr := uuid.FromString(params["id"])
 					if idErr != nil {
@@ -231,14 +233,19 @@ func (app *core20181108) retrieveEntityByID() routers.CreateRouteParams {
 					}
 
 					// retrieve the entity instance:
-					metaData := representation.MetaData()
 					retIns, retInsErr := dep.entityRepository.RetrieveByID(metaData, &id)
 					if retInsErr != nil {
 						return nil, retInsErr
 					}
 
-					// convert the entity to json:
-					js, jsErr := cdc.MarshalJSON(retIns)
+					// normalize:
+					normalized, normalizedErr := metaData.Normalize()(retIns)
+					if normalizedErr != nil {
+						return nil, normalizedErr
+					}
+
+					// convert the normalized entity to json:
+					js, jsErr := cdc.MarshalJSON(normalized)
 					if jsErr != nil {
 						return nil, jsErr
 					}

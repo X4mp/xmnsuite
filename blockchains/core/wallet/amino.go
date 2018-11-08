@@ -9,6 +9,9 @@ const (
 
 	// XMNSuiteApplicationsXMNWallet represents the xmnsuite xmn Wallet resource
 	XMNSuiteApplicationsXMNWallet = "xmnsuite/xmn/Wallet"
+
+	// XMNSuiteApplicationsXMNNormalizedWallet represents the xmnsuite xmn Normalized Wallet resource
+	XMNSuiteApplicationsXMNNormalizedWallet = "xmnsuite/xmn/NormalizedWallet"
 )
 
 var cdc = amino.NewCodec()
@@ -29,5 +32,14 @@ func Register(codec *amino.Codec) {
 		}()
 		codec.RegisterInterface((*Wallet)(nil), nil)
 		codec.RegisterConcrete(&wallet{}, XMNSuiteApplicationsXMNWallet, nil)
+	}()
+
+	// Normalized
+	func() {
+		defer func() {
+			recover()
+		}()
+		codec.RegisterInterface((*Normalized)(nil), nil)
+		codec.RegisterConcrete(&storableWallet{}, XMNSuiteApplicationsXMNNormalizedWallet, nil)
 	}()
 }

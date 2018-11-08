@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 )
 
@@ -66,14 +66,34 @@ func createMetaData() entity.MetaData {
 				return fromStorableToEntity(storable)
 			}
 
-			ptr := new(storableDeposit)
+			ptr := new(normalizedDeposit)
 			jsErr := cdc.UnmarshalJSON(data.([]byte), ptr)
 			if jsErr != nil {
 				return nil, jsErr
 			}
 
-			return fromStorableToEntity(ptr)
+			return createDepositFromNormalized(ptr)
 
+		},
+		Normalize: func(ins entity.Entity) (interface{}, error) {
+			if deposit, ok := ins.(Deposit); ok {
+				out, outErr := createNormalizedDeposit(deposit)
+				if outErr != nil {
+					return nil, outErr
+				}
+
+				return out, nil
+			}
+
+			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Deposit instance", ins.ID().String())
+			return nil, errors.New(str)
+		},
+		Denormalize: func(ins interface{}) (entity.Entity, error) {
+			if normalized, ok := ins.(*normalizedDeposit); ok {
+				return createDepositFromNormalized(normalized)
+			}
+
+			return nil, errors.New("the given normalized instance cannot be converted to a Deposit instance")
 		},
 		EmptyStorable: new(storableDeposit),
 	})

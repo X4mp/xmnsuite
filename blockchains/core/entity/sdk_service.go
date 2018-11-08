@@ -24,12 +24,12 @@ func createSDKService(pk crypto.PrivateKey, client applications.Client) Service 
 
 // Save saves an entity instance to the service
 func (app *sdkService) Save(ins Entity, rep Representation) error {
-	storable, storableErr := rep.ToStorable()(ins)
-	if storableErr != nil {
-		return storableErr
+	normalized, normalizedErr := rep.MetaData().Normalize()(ins)
+	if normalizedErr != nil {
+		return normalizedErr
 	}
 
-	js, jsErr := cdc.MarshalJSON(storable)
+	js, jsErr := cdc.MarshalJSON(normalized)
 	if jsErr != nil {
 		return jsErr
 	}

@@ -1,7 +1,9 @@
 package wallet
 
 import (
-	uuid "github.com/satori/go.uuid"
+	"errors"
+	"fmt"
+
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 )
 
@@ -13,18 +15,8 @@ func createMetaData() entity.MetaData {
 	return entity.SDKFunc.CreateMetaData(entity.CreateMetaDataParams{
 		Name: "Wallet",
 		ToEntity: func(rep entity.Repository, data interface{}) (entity.Entity, error) {
-			fromStorableToEntity := func(storable *storableWallet) (entity.Entity, error) {
-				id, idErr := uuid.FromString(storable.ID)
-				if idErr != nil {
-					return nil, idErr
-				}
-
-				out := createWallet(&id, storable.CNeeded)
-				return out, nil
-			}
-
 			if storable, ok := data.(*storableWallet); ok {
-				return fromStorableToEntity(storable)
+				return createWalletFromStorable(storable)
 			}
 
 			ptr := new(storableWallet)
@@ -33,9 +25,27 @@ func createMetaData() entity.MetaData {
 				return nil, jsErr
 			}
 
-			return fromStorableToEntity(ptr)
+			return createWalletFromStorable(ptr)
 
+		},
+		Normalize: toData,
+		Denormalize: func(ins interface{}) (entity.Entity, error) {
+			if storable, ok := ins.(*storableWallet); ok {
+				return createWalletFromStorable(storable)
+			}
+
+			return nil, errors.New("the given instance is not a valid normalized Wallet instance")
 		},
 		EmptyStorable: new(storableWallet),
 	})
+}
+
+func toData(ins entity.Entity) (interface{}, error) {
+	if wallet, ok := ins.(Wallet); ok {
+		out := createStoredWallet(wallet)
+		return out, nil
+	}
+
+	str := fmt.Sprintf("the given entity (ID: %s) is not a valid Wallet instance", ins.ID().String())
+	return nil, errors.New(str)
 }

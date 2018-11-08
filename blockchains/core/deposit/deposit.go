@@ -1,6 +1,9 @@
 package deposit
 
 import (
+	"errors"
+	"fmt"
+
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
@@ -22,6 +25,37 @@ func createDeposit(id *uuid.UUID, toWallet wallet.Wallet, tok token.Token, amoun
 	}
 
 	return &out
+}
+
+func createDepositFromNormalized(ins *normalizedDeposit) (Deposit, error) {
+	id, idErr := uuid.FromString(ins.ID)
+	if idErr != nil {
+		return nil, idErr
+	}
+
+	toWalletIns, toWalletInsErr := wallet.SDKFunc.CreateMetaData().Denormalize()(ins.To)
+	if toWalletInsErr != nil {
+		return nil, toWalletInsErr
+	}
+
+	tokenIns, tokenInsErr := token.SDKFunc.CreateMetaData().Denormalize()(ins.Token)
+	if tokenInsErr != nil {
+		return nil, tokenInsErr
+	}
+
+	if toWallet, ok := toWalletIns.(wallet.Wallet); ok {
+		if tok, ok := tokenIns.(token.Token); ok {
+			out := createDeposit(&id, toWallet, tok, ins.Amount)
+			return out, nil
+		}
+
+		str := fmt.Sprintf("the entity (ID: %s) is not  avalid Token instance", tokenIns.ID().String())
+		return nil, errors.New(str)
+	}
+
+	str := fmt.Sprintf("the entity (ID: %s) is not  avalid Wallet instance", toWalletIns.ID().String())
+	return nil, errors.New(str)
+
 }
 
 // ID returns the ID

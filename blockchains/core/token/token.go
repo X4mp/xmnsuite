@@ -22,6 +22,16 @@ func createToken(id *uuid.UUID, symbol string, name string, desc string) Token {
 	return &out
 }
 
+func createTokenFromStorable(ins *storableToken) (Token, error) {
+	id, idErr := uuid.FromString(ins.ID)
+	if idErr != nil {
+		return nil, idErr
+	}
+
+	out := createToken(&id, ins.Symbol, ins.Name, ins.Description)
+	return out, nil
+}
+
 // ID returns the ID
 func (app *token) ID() *uuid.UUID {
 	return app.UUID

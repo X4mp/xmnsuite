@@ -10,8 +10,9 @@ import (
 type dependencies struct {
 	entityRepository  entity.Repository
 	entityService     entity.Service
-	genesisRepository genesis.Repository
 	userRepository    user.Repository
+	genesisRepository genesis.Repository
+	genesisService    genesis.Service
 }
 
 func createDependencies(ds datastore.DataStore) *dependencies {
@@ -23,19 +24,25 @@ func createDependencies(ds datastore.DataStore) *dependencies {
 		Store: ds,
 	})
 
+	userRepository := user.SDKFunc.CreateRepository(user.CreateRepositoryParams{
+		EntityRepository: entityRepository,
+	})
+
 	genesisRepository := genesis.SDKFunc.CreateRepository(genesis.CreateRepositoryParams{
 		EntityRepository: entityRepository,
 	})
 
-	userRepository := user.SDKFunc.CreateRepository(user.CreateRepositoryParams{
+	genesisService := genesis.SDKFunc.CreateService(genesis.CreateServiceParams{
+		EntityService:    entityService,
 		EntityRepository: entityRepository,
 	})
 
 	out := dependencies{
 		entityRepository:  entityRepository,
 		entityService:     entityService,
-		genesisRepository: genesisRepository,
 		userRepository:    userRepository,
+		genesisRepository: genesisRepository,
+		genesisService:    genesisService,
 	}
 
 	return &out

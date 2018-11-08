@@ -11,10 +11,12 @@ type retrievalMetaData struct {
 	name        string
 	keyname     string
 	toEntity    ToEntity
+	normalize   Normalize
+	denormalize Denormalize
 	empStorable interface{}
 }
 
-func createMetaData(name string, toEntity ToEntity, empStorable interface{}) (MetaData, error) {
+func createMetaData(name string, toEntity ToEntity, normalize Normalize, denormalize Denormalize, empStorable interface{}) (MetaData, error) {
 
 	if len(name) < 3 {
 		str := fmt.Sprintf("the minimum length for the name is 3 characters: %d given", len(name))
@@ -25,6 +27,8 @@ func createMetaData(name string, toEntity ToEntity, empStorable interface{}) (Me
 		name:        name,
 		keyname:     strings.ToLower(name),
 		toEntity:    toEntity,
+		normalize:   normalize,
+		denormalize: denormalize,
 		empStorable: empStorable,
 	}
 
@@ -44,6 +48,16 @@ func (obj *retrievalMetaData) Keyname() string {
 // ToEntity returns the ToEntity func
 func (obj *retrievalMetaData) ToEntity() ToEntity {
 	return obj.toEntity
+}
+
+// Normalize returns the Normalization func
+func (obj *retrievalMetaData) Normalize() Normalize {
+	return obj.normalize
+}
+
+// Denormalize returns the Denormalization func
+func (obj *retrievalMetaData) Denormalize() Denormalize {
+	return obj.denormalize
 }
 
 // CopyStorable copies the empty storable instance and returns it
