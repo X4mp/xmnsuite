@@ -59,14 +59,29 @@ func createMetaData() entity.MetaData {
 				return fromStorableToEntity(storable)
 			}
 
-			ptr := new(storableUser)
+			ptr := new(normalizedUser)
 			jsErr := cdc.UnmarshalJSON(data.([]byte), ptr)
 			if jsErr != nil {
 				return nil, jsErr
 			}
 
-			return fromStorableToEntity(ptr)
+			return createUserFromNormalizedUser(ptr)
 
+		},
+		Normalize: func(ins entity.Entity) (interface{}, error) {
+			if usr, ok := ins.(User); ok {
+				return createNormalizedUser(usr)
+			}
+
+			str := fmt.Sprintf("the given entity (ID: %s) is not a valid User instance", ins.ID().String())
+			return nil, errors.New(str)
+		},
+		Denormalize: func(ins interface{}) (entity.Entity, error) {
+			if normalized, ok := ins.(*normalizedUser); ok {
+				return createUserFromNormalizedUser(normalized)
+			}
+
+			return nil, errors.New("the given instance is not a valid normalized User instance")
 		},
 		EmptyStorable: new(storableUser),
 	})

@@ -93,7 +93,7 @@ func (app *service) Delete(ins Entity, rep Representation) error {
 	met := rep.MetaData()
 	_, retEntErr := app.repository.RetrieveByID(met, ins.ID())
 	if retEntErr != nil {
-		str := fmt.Sprintf("there was an error while retrieving the given Entity instance (ID: %s): %s", ins.ID().String(), retEntErr.Error())
+		str := fmt.Sprintf("there was an error while retrieving the given Entity instance (ID: %s, Name: %s): %s", ins.ID().String(), met.Name(), retEntErr.Error())
 		return errors.New(str)
 	}
 

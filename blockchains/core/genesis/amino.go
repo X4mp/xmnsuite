@@ -3,6 +3,7 @@ package genesis
 import (
 	amino "github.com/tendermint/go-amino"
 	deposit "github.com/xmnservices/xmnsuite/blockchains/core/deposit"
+	user "github.com/xmnservices/xmnsuite/blockchains/core/user"
 )
 
 const (
@@ -24,6 +25,7 @@ func init() {
 func Register(codec *amino.Codec) {
 	// Dependencies
 	deposit.Register(codec)
+	user.Register(codec)
 
 	// Genesis
 	func() {

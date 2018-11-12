@@ -6,8 +6,8 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/deposit"
-	"github.com/xmnservices/xmnsuite/blockchains/core/transfer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/transfer"
 )
 
 func retrieveAllClaimsKeyname() string {
@@ -21,17 +21,20 @@ func createMetaData() entity.MetaData {
 			fromStorableToEntity := func(storable *storableClaim) (entity.Entity, error) {
 				id, idErr := uuid.FromString(storable.ID)
 				if idErr != nil {
-					return nil, idErr
+					str := fmt.Sprintf("the given storable Claim ID (%s) is invalid: %s", storable.ID, idErr.Error())
+					return nil, errors.New(str)
 				}
 
 				transferID, transferIDErr := uuid.FromString(storable.TransferID)
 				if transferIDErr != nil {
-					return nil, transferIDErr
+					str := fmt.Sprintf("the given storable Claim Transfer ID (%s) is invalid: %s", storable.DepositID, transferIDErr.Error())
+					return nil, errors.New(str)
 				}
 
 				depositID, depositIDErr := uuid.FromString(storable.DepositID)
 				if depositIDErr != nil {
-					return nil, depositIDErr
+					str := fmt.Sprintf("the given storable Claim Deposit ID (%s) is invalid: %s", storable.DepositID, depositIDErr.Error())
+					return nil, errors.New(str)
 				}
 
 				// retrieve the transfer:

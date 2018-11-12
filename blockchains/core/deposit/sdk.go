@@ -47,7 +47,8 @@ var SDKFunc = struct {
 					base := retrieveAllDepositsKeyname()
 					return []string{
 						base,
-						fmt.Sprintf("%s:by_to_wallet_id:%s", base, deposit.To().ID().String()),
+						retrieveDepositsByToWalletIDKeyname(deposit.To().ID()),
+						retrieveDepositsByTokenIDKeyname(deposit.Token().ID()),
 					}, nil
 				}
 

@@ -69,5 +69,32 @@ func (app *sdkService) Save(ins Entity, rep Representation) error {
 
 // Delete deletes the entity instance from the service
 func (app *sdkService) Delete(ins Entity, rep Representation) error {
+	// create the resource:
+	respPtr := routers.SDKFunc.CreateResourcePointer(routers.CreateResourcePointerParams{
+		From: app.pk.PublicKey(),
+		Path: fmt.Sprintf("/%s/%s", rep.MetaData().Keyname(), ins.ID().String()),
+	})
+
+	// sign the resource:
+	firstSig := app.pk.Sign(respPtr.Hash())
+
+	// delete the instance:
+	trxResp, trxRespErr := app.client.Transact(routers.SDKFunc.CreateTransactionRequest(routers.CreateTransactionRequestParams{
+		Ptr: respPtr,
+		Sig: firstSig,
+	}))
+
+	if trxRespErr != nil {
+		return trxRespErr
+	}
+
+	chk := trxResp.Check()
+	chkCode := chk.Code()
+	if chkCode != routers.IsSuccessful {
+		trx := trxResp.Transaction()
+		str := fmt.Sprintf("there was an error (Check Code: %d, Trx Code: %d) while executing the transaction: (Check Log: %s, Trx Log: %s)", chkCode, trx.Code(), chk.Log(), trx.Log())
+		return errors.New(str)
+	}
+
 	return nil
 }

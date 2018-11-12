@@ -30,7 +30,8 @@ func createDeposit(id *uuid.UUID, toWallet wallet.Wallet, tok token.Token, amoun
 func createDepositFromNormalized(ins *normalizedDeposit) (Deposit, error) {
 	id, idErr := uuid.FromString(ins.ID)
 	if idErr != nil {
-		return nil, idErr
+		str := fmt.Sprintf("the given storable Deposit ID (%s) is invalid: %s", ins.ID, idErr.Error())
+		return nil, errors.New(str)
 	}
 
 	toWalletIns, toWalletInsErr := wallet.SDKFunc.CreateMetaData().Denormalize()(ins.To)

@@ -2,7 +2,8 @@ package pledge
 
 import (
 	amino "github.com/tendermint/go-amino"
-	"github.com/xmnservices/xmnsuite/blockchains/core/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/withdrawal"
 )
 
 const (
@@ -20,7 +21,8 @@ func init() {
 // Register registers all the interface -> struct to amino
 func Register(codec *amino.Codec) {
 	// Dependencies
-	user.Register(codec)
+	withdrawal.Register(codec)
+	wallet.Register(codec)
 
 	// Pledge
 	func() {

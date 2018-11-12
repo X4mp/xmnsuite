@@ -18,6 +18,10 @@ type User interface {
 	Wallet() wallet.Wallet
 }
 
+// Normalized represents a normalized user
+type Normalized interface {
+}
+
 // Repository represents the user repository
 type Repository interface {
 	RetrieveByPubKey(pubKey crypto.PublicKey) (User, error)

@@ -14,6 +14,16 @@ func retrieveAllDepositsKeyname() string {
 	return "deposits"
 }
 
+func retrieveDepositsByTokenIDKeyname(tokenID *uuid.UUID) string {
+	base := retrieveAllDepositsKeyname()
+	return fmt.Sprintf("%s:by_token_id:%s", base, tokenID.String())
+}
+
+func retrieveDepositsByToWalletIDKeyname(toWalletID *uuid.UUID) string {
+	base := retrieveAllDepositsKeyname()
+	return fmt.Sprintf("%s:by_to_wallet_id:%s", base, toWalletID.String())
+}
+
 func createMetaData() entity.MetaData {
 	return entity.SDKFunc.CreateMetaData(entity.CreateMetaDataParams{
 		Name: "Deposit",
@@ -21,17 +31,20 @@ func createMetaData() entity.MetaData {
 			fromStorableToEntity := func(storable *storableDeposit) (entity.Entity, error) {
 				id, idErr := uuid.FromString(storable.ID)
 				if idErr != nil {
-					return nil, idErr
+					str := fmt.Sprintf("the given storable Deposit ID (%s) is invalid: %s", storable.ID, idErr.Error())
+					return nil, errors.New(str)
 				}
 
 				toWalletID, toWalletIDErr := uuid.FromString(storable.ToWalletID)
 				if toWalletIDErr != nil {
-					return nil, toWalletIDErr
+					str := fmt.Sprintf("the given storable Deposit Wallet ID (%s) is invalid: %s", storable.ToWalletID, toWalletIDErr.Error())
+					return nil, errors.New(str)
 				}
 
 				tokenID, tokenIDErr := uuid.FromString(storable.TokenID)
 				if tokenIDErr != nil {
-					return nil, tokenIDErr
+					str := fmt.Sprintf("the given storable Deposit Token ID (%s) is invalid: %s", storable.TokenID, tokenIDErr.Error())
+					return nil, errors.New(str)
 				}
 
 				// retrieve the wallet:

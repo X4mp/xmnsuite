@@ -4,6 +4,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/user"
 )
 
 // Genesis represents the genesis instance
@@ -11,6 +12,7 @@ type Genesis interface {
 	ID() *uuid.UUID
 	GazPricePerKb() int
 	MaxAmountOfValidators() int
+	User() user.User
 	Deposit() deposit.Deposit
 }
 
@@ -52,11 +54,9 @@ var SDKFunc = struct {
 		return out
 	},
 	CreateService: func(params CreateServiceParams) Service {
-		depositRepresentation := deposit.SDKFunc.CreateRepresentation()
-
 		met := createMetaData()
 		repository := createRepository(params.EntityRepository, met)
-		rep := representation(depositRepresentation)
+		rep := representation()
 		out := createService(params.EntityService, params.EntityRepository, repository, rep)
 		return out
 	},
@@ -64,7 +64,6 @@ var SDKFunc = struct {
 		return createMetaData()
 	},
 	CreateRepresentation: func() entity.Representation {
-		depositRepresentation := deposit.SDKFunc.CreateRepresentation()
-		return representation(depositRepresentation)
+		return representation()
 	},
 }

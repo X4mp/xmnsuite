@@ -3,22 +3,19 @@ package balance
 import (
 	"time"
 
-	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 )
 
 type balance struct {
-	UUID     *uuid.UUID    `json:"id"`
 	OnWallet wallet.Wallet `json:"on"`
 	OfToken  token.Token   `json:"of"`
 	Am       int           `json:"amount"`
 	CrOn     time.Time     `json:"created_on"`
 }
 
-func createBalance(id *uuid.UUID, on wallet.Wallet, of token.Token, amount int, createdOn time.Time) Balance {
+func createBalance(on wallet.Wallet, of token.Token, amount int, createdOn time.Time) Balance {
 	out := balance{
-		UUID:     id,
 		OnWallet: on,
 		OfToken:  of,
 		Am:       amount,
@@ -26,11 +23,6 @@ func createBalance(id *uuid.UUID, on wallet.Wallet, of token.Token, amount int, 
 	}
 
 	return &out
-}
-
-// ID returns the ID
-func (obj *balance) ID() *uuid.UUID {
-	return obj.UUID
 }
 
 // On returns the on wallet

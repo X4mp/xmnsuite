@@ -1,82 +1,93 @@
 package core
 
 import (
-	"math/rand"
-	"net"
 	"os"
 	"path/filepath"
 	"testing"
 
-	uuid "github.com/satori/go.uuid"
-	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/core/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/token"
+	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 
 func TestSaveGenesis_thenRetrieveByID_Success(t *testing.T) {
 	// variables:
-	namespace := "xmn"
-	name := "core"
-	id := uuid.NewV4()
-	rootPath := filepath.Join("./test_files")
-	port := rand.Int()%9000 + 1000
 	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
-	nodePK := ed25519.GenPrivKey()
-	ip := net.ParseIP("127.0.0.1")
+	rootPath := filepath.Join("./test_files")
 	defer func() {
 		os.RemoveAll(rootPath)
 	}()
 
-	// spawn the blockchain:
-	node, nodeErr := spawnBlockchain(namespace, name, &id, rootPath, port, nodePK, pk.PublicKey())
-	if nodeErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", nodeErr.Error())
-		return
+	// spawn bockchain with genesis instance:
+	node, _, _ := spawnBlockchainWithGenesisForTests(t, pk, rootPath)
+	defer node.Stop()
+}
+
+func TestSaveGenesis_thenCRUD_Success(t *testing.T) {
+
+	pldge := pledge.CreatePledgeForTests()
+
+	// variables:
+	testEntities := []struct {
+		Ins            entity.Entity
+		Representation entity.Representation
+		Prepare        func(repository entity.Repository, service entity.Service)
+		Teardown       func(repository entity.Repository, service entity.Service)
+		Compare        func(t *testing.T, first entity.Entity, second entity.Entity)
+	}{
+		{
+			Ins:            wallet.CreateWalletForTests(),
+			Representation: wallet.SDKFunc.CreateRepresentation(),
+			Compare: func(t *testing.T, first entity.Entity, second entity.Entity) {
+				wallet.CompareWalletsForTests(t, first.(wallet.Wallet), second.(wallet.Wallet))
+			},
+		},
+		{
+			Ins:            token.CreateTokenForTests(),
+			Representation: token.SDKFunc.CreateRepresentation(),
+			Compare: func(t *testing.T, first entity.Entity, second entity.Entity) {
+				token.CompareTokensForTests(t, first.(token.Token), second.(token.Token))
+			},
+		},
+		{
+			Ins:            pldge,
+			Representation: pledge.SDKFunc.CreateRepresentation(),
+			Prepare: func(repository entity.Repository, service entity.Service) {
+				service.Save(pldge.From().From(), wallet.SDKFunc.CreateRepresentation())
+				service.Save(pldge.From().Token(), token.SDKFunc.CreateRepresentation())
+			},
+			Compare: func(t *testing.T, first entity.Entity, second entity.Entity) {
+				pledge.ComparePledgesForTests(t, first.(pledge.Pledge), second.(pledge.Pledge))
+			},
+		},
 	}
 
-	node.Start()
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	rootPath := filepath.Join("./test_files")
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// spawn bockchain with genesis instance:
+	node, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath)
 	defer node.Stop()
 
-	// get the client:
-	client, clientErr := connectToBlockchain(ip, port)
-	if clientErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", clientErr.Error())
-		return
+	// test all instances:
+	for _, oneTestEntity := range testEntities {
+		// prepare:
+		if oneTestEntity.Prepare != nil {
+			oneTestEntity.Prepare(repository, service)
+		}
+
+		// execute:
+		retIns := saveEntityThenRetrieveEntityByIDThenDeleteEntityByID(t, oneTestEntity.Ins, oneTestEntity.Representation, service, repository)
+		oneTestEntity.Compare(t, oneTestEntity.Ins, retIns)
+
+		// teardown:
+		if oneTestEntity.Teardown != nil {
+			oneTestEntity.Teardown(repository, service)
+		}
 	}
-
-	// create a genesis:
-	genIns := genesis.CreateGenesisForTests()
-
-	// create the representation:
-	representation := genesis.SDKFunc.CreateRepresentation()
-
-	// create the entity service:
-	entityService := entity.SDKFunc.CreateSDKService(entity.CreateSDKServiceParams{
-		PK:     pk,
-		Client: client,
-	})
-
-	// create the entity repository:
-	entityRepository := entity.SDKFunc.CreateSDKRepository(entity.CreateSDKRepositoryParams{
-		PK:     pk,
-		Client: client,
-	})
-
-	// save the genesis:
-	saveErr := entityService.Save(genIns, representation)
-	if saveErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", saveErr.Error())
-		return
-	}
-
-	// retrieve the genesis:
-	retGen, retGenErr := entityRepository.RetrieveByID(representation.MetaData(), genIns.ID())
-	if retGenErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", retGenErr.Error())
-		return
-	}
-
-	// compare the wallet instances:
-	genesis.CompareGenesisForTests(t, genIns, retGen.(genesis.Genesis))
 }

@@ -9,7 +9,9 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/core/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request"
+	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 	"github.com/xmnservices/xmnsuite/crypto"
@@ -31,14 +33,21 @@ type core20181108 struct {
 func createCore20181108() *core20181108 {
 
 	walletRepresentation := wallet.SDKFunc.CreateRepresentation()
+	tokenRepresentation := token.SDKFunc.CreateRepresentation()
+	pledgeRepresentation := pledge.SDKFunc.CreateRepresentation()
 
 	out := core20181108{
 		genesisRepresentation: genesis.SDKFunc.CreateRepresentation(),
 		entityMetaDatas: map[string]entity.MetaData{
 			"genesis": genesis.SDKFunc.CreateMetaData(),
+			"wallet":  walletRepresentation.MetaData(),
+			"token":   tokenRepresentation.MetaData(),
+			"pledge":  pledgeRepresentation.MetaData(),
 		},
 		entityRepresentations: map[string]entity.Representation{
 			"wallet": walletRepresentation,
+			"token":  tokenRepresentation,
+			"pledge": pledgeRepresentation,
 		},
 		requestRepresentations: map[string]entity.Representation{},
 	}
@@ -63,6 +72,8 @@ func create20181106(
 	store.Users().Insert(rootPubKey)
 	store.Roles().Add(routerRoleKey, rootPubKey)
 	store.Roles().EnableWriteAccess(routerRoleKey, "/genesis")
+	store.Roles().EnableWriteAccess(routerRoleKey, "/[a-z-]+")
+	store.Roles().EnableWriteAccess(routerRoleKey, "/[a-z-]+/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 
 	// create core:
 	core := createCore20181108()
@@ -85,6 +96,7 @@ func create20181106(
 				core.saveGenesis(),
 				core.saveEntity(),
 				core.retrieveEntityByID(),
+				core.deleteEntityByID(),
 				core.saveRequest(),
 				core.saveRequestVote(),
 			},
@@ -229,7 +241,8 @@ func (app *core20181108) retrieveEntityByID() routers.CreateRouteParams {
 					// parse the id:
 					id, idErr := uuid.FromString(params["id"])
 					if idErr != nil {
-						return nil, idErr
+						str := fmt.Sprintf("the given ID (%s) is invalid: %s", params["id"], idErr.Error())
+						return nil, errors.New(str)
 					}
 
 					// retrieve the entity instance:
@@ -256,6 +269,83 @@ func (app *core20181108) retrieveEntityByID() routers.CreateRouteParams {
 						Log:   "success",
 						Key:   path,
 						Value: js,
+					})
+
+					return resp, nil
+				}
+
+				str := fmt.Sprintf("the given entity name (%s) is not supported", name)
+				return nil, errors.New(str)
+			}
+
+			return nil, errors.New("an entity name must be provided")
+		},
+	}
+}
+
+func (app *core20181108) deleteEntityByID() routers.CreateRouteParams {
+	return routers.CreateRouteParams{
+		Pattern: "/<name|[a-z-]+>/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
+		DelTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (routers.TransactionResponse, error) {
+			// create the dependencies:
+			dep := createDependencies(store)
+
+			// retrieve the genesis:
+			gen, genErr := dep.genesisRepository.Retrieve()
+			if genErr != nil {
+				str := fmt.Sprintf("there was an error while retrieving the Genesis instance: %s", genErr.Error())
+				return nil, errors.New(str)
+			}
+
+			// retrieve the name:
+			if name, ok := params["name"]; ok {
+				// retrieve the entity representation:
+				if representation, ok := app.entityRepresentations[name]; ok {
+					// get the metadata:
+					metaData := representation.MetaData()
+
+					// parse the id:
+					id, idErr := uuid.FromString(params["id"])
+					if idErr != nil {
+						str := fmt.Sprintf("the given ID (%s) is invalid: %s", params["id"], idErr.Error())
+						return nil, errors.New(str)
+					}
+
+					// retrieve the entity instance:
+					retIns, retInsErr := dep.entityRepository.RetrieveByID(metaData, &id)
+					if retInsErr != nil {
+						return nil, retInsErr
+					}
+
+					// delete the entity instance:
+					delErr := dep.entityService.Delete(retIns, representation)
+					if delErr != nil {
+						return nil, delErr
+					}
+
+					// normalize:
+					normalized, normalizedErr := metaData.Normalize()(retIns)
+					if normalizedErr != nil {
+						return nil, normalizedErr
+					}
+
+					// convert the normalized entity to json:
+					js, jsErr := cdc.MarshalJSON(normalized)
+					if jsErr != nil {
+						return nil, jsErr
+					}
+
+					// calculate the gaz used:
+					gazUsed := int(unsafe.Sizeof(js)) * gen.GazPricePerKb()
+
+					// return the response:
+					resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
+						Code:    routers.IsSuccessful,
+						Log:     "success",
+						GazUsed: int64(gazUsed),
+						Tags: map[string][]byte{
+							path: []byte("deleted"),
+						},
 					})
 
 					return resp, nil
@@ -299,7 +389,8 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 					if requestIDAsString, ok := params["id"]; ok {
 						requestID, requestIDErr := uuid.FromString(requestIDAsString)
 						if requestIDErr != nil {
-							return nil, requestIDErr
+							str := fmt.Sprintf("the given ID (%s) is invalid: %s", params["id"], requestIDErr.Error())
+							return nil, errors.New(str)
 						}
 
 						// unmarshal the data:
@@ -399,13 +490,15 @@ func (app *core20181108) saveRequestVote() routers.CreateRouteParams {
 					if requestIDAsString, ok := params["id"]; ok {
 						requestID, requestIDErr := uuid.FromString(requestIDAsString)
 						if requestIDErr != nil {
-							return nil, requestIDErr
+							str := fmt.Sprintf("the given ID (%s) is invalid: %s", params["id"], requestIDErr.Error())
+							return nil, errors.New(str)
 						}
 
 						if voteIDAsString, ok := params["voteID"]; ok {
 							voteID, voteIDErr := uuid.FromString(voteIDAsString)
 							if voteIDErr != nil {
-								return nil, voteIDErr
+								str := fmt.Sprintf("the given voteID (%s) is invalid: %s", params["id"], voteIDErr.Error())
+								return nil, errors.New(str)
 							}
 
 							// retrieve the request:

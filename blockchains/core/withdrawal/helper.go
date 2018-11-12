@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 )
 
@@ -66,14 +66,29 @@ func createMetaData() entity.MetaData {
 				return fromStorableToEntity(storable)
 			}
 
-			ptr := new(storableWithdrawal)
+			ptr := new(normalizedWithdrawal)
 			jsErr := cdc.UnmarshalJSON(data.([]byte), ptr)
 			if jsErr != nil {
 				return nil, jsErr
 			}
 
-			return fromStorableToEntity(ptr)
+			return createWithdrawalFromNormalized(ptr)
 
+		},
+		Normalize: func(ins entity.Entity) (interface{}, error) {
+			if with, ok := ins.(Withdrawal); ok {
+				return createNormalizedWithdrawal(with)
+			}
+
+			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Withdrawal instance", ins.ID().String())
+			return nil, errors.New(str)
+		},
+		Denormalize: func(ins interface{}) (entity.Entity, error) {
+			if normalized, ok := ins.(*normalizedWithdrawal); ok {
+				return createWithdrawalFromNormalized(normalized)
+			}
+
+			return nil, errors.New("the given instance is not a valid normalized Withdrawal instance")
 		},
 		EmptyStorable: new(storableWithdrawal),
 	})

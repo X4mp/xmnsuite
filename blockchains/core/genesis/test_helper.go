@@ -6,6 +6,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/deposit"
+	"github.com/xmnservices/xmnsuite/blockchains/core/user"
 )
 
 // CreateGenesisForTests creates a Genesis for tests
@@ -14,7 +15,8 @@ func CreateGenesisForTests() Genesis {
 	gazPricePerKb := rand.Int() % 30
 	maxAmountOfValidators := rand.Int() % 20
 	dep := deposit.CreateDepositForTests()
-	out := createGenesis(&id, gazPricePerKb, maxAmountOfValidators, dep)
+	usr := user.CreateUserWithWalletForTests(dep.To())
+	out := createGenesis(&id, gazPricePerKb, maxAmountOfValidators, dep, usr)
 	return out
 }
 

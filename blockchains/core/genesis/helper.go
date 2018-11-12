@@ -7,6 +7,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/user"
 )
 
 func keyname() string {
@@ -28,6 +29,11 @@ func createMetaData() entity.MetaData {
 					return nil, initialDepIDErr
 				}
 
+				userID, userIDErr := uuid.FromString(storable.UserID)
+				if userIDErr != nil {
+					return nil, userIDErr
+				}
+
 				// retrieve the initial deposit:
 				depositMet := deposit.SDKFunc.CreateMetaData()
 				depIns, depInsErr := rep.RetrieveByID(depositMet, &initialDepID)
@@ -35,9 +41,21 @@ func createMetaData() entity.MetaData {
 					return nil, depInsErr
 				}
 
+				// retrieve the user:
+				usrMet := user.SDKFunc.CreateMetaData()
+				usrIns, usrInsErr := rep.RetrieveByID(usrMet, &userID)
+				if usrInsErr != nil {
+					return nil, usrInsErr
+				}
+
 				if deposit, ok := depIns.(deposit.Deposit); ok {
-					out := createGenesis(&id, storable.GzPricePerKb, storable.MxAmountOfValidators, deposit)
-					return out, nil
+					if usr, ok := usrIns.(user.User); ok {
+						out := createGenesis(&id, storable.GzPricePerKb, storable.MxAmountOfValidators, deposit, usr)
+						return out, nil
+					}
+
+					str := fmt.Sprintf("the entity (ID: %s) is not a valid User instance", userID.String())
+					return nil, errors.New(str)
 				}
 
 				str := fmt.Sprintf("the entity (ID: %s) is not a valid Genesis instance", initialDepID.String())
@@ -86,7 +104,7 @@ func createMetaData() entity.MetaData {
 	})
 }
 
-func representation(depositRepresentation entity.Representation) entity.Representation {
+func representation() entity.Representation {
 	return entity.SDKFunc.CreateRepresentation(entity.CreateRepresentationParams{
 		Met: createMetaData(),
 		ToStorable: func(ins entity.Entity) (interface{}, error) {
@@ -105,14 +123,33 @@ func representation(depositRepresentation entity.Representation) entity.Represen
 		},
 		Sync: func(rep entity.Repository, service entity.Service, ins entity.Entity) error {
 			if gen, ok := ins.(Genesis); ok {
+
+				// deposit:
 				dep := gen.Deposit()
-				metaData := depositRepresentation.MetaData()
-				_, retDepErr := rep.RetrieveByID(metaData, dep.ID())
-				if retDepErr != nil {
-					saveErr := service.Save(dep, depositRepresentation)
-					if saveErr != nil {
-						return saveErr
-					}
+				depRepresentation := deposit.SDKFunc.CreateRepresentation()
+				_, retDepErr := rep.RetrieveByID(depRepresentation.MetaData(), dep.ID())
+				if retDepErr == nil {
+					str := fmt.Sprintf("the Genesis instance contains a Deposit instance (ID: %s) that is already saved", dep.ID().String())
+					return errors.New(str)
+				}
+
+				depSaveErr := service.Save(dep, depRepresentation)
+				if depSaveErr != nil {
+					return depSaveErr
+				}
+
+				// user:
+				usr := gen.User()
+				usrRepresentation := user.SDKFunc.CreateRepresentation()
+				_, retUsrErr := rep.RetrieveByID(usrRepresentation.MetaData(), usr.ID())
+				if retUsrErr == nil {
+					str := fmt.Sprintf("the Genesis instance contains a User instance (ID: %s) that is already saved", usr.ID().String())
+					return errors.New(str)
+				}
+
+				usrSaveErr := service.Save(usr, usrRepresentation)
+				if usrSaveErr != nil {
+					return usrSaveErr
 				}
 
 				return nil
