@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/xmnservices/xmnsuite/blockchains/core/category"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/token"
@@ -49,6 +50,13 @@ func TestSaveGenesis_thenCRUD_Success(t *testing.T) {
 			Representation: token.SDKFunc.CreateRepresentation(),
 			Compare: func(t *testing.T, first entity.Entity, second entity.Entity) {
 				token.CompareTokensForTests(t, first.(token.Token), second.(token.Token))
+			},
+		},
+		{
+			Ins:            category.CreateCategoryForTests(),
+			Representation: category.SDKFunc.CreateRepresentation(),
+			Compare: func(t *testing.T, first entity.Entity, second entity.Entity) {
+				category.CompareCategoriesForTests(t, first.(category.Category), second.(category.Category))
 			},
 		},
 		{

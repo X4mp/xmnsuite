@@ -7,6 +7,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
+	"github.com/xmnservices/xmnsuite/blockchains/core/category"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/pledge"
@@ -35,19 +36,22 @@ func createCore20181108() *core20181108 {
 	walletRepresentation := wallet.SDKFunc.CreateRepresentation()
 	tokenRepresentation := token.SDKFunc.CreateRepresentation()
 	pledgeRepresentation := pledge.SDKFunc.CreateRepresentation()
+	categoryRepresentation := category.SDKFunc.CreateRepresentation()
 
 	out := core20181108{
 		genesisRepresentation: genesis.SDKFunc.CreateRepresentation(),
 		entityMetaDatas: map[string]entity.MetaData{
-			"genesis": genesis.SDKFunc.CreateMetaData(),
-			"wallet":  walletRepresentation.MetaData(),
-			"token":   tokenRepresentation.MetaData(),
-			"pledge":  pledgeRepresentation.MetaData(),
+			"genesis":  genesis.SDKFunc.CreateMetaData(),
+			"category": categoryRepresentation.MetaData(),
+			"wallet":   walletRepresentation.MetaData(),
+			"token":    tokenRepresentation.MetaData(),
+			"pledge":   pledgeRepresentation.MetaData(),
 		},
 		entityRepresentations: map[string]entity.Representation{
-			"wallet": walletRepresentation,
-			"token":  tokenRepresentation,
-			"pledge": pledgeRepresentation,
+			"wallet":   walletRepresentation,
+			"category": categoryRepresentation,
+			"token":    tokenRepresentation,
+			"pledge":   pledgeRepresentation,
 		},
 		requestRepresentations: map[string]entity.Representation{},
 	}

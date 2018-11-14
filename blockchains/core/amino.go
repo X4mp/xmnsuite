@@ -2,6 +2,7 @@ package core
 
 import (
 	amino "github.com/tendermint/go-amino"
+	category "github.com/xmnservices/xmnsuite/blockchains/core/category"
 	deposit "github.com/xmnservices/xmnsuite/blockchains/core/deposit"
 	entity "github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	genesis "github.com/xmnservices/xmnsuite/blockchains/core/genesis"
@@ -14,6 +15,7 @@ var cdc = amino.NewCodec()
 
 func init() {
 	// dependencies:
+	category.Register(cdc)
 	wallet.Register(cdc)
 	token.Register(cdc)
 	deposit.Register(cdc)
