@@ -24,7 +24,7 @@ func CreateWalletWithConcensusNeededForTests(concensusNeeded int) Wallet {
 // CompareWalletsForTests compares 2 Wallet instances for tests
 func CompareWalletsForTests(t *testing.T, first Wallet, second Wallet) {
 	if !reflect.DeepEqual(first.ID(), second.ID()) {
-		t.Errorf("the ID is invalid")
+		t.Errorf("the ID is invalid, expected: %s, returned: %s", first.ID().String(), second.ID().String())
 		return
 	}
 

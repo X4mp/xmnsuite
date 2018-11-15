@@ -100,7 +100,8 @@ func createMetaData() entity.MetaData {
 
 			return nil, errors.New("the given normalized instance cannot be converted to a Genesis instance")
 		},
-		EmptyStorable: new(storableGenesis),
+		EmptyStorable:   new(storableGenesis),
+		EmptyNormalized: new(normalizedGenesis),
 	})
 }
 

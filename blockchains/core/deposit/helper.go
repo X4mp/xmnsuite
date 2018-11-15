@@ -108,6 +108,7 @@ func createMetaData() entity.MetaData {
 
 			return nil, errors.New("the given normalized instance cannot be converted to a Deposit instance")
 		},
-		EmptyStorable: new(storableDeposit),
+		EmptyStorable:   new(storableDeposit),
+		EmptyNormalized: new(normalizedDeposit),
 	})
 }

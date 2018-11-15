@@ -19,7 +19,7 @@ func retrieveVotesByRequestIDKeyname(reqID *uuid.UUID) string {
 	return fmt.Sprintf("%s:by_request_id:%s", base, reqID.String())
 }
 
-func createMetaData(met entity.MetaData) entity.MetaData {
+func createMetaData() entity.MetaData {
 	return entity.SDKFunc.CreateMetaData(entity.CreateMetaDataParams{
 		Name: "Vote",
 		ToEntity: func(rep entity.Repository, data interface{}) (entity.Entity, error) {
@@ -40,10 +40,7 @@ func createMetaData(met entity.MetaData) entity.MetaData {
 				}
 
 				// retrieve the request:
-				reqMet := request.SDKFunc.CreateMetaData(request.CreateMetaDataParams{
-					EntityMetaData: met,
-				})
-
+				reqMet := request.SDKFunc.CreateMetaData()
 				reqIns, reqInsErr := rep.RetrieveByID(reqMet, &reqID)
 				if reqInsErr != nil {
 					return nil, reqInsErr
@@ -92,9 +89,9 @@ func createMetaData(met entity.MetaData) entity.MetaData {
 	})
 }
 
-func createRepresentation(met entity.MetaData) entity.Representation {
+func createRepresentation() entity.Representation {
 	return entity.SDKFunc.CreateRepresentation(entity.CreateRepresentationParams{
-		Met: createMetaData(met),
+		Met: createMetaData(),
 		ToStorable: func(ins entity.Entity) (interface{}, error) {
 			if vote, ok := ins.(Vote); ok {
 				out := createStorableVote(vote)

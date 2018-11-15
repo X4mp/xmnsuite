@@ -7,13 +7,11 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
-	"github.com/xmnservices/xmnsuite/blockchains/core/category"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/token"
-	"github.com/xmnservices/xmnsuite/blockchains/core/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 	"github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
@@ -26,6 +24,7 @@ type incomingVote struct {
 
 type core20181108 struct {
 	genesisRepresentation  entity.Representation
+	walletRepresentation   entity.Representation
 	entityMetaDatas        map[string]entity.MetaData
 	entityRepresentations  map[string]entity.Representation
 	requestRepresentations map[string]entity.Representation
@@ -33,27 +32,30 @@ type core20181108 struct {
 
 func createCore20181108() *core20181108 {
 
+	// register the possible requests:
+	request.SDKFunc.Register(pledge.SDKFunc.CreateMetaData())
+
 	walletRepresentation := wallet.SDKFunc.CreateRepresentation()
 	tokenRepresentation := token.SDKFunc.CreateRepresentation()
 	pledgeRepresentation := pledge.SDKFunc.CreateRepresentation()
-	categoryRepresentation := category.SDKFunc.CreateRepresentation()
 
 	out := core20181108{
 		genesisRepresentation: genesis.SDKFunc.CreateRepresentation(),
+		walletRepresentation:  walletRepresentation,
 		entityMetaDatas: map[string]entity.MetaData{
-			"genesis":  genesis.SDKFunc.CreateMetaData(),
-			"category": categoryRepresentation.MetaData(),
-			"wallet":   walletRepresentation.MetaData(),
-			"token":    tokenRepresentation.MetaData(),
-			"pledge":   pledgeRepresentation.MetaData(),
+			"genesis": genesis.SDKFunc.CreateMetaData(),
+			"wallet":  walletRepresentation.MetaData(),
+			"token":   tokenRepresentation.MetaData(),
+			"pledge":  pledgeRepresentation.MetaData(),
 		},
 		entityRepresentations: map[string]entity.Representation{
-			"wallet":   walletRepresentation,
-			"category": categoryRepresentation,
-			"token":    tokenRepresentation,
-			"pledge":   pledgeRepresentation,
+			"wallet": walletRepresentation,
+			"token":  tokenRepresentation,
+			"pledge": pledgeRepresentation,
 		},
-		requestRepresentations: map[string]entity.Representation{},
+		requestRepresentations: map[string]entity.Representation{
+			"pledge": pledgeRepresentation,
+		},
 	}
 
 	return &out
@@ -78,6 +80,8 @@ func create20181106(
 	store.Roles().EnableWriteAccess(routerRoleKey, "/genesis")
 	store.Roles().EnableWriteAccess(routerRoleKey, "/[a-z-]+")
 	store.Roles().EnableWriteAccess(routerRoleKey, "/[a-z-]+/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+	store.Roles().EnableWriteAccess(routerRoleKey, "/requests/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[a-z-]+/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+	store.Roles().EnableWriteAccess(routerRoleKey, "/requests/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[a-z-]+/vote/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 
 	// create core:
 	core := createCore20181108()
@@ -366,7 +370,7 @@ func (app *core20181108) deleteEntityByID() routers.CreateRouteParams {
 
 func (app *core20181108) saveRequest() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
-		Pattern: "/<name|[a-z-]+>/request/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
+		Pattern: "/requests/<walletid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>/<name|[a-z-]+>/<requestid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
 		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
 
 			// create the dependencies:
@@ -379,48 +383,59 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 				return nil, errors.New(str)
 			}
 
-			// retrieve the from user:
-			fromUser, fromUserErr := dep.userRepository.RetrieveByPubKey(from)
-			if fromUserErr != nil {
-				str := fmt.Sprintf("the from user (pubKey: %s) could not be found", from.String())
+			// parse the walletID:
+			walletID, walletIDErr := uuid.FromString(params["walletid"])
+			if walletIDErr != nil {
+				str := fmt.Sprintf("the given walletID (%s) is invalid: %s", params["walletid"], walletIDErr.Error())
 				return nil, errors.New(str)
 			}
 
-			// retrieve the name:
-			if name, ok := params["name"]; ok {
-				// retrieve the entity representation:
-				if representation, ok := app.requestRepresentations[name]; ok {
-					if requestIDAsString, ok := params["id"]; ok {
-						requestID, requestIDErr := uuid.FromString(requestIDAsString)
-						if requestIDErr != nil {
-							str := fmt.Sprintf("the given ID (%s) is invalid: %s", params["id"], requestIDErr.Error())
-							return nil, errors.New(str)
-						}
+			// retrieve the wallet:
+			walIns, walInsErr := dep.entityRepository.RetrieveByID(app.walletRepresentation.MetaData(), &walletID)
+			if walInsErr != nil {
+				return nil, walInsErr
+			}
 
-						// unmarshal the data:
+			// parse the requestID:
+			reqID, reqIDErr := uuid.FromString(params["requestid"])
+			if reqIDErr != nil {
+				str := fmt.Sprintf("the given requestID (%s) is invalid: %s", params["requestid"], reqIDErr.Error())
+				return nil, errors.New(str)
+			}
+
+			if wal, ok := walIns.(wallet.Wallet); ok {
+				// retrieve the user:
+				usr, usrErr := dep.userRepository.RetrieveByPubKeyAndWallet(from, wal)
+				if usrErr != nil {
+					return nil, usrErr
+				}
+
+				// retrieve the name:
+				if name, ok := params["name"]; ok {
+					// retrieve the entity representation:
+					if representation, ok := app.requestRepresentations[name]; ok {
+						// converts the data to an entity:
 						ins, insErr := representation.MetaData().ToEntity()(dep.entityRepository, data)
 						if insErr != nil {
 							return nil, insErr
 						}
 
-						// build the request:
+						// create the request:
 						req := request.SDKFunc.Create(request.CreateParams{
-							ID:        &requestID,
-							FromUser:  fromUser,
+							ID:        &reqID,
+							FromUser:  usr,
 							NewEntity: ins,
 						})
 
 						// save the request:
-						saveErr := dep.entityService.Save(req, request.SDKFunc.CreateRepresentation(request.CreateRepresentationParams{
-							EntityMetaData: representation.MetaData(),
-						}))
-
+						representation := request.SDKFunc.CreateRepresentation()
+						saveErr := dep.entityService.Save(req, representation)
 						if saveErr != nil {
 							return nil, saveErr
 						}
 
 						// convert to json:
-						storable, storableErr := representation.ToStorable()(ins)
+						storable, storableErr := representation.ToStorable()(req)
 						if storableErr != nil {
 							return nil, storableErr
 						}
@@ -446,24 +461,25 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 						return resp, nil
 					}
 
-					return nil, errors.New("the requestID is mandatory")
+					str := fmt.Sprintf("the given entity name (%s) is not supported for requests", name)
+					return nil, errors.New(str)
 				}
 
-				str := fmt.Sprintf("the given entity name (%s) is not supported", name)
-				return nil, errors.New(str)
+				return nil, errors.New("an entity name must be provided")
 			}
 
-			return nil, errors.New("an entity name must be provided")
+			str := fmt.Sprintf("the entity (ID: %s) was expected to be a wallet instance", walIns.ID().String())
+			return nil, errors.New(str)
 		},
 	}
 }
 
 func (app *core20181108) saveRequestVote() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
-		Pattern: "/<name|[a-z-]+>/request/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>/vote/<voteID|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
+		Pattern: "/requests/<requestid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>/vote/<voteid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
 		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
 			// create the dependencies:
-			dep := createDependencies(store)
+			/*dep := createDependencies(store)
 
 			// retrieve the genesis:
 			gen, genErr := dep.genesisRepository.Retrieve()
@@ -506,9 +522,7 @@ func (app *core20181108) saveRequestVote() routers.CreateRouteParams {
 							}
 
 							// retrieve the request:
-							req, reqErr := dep.entityRepository.RetrieveByID(request.SDKFunc.CreateMetaData(request.CreateMetaDataParams{
-								EntityMetaData: representation.MetaData(),
-							}), &requestID)
+							req, reqErr := dep.entityRepository.RetrieveByID(request.SDKFunc.CreateMetaData(), &requestID)
 
 							if reqErr != nil {
 								return nil, reqErr
@@ -524,11 +538,9 @@ func (app *core20181108) saveRequestVote() routers.CreateRouteParams {
 
 							// save the vote:
 							voteService := vote.SDKFunc.CreateService(vote.CreateServiceParams{
-								EntityRepository: dep.entityRepository,
-								EntityService:    dep.entityService,
-								RequestRepresentation: request.SDKFunc.CreateRepresentation(request.CreateRepresentationParams{
-									EntityMetaData: representation.MetaData(),
-								}),
+								EntityRepository:        dep.entityRepository,
+								EntityService:           dep.entityService,
+								RequestRepresentation:   request.SDKFunc.CreateRepresentation(),
 								NewEntityRepresentation: representation,
 							})
 
@@ -574,7 +586,8 @@ func (app *core20181108) saveRequestVote() routers.CreateRouteParams {
 				return nil, errors.New(str)
 			}
 
-			return nil, errors.New("an entity name must be provided")
+			return nil, errors.New("an entity name must be provided")*/
+			return nil, nil
 		},
 	}
 }

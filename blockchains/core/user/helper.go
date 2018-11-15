@@ -19,6 +19,11 @@ func retrieveUserByPubKeyKeyname(pubKey crypto.PublicKey) string {
 	return fmt.Sprintf("%s:by_public_key:%s", base, pubKey.String())
 }
 
+func retrieveUserByWalletIDKeyname(walletID *uuid.UUID) string {
+	base := retrieveAllUserKeyname()
+	return fmt.Sprintf("%s:by_wallet_id:%s", base, walletID.String())
+}
+
 func createMetaData() entity.MetaData {
 	return entity.SDKFunc.CreateMetaData(entity.CreateMetaDataParams{
 		Name: "User",
@@ -83,6 +88,7 @@ func createMetaData() entity.MetaData {
 
 			return nil, errors.New("the given instance is not a valid normalized User instance")
 		},
-		EmptyStorable: new(storableUser),
+		EmptyStorable:   new(storableUser),
+		EmptyNormalized: new(normalizedUser),
 	})
 }

@@ -36,7 +36,8 @@ func createMetaData() entity.MetaData {
 
 			return nil, errors.New("the given instance is not a valid normalized Token instance")
 		},
-		EmptyStorable: new(storableToken),
+		EmptyStorable:   new(storableToken),
+		EmptyNormalized: new(storableToken),
 	})
 }
 

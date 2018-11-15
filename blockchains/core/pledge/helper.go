@@ -46,7 +46,8 @@ func createMetaData() entity.MetaData {
 
 			return nil, errors.New("the given instance is not a valid normalized Pledge instance")
 		},
-		EmptyStorable: new(storablePledge),
+		EmptyStorable:   new(storablePledge),
+		EmptyNormalized: new(normalizedPledge),
 	})
 }
 

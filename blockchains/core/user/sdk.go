@@ -24,7 +24,7 @@ type Normalized interface {
 
 // Repository represents the user repository
 type Repository interface {
-	RetrieveByPubKey(pubKey crypto.PublicKey) (User, error)
+	RetrieveByPubKeyAndWallet(pubKey crypto.PublicKey, wal wallet.Wallet) (User, error)
 }
 
 // CreateRepositoryParams represents the CreateRepository params
@@ -32,12 +32,30 @@ type CreateRepositoryParams struct {
 	EntityRepository entity.Repository
 }
 
+// CreateParams represents the Create params
+type CreateParams struct {
+	ID     *uuid.UUID
+	PubKey crypto.PublicKey
+	Shares int
+	Wallet wallet.Wallet
+}
+
 // SDKFunc represents the User SDK func
 var SDKFunc = struct {
+	Create               func(params CreateParams) User
 	CreateRepository     func(params CreateRepositoryParams) Repository
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 }{
+	Create: func(params CreateParams) User {
+		if params.ID == nil {
+			id := uuid.NewV4()
+			params.ID = &id
+		}
+
+		out := createUser(params.ID, params.PubKey, params.Shares, params.Wallet)
+		return out
+	},
 	CreateRepository: func(params CreateRepositoryParams) Repository {
 		userMetaData := createMetaData()
 		out := createRepository(userMetaData, params.EntityRepository)
@@ -63,6 +81,7 @@ var SDKFunc = struct {
 					return []string{
 						retrieveAllUserKeyname(),
 						retrieveUserByPubKeyKeyname(usr.PubKey()),
+						retrieveUserByWalletIDKeyname(usr.Wallet().ID()),
 					}, nil
 				}
 

@@ -39,6 +39,7 @@ type MetaData interface {
 	Normalize() Normalize
 	Denormalize() Denormalize
 	CopyStorable() interface{}
+	CopyNormalized() interface{}
 }
 
 // Representation represents an entity representation
@@ -85,11 +86,12 @@ type Controllers interface {
 
 // CreateMetaDataParams represents the MetaData params
 type CreateMetaDataParams struct {
-	Name          string
-	ToEntity      ToEntity
-	Normalize     Normalize
-	Denormalize   Denormalize
-	EmptyStorable interface{}
+	Name            string
+	ToEntity        ToEntity
+	Normalize       Normalize
+	Denormalize     Denormalize
+	EmptyStorable   interface{}
+	EmptyNormalized interface{}
 }
 
 // CreateRepresentationParams represents the Representation params
@@ -143,7 +145,15 @@ var SDKFunc = struct {
 	CreateSDKService     func(params CreateSDKServiceParams) Service
 }{
 	CreateMetaData: func(params CreateMetaDataParams) MetaData {
-		met, metErr := createMetaData(params.Name, params.ToEntity, params.Normalize, params.Denormalize, params.EmptyStorable)
+		met, metErr := createMetaData(
+			params.Name,
+			params.ToEntity,
+			params.Normalize,
+			params.Denormalize,
+			params.EmptyStorable,
+			params.EmptyNormalized,
+		)
+
 		if metErr != nil {
 			panic(metErr)
 		}

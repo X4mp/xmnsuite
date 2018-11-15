@@ -1,6 +1,9 @@
 package request
 
 import (
+	"errors"
+	"fmt"
+
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/user"
@@ -20,6 +23,31 @@ func createRequest(id *uuid.UUID, frm user.User, nw entity.Entity) Request {
 	}
 
 	return &out
+}
+
+func createRequestFromNormalized(normalized *normalizedRequest, reg Registry) (Request, error) {
+	id, idErr := uuid.FromString(normalized.ID)
+	if idErr != nil {
+		return nil, idErr
+	}
+
+	fromIns, fromInsErr := user.SDKFunc.CreateMetaData().Denormalize()(normalized.From)
+	if fromInsErr != nil {
+		return nil, fromInsErr
+	}
+
+	ins, insErr := reg.FromJSONToEntity(normalized.NewEntityJS)
+	if insErr != nil {
+		return nil, insErr
+	}
+
+	if from, ok := fromIns.(user.User); ok {
+		out := createRequest(&id, from, ins)
+		return out, nil
+	}
+
+	str := fmt.Sprintf("the entity (ID: %s) is not a valid User instance", fromIns.ID().String())
+	return nil, errors.New(str)
 }
 
 // ID returns the ID

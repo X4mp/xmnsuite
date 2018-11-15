@@ -386,21 +386,22 @@ func TestSave_thenRetrieve_thenRetrieveByID_thenDelete_Success(t *testing.T) {
 		os.RemoveAll(rootPath)
 	}()
 
+	fromStorableToHuman := func(storable *storableHuman) (*human, error) {
+		insID, insIDErr := uuid.FromString(storable.UUID)
+		if insIDErr != nil {
+			return nil, insIDErr
+		}
+
+		return &human{
+			UUID:   &insID,
+			Name:   storable.Name,
+			Height: storable.Height,
+		}, nil
+	}
+
 	met := SDKFunc.CreateMetaData(CreateMetaDataParams{
 		Name: "Human",
 		ToEntity: func(rep Repository, data interface{}) (Entity, error) {
-			fromStorableToHuman := func(storable *storableHuman) (*human, error) {
-				insID, insIDErr := uuid.FromString(storable.UUID)
-				if insIDErr != nil {
-					return nil, insIDErr
-				}
-
-				return &human{
-					UUID:   &insID,
-					Name:   storable.Name,
-					Height: storable.Height,
-				}, nil
-			}
 
 			if storable, ok := data.(*storableHuman); ok {
 				return fromStorableToHuman(storable)
@@ -418,7 +419,28 @@ func TestSave_thenRetrieve_thenRetrieveByID_thenDelete_Success(t *testing.T) {
 
 			return nil, errors.New("the given data is invalid and therefore cannot be converted to an Entity instance")
 		},
-		EmptyStorable: new(storableHuman),
+		Normalize: func(ins Entity) (interface{}, error) {
+			if ent, ok := ins.(*testEntity); ok {
+				out := storableTestEntity{
+					ID:   ent.ID().String(),
+					Name: ent.Name(),
+				}
+
+				return &out, nil
+			}
+
+			return nil, errors.New("the given instance is not a valid testEntity instance")
+		},
+		Denormalize: func(ins interface{}) (Entity, error) {
+			out, outErr := fromStorableToHuman(ins.(*storableHuman))
+			if outErr != nil {
+				return nil, outErr
+			}
+
+			return out, nil
+		},
+		EmptyStorable:   new(storableHuman),
+		EmptyNormalized: new(storableHuman),
 	})
 
 	rep := SDKFunc.CreateRepresentation(CreateRepresentationParams{

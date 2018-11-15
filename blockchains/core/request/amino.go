@@ -7,8 +7,11 @@ import (
 
 const (
 
-	// XMNSuiteBlockchainsFrameworkVoteRequest represents the xmnsuite framework vote Request
-	XMNSuiteBlockchainsFrameworkVoteRequest = "xmnsuite/blockchains/framework/vote/Request"
+	// XMNSuiteBlockchainsCoreRequest represents the xmnsuite core Request
+	XMNSuiteBlockchainsCoreRequest = "xmnsuite/blockchains/core/Request"
+
+	// XMNSuiteBlockchainsCoreNormalizedRequest represents the xmnsuite core NormalizedRequest
+	XMNSuiteBlockchainsCoreNormalizedRequest = "xmnsuite/blockchains/core/NormalizedRequest"
 )
 
 var cdc = amino.NewCodec()
@@ -28,6 +31,24 @@ func Register(codec *amino.Codec) {
 			recover()
 		}()
 		codec.RegisterInterface((*Request)(nil), nil)
-		codec.RegisterConcrete(&request{}, XMNSuiteBlockchainsFrameworkVoteRequest, nil)
+		codec.RegisterConcrete(&request{}, XMNSuiteBlockchainsCoreRequest, nil)
 	}()
+
+	// Normalized
+	func() {
+		defer func() {
+			recover()
+		}()
+		codec.RegisterInterface((*Normalized)(nil), nil)
+		codec.RegisterConcrete(&normalizedRequest{}, XMNSuiteBlockchainsCoreNormalizedRequest, nil)
+	}()
+}
+
+// Replace replaces the amino codec
+func Replace(codec *amino.Codec) {
+	// replace:
+	cdc = codec
+
+	// register again:
+	Register(cdc)
 }

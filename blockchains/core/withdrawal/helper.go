@@ -90,6 +90,7 @@ func createMetaData() entity.MetaData {
 
 			return nil, errors.New("the given instance is not a valid normalized Withdrawal instance")
 		},
-		EmptyStorable: new(storableWithdrawal),
+		EmptyStorable:   new(storableWithdrawal),
+		EmptyNormalized: new(storableWithdrawal),
 	})
 }

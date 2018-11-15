@@ -17,11 +17,28 @@ type Pledge interface {
 	To() wallet.Wallet
 }
 
+// CreateParams represents the create params
+type CreateParams struct {
+	ID   *uuid.UUID
+	From withdrawal.Withdrawal
+	To   wallet.Wallet
+}
+
 // SDKFunc represents the Pledge SDK func
 var SDKFunc = struct {
+	Create               func(params CreateParams) Pledge
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 }{
+	Create: func(params CreateParams) Pledge {
+		if params.ID == nil {
+			id := uuid.NewV4()
+			params.ID = &id
+		}
+
+		out := createPledge(params.ID, params.From, params.To)
+		return out
+	},
 	CreateMetaData: func() entity.MetaData {
 		out := createMetaData()
 		return out

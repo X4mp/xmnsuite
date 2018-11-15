@@ -22,11 +22,29 @@ type Deposit interface {
 type Normalized interface {
 }
 
+// CreateParams represents the Create params
+type CreateParams struct {
+	ID     *uuid.UUID
+	To     wallet.Wallet
+	Token  token.Token
+	Amount int
+}
+
 // SDKFunc represents the Deposit SDK func
 var SDKFunc = struct {
+	Create               func(params CreateParams) Deposit
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 }{
+	Create: func(params CreateParams) Deposit {
+		if params.ID == nil {
+			id := uuid.NewV4()
+			params.ID = &id
+		}
+
+		out := createDeposit(params.ID, params.To, params.Token, params.Amount)
+		return out
+	},
 	CreateMetaData: func() entity.MetaData {
 		return createMetaData()
 	},

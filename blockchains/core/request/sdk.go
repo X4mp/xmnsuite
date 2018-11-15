@@ -5,8 +5,10 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
+	"github.com/xmnservices/xmnsuite/blockchains/applications"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/user"
+	"github.com/xmnservices/xmnsuite/crypto"
 )
 
 // Request represents an entity request
@@ -16,6 +18,28 @@ type Request interface {
 	New() entity.Entity
 }
 
+// Normalized represents a normalized request
+type Normalized interface {
+}
+
+// Registry represents an entity registry
+type Registry interface {
+	Register(metadata entity.MetaData) error
+	FromJSONToEntity(js []byte) (entity.Entity, error)
+}
+
+// Service represents an entity service
+type Service interface {
+	Save(req Request, entityRep entity.Representation) error
+}
+
+// Repository represents a Request repository
+type Repository interface {
+	RetrieveByID(id *uuid.UUID) (Request, error)
+	RetrieveSet(index int, amount int) (entity.PartialSet, error)
+	RetrieveSetByFromUser(usr user.User, index int, amount int) (entity.PartialSet, error)
+}
+
 // CreateParams represents the create params
 type CreateParams struct {
 	ID        *uuid.UUID
@@ -23,32 +47,37 @@ type CreateParams struct {
 	NewEntity entity.Entity
 }
 
-// CreateMetaDataParams represents the CreateMetaData params
-type CreateMetaDataParams struct {
-	EntityMetaData entity.MetaData
+// CreateSDKServiceParams represents the CreateSDKService params
+type CreateSDKServiceParams struct {
+	PK     crypto.PrivateKey
+	Client applications.Client
 }
 
-// CreateRepresentationParams represents the CreateRepresentation params
-type CreateRepresentationParams struct {
-	EntityMetaData entity.MetaData
-}
+var reg = createRegistry()
 
 // SDKFunc represents the request SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Request
-	CreateMetaData       func(params CreateMetaDataParams) entity.MetaData
-	CreateRepresentation func(params CreateRepresentationParams) entity.Representation
+	CreateMetaData       func() entity.MetaData
+	CreateRepresentation func() entity.Representation
+	CreateSDKService     func(params CreateSDKServiceParams) Service
+	Register             func(met entity.MetaData) error
 }{
 	Create: func(params CreateParams) Request {
+		if params.ID == nil {
+			id := uuid.NewV4()
+			params.ID = &id
+		}
+
 		out := createRequest(params.ID, params.FromUser, params.NewEntity)
 		return out
 	},
-	CreateMetaData: func(params CreateMetaDataParams) entity.MetaData {
-		return createMetaData(params.EntityMetaData)
+	CreateMetaData: func() entity.MetaData {
+		return createMetaData(reg)
 	},
-	CreateRepresentation: func(params CreateRepresentationParams) entity.Representation {
+	CreateRepresentation: func() entity.Representation {
 		return entity.SDKFunc.CreateRepresentation(entity.CreateRepresentationParams{
-			Met: createMetaData(params.EntityMetaData),
+			Met: createMetaData(reg),
 			ToStorable: func(ins entity.Entity) (interface{}, error) {
 				if req, ok := ins.(Request); ok {
 					out, outErr := createStorableRequest(req)
@@ -74,5 +103,12 @@ var SDKFunc = struct {
 				return nil, errors.New("the given entity is not a valid Request instance")
 			},
 		})
+	},
+	CreateSDKService: func(params CreateSDKServiceParams) Service {
+		out := createSDKService(params.PK, params.Client)
+		return out
+	},
+	Register: func(met entity.MetaData) error {
+		return reg.Register(met)
 	},
 }

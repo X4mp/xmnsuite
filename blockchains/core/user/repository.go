@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 
@@ -22,10 +23,11 @@ func createRepository(userMetaData entity.MetaData, entityRepository entity.Repo
 	return &out
 }
 
-// RetrieveByPubKey retrieves a User instance by its publicKey
-func (app *repository) RetrieveByPubKey(pubKey crypto.PublicKey) (User, error) {
+// RetrieveByPubKeyAndWallet retrieves a User instance by its publicKey and wallet
+func (app *repository) RetrieveByPubKeyAndWallet(pubKey crypto.PublicKey, wal wallet.Wallet) (User, error) {
 	ins, insErr := app.entityRepository.RetrieveByIntersectKeynames(app.userMetaData, []string{
 		retrieveUserByPubKeyKeyname(pubKey),
+		retrieveUserByWalletIDKeyname(wal.ID()),
 	})
 
 	if insErr != nil {

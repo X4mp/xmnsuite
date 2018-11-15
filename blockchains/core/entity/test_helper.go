@@ -34,6 +34,7 @@ func CreateRepresentationForTests() Representation {
 func CreateMetaDataForTests() MetaData {
 	name := "MyEntity"
 	empStorable := new(storableTestEntity)
+	empNormalized := new(storableTestEntity)
 
 	toEntity := func(rep Repository, data interface{}) (Entity, error) {
 		if casted, ok := data.(*storableTestEntity); ok {
@@ -70,7 +71,7 @@ func CreateMetaDataForTests() MetaData {
 	}
 
 	// execute:
-	met, _ := createMetaData(name, toEntity, normalize, denormalize, empStorable)
+	met, _ := createMetaData(name, toEntity, normalize, denormalize, empStorable, empNormalized)
 	return met
 }
 

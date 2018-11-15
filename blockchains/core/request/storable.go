@@ -7,7 +7,7 @@ type storableRequest struct {
 }
 
 func createStorableRequest(req Request) (*storableRequest, error) {
-	js, jsErr := cdc.MarshalJSON(req)
+	js, jsErr := cdc.MarshalJSON(req.New())
 	if jsErr != nil {
 		return nil, jsErr
 	}

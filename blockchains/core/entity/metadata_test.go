@@ -49,14 +49,14 @@ func TestMetaData_Success(t *testing.T) {
 	}
 
 	// execute, name too small, returns error:
-	_, validMetErr := createMetaData("s", toEntity, normalize, denormalize, empStorable)
+	_, validMetErr := createMetaData("s", toEntity, normalize, denormalize, empStorable, empStorable)
 	if validMetErr == nil {
 		t.Errorf("the returned error was expected to be valid, nil returned")
 		return
 	}
 
 	// execute:
-	met, metErr := createMetaData(name, toEntity, normalize, denormalize, empStorable)
+	met, metErr := createMetaData(name, toEntity, normalize, denormalize, empStorable, empStorable)
 	if metErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", metErr.Error())
 		return

@@ -41,13 +41,32 @@ type CreateServiceParams struct {
 	EntityRepository entity.Repository
 }
 
+// CreateParams represents the Create params
+type CreateParams struct {
+	ID                    *uuid.UUID
+	GazPricePerKb         int
+	MaxAmountOfValidators int
+	User                  user.User
+	Deposit               deposit.Deposit
+}
+
 // SDKFunc represents the Genesis SDK func
 var SDKFunc = struct {
+	Create               func(params CreateParams) Genesis
 	CreateRepository     func(params CreateRepositoryParams) Repository
 	CreateService        func(params CreateServiceParams) Service
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 }{
+	Create: func(params CreateParams) Genesis {
+		if params.ID == nil {
+			id := uuid.NewV4()
+			params.ID = &id
+		}
+
+		out := createGenesis(params.ID, params.GazPricePerKb, params.MaxAmountOfValidators, params.Deposit, params.User)
+		return out
+	},
 	CreateRepository: func(params CreateRepositoryParams) Repository {
 		met := createMetaData()
 		out := createRepository(params.EntityRepository, met)

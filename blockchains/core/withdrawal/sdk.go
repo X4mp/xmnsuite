@@ -26,7 +26,7 @@ type Normalized interface {
 type CreateParams struct {
 	ID     *uuid.UUID
 	From   wallet.Wallet
-	Tok    token.Token
+	Token  token.Token
 	Amount int
 }
 
@@ -37,7 +37,12 @@ var SDKFunc = struct {
 	CreateRepresentation func() entity.Representation
 }{
 	Create: func(params CreateParams) Withdrawal {
-		out := createWithdrawal(params.ID, params.From, params.Tok, params.Amount)
+		if params.ID == nil {
+			id := uuid.NewV4()
+			params.ID = &id
+		}
+
+		out := createWithdrawal(params.ID, params.From, params.Token, params.Amount)
 		return out
 	},
 	CreateMetaData: func() entity.MetaData {
