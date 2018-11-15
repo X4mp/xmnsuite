@@ -60,7 +60,7 @@ func createMetaData(reg Registry) entity.MetaData {
 				return nil, jsErr
 			}
 
-			return createRequestFromNormalized(ptr, reg)
+			return createRequestFromNormalized(ptr)
 
 		},
 		Normalize: func(ins entity.Entity) (interface{}, error) {
@@ -73,7 +73,7 @@ func createMetaData(reg Registry) entity.MetaData {
 		},
 		Denormalize: func(ins interface{}) (entity.Entity, error) {
 			if normalized, ok := ins.(*normalizedRequest); ok {
-				return createRequestFromNormalized(normalized, reg)
+				return createRequestFromNormalized(normalized)
 			}
 
 			return nil, errors.New("the given instance is not a valid normalized Request instance")

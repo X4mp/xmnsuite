@@ -13,6 +13,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/withdrawal"
 	"github.com/xmnservices/xmnsuite/crypto"
@@ -156,6 +157,12 @@ func TestSaveGenesis_savePledgeRequest_saveVotesOnRequest_Success(t *testing.T) 
 		NewEntity: pldge,
 	})
 
+	firstVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    pledgeRequest,
+		Voter:      fromUser,
+		IsApproved: true,
+	})
+
 	rootPath := filepath.Join("./test_files")
 	defer func() {
 		os.RemoveAll(rootPath)
@@ -175,6 +182,19 @@ func TestSaveGenesis_savePledgeRequest_saveVotesOnRequest_Success(t *testing.T) 
 	saveErr := reqService.Save(pledgeRequest, pledge.SDKFunc.CreateRepresentation())
 	if saveErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", saveErr.Error())
+		return
+	}
+
+	// create the vote service:
+	voteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
+		PK:     pk,
+		Client: client,
+	})
+
+	// save the vote:
+	firstSaveErr := voteService.Save(firstVote, pledge.SDKFunc.CreateRepresentation())
+	if firstSaveErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", firstSaveErr.Error())
 		return
 	}
 }

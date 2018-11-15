@@ -85,7 +85,23 @@ func createMetaData() entity.MetaData {
 			return fromStorableToEntity(ptr)
 
 		},
-		EmptyStorable: new(storableVote),
+		Normalize: func(ins entity.Entity) (interface{}, error) {
+			if vote, ok := ins.(Vote); ok {
+				return createNormalizedVote(vote)
+			}
+
+			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Vote instance", ins.ID().String())
+			return nil, errors.New(str)
+		},
+		Denormalize: func(ins interface{}) (entity.Entity, error) {
+			if normalized, ok := ins.(*normalizedVote); ok {
+				return createVoteFromNormalized(normalized)
+			}
+
+			return nil, errors.New("the given instance is not a valid normalized Vote instance")
+		},
+		EmptyStorable:   new(storableVote),
+		EmptyNormalized: new(normalizedVote),
 	})
 }
 

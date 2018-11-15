@@ -25,10 +25,11 @@ func createRequest(id *uuid.UUID, frm user.User, nw entity.Entity) Request {
 	return &out
 }
 
-func createRequestFromNormalized(normalized *normalizedRequest, reg Registry) (Request, error) {
+func createRequestFromNormalized(normalized *normalizedRequest) (Request, error) {
 	id, idErr := uuid.FromString(normalized.ID)
 	if idErr != nil {
-		return nil, idErr
+		str := fmt.Sprintf("the normalized ID (%s) is invalid: %s", normalized.ID, idErr.Error())
+		return nil, errors.New(str)
 	}
 
 	fromIns, fromInsErr := user.SDKFunc.CreateMetaData().Denormalize()(normalized.From)

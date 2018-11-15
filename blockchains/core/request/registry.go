@@ -30,20 +30,53 @@ func (app *registry) Register(metadata entity.MetaData) error {
 	return nil
 }
 
-// FromJSONToEntity converts JSON data to an entity instande
+// FromJSONToEntity converts JSON data to an entity instance
 func (app *registry) FromJSONToEntity(js []byte) (entity.Entity, error) {
-	for _, oneMetaData := range app.metadatas {
-		ptr := oneMetaData.CopyNormalized()
-		jsErr := cdc.UnmarshalJSON(js, ptr)
-		if jsErr == nil {
-			ins, insErr := oneMetaData.Denormalize()(ptr)
-			if insErr != nil {
-				return nil, insErr
-			}
 
-			return ins, nil
+	denormalize := func(js []byte, ptr interface{}, fn entity.Denormalize) (entity.Entity, error) {
+		jsErr := cdc.UnmarshalJSON(js, ptr)
+		if jsErr != nil {
+			return nil, jsErr
+		}
+
+		ins, insErr := fn(ptr)
+		if insErr != nil {
+			return nil, insErr
+		}
+
+		return ins, nil
+	}
+
+	for _, oneMetaData := range app.metadatas {
+		// try the normalized:
+		nIns, nInsErr := denormalize(js, oneMetaData.CopyNormalized(), oneMetaData.Denormalize())
+		if nInsErr == nil {
+			return nIns, nil
+		}
+
+		// try the storable:
+		sIns, sInsErr := denormalize(js, oneMetaData.CopyStorable(), oneMetaData.Denormalize())
+		if sInsErr == nil {
+			return sIns, nil
 		}
 	}
 
 	return nil, errors.New("the given JSON data does not match any registered entity")
+}
+
+// FromEntityToJSON converts an entity instance to JSON
+func (app *registry) FromEntityToJSON(ins entity.Entity) ([]byte, error) {
+	for _, oneMetaData := range app.metadatas {
+		normalized, normalizedErr := oneMetaData.Normalize()(ins)
+		if normalizedErr == nil {
+			js, jsErr := cdc.MarshalJSON(normalized)
+			if jsErr != nil {
+				return nil, jsErr
+			}
+
+			return js, nil
+		}
+	}
+
+	return nil, errors.New("the given entity data does not match any registered entity")
 }

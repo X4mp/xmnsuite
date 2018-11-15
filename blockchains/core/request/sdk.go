@@ -26,6 +26,7 @@ type Normalized interface {
 type Registry interface {
 	Register(metadata entity.MetaData) error
 	FromJSONToEntity(js []byte) (entity.Entity, error)
+	FromEntityToJSON(ins entity.Entity) ([]byte, error)
 }
 
 // Service represents an entity service

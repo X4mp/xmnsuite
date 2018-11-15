@@ -12,6 +12,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/token"
+	"github.com/xmnservices/xmnsuite/blockchains/core/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 	"github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
@@ -19,12 +20,21 @@ import (
 )
 
 type incomingVote struct {
-	IsApproved bool `json:"is_approved"`
+	ID         string `json:"id"`
+	IsApproved bool   `json:"is_approved"`
+}
+
+type incomingRequest struct {
+	ID         string `json:"id"`
+	WalletID   string `json:"wallet_id"`
+	EntityJSON []byte `json:"entity"`
 }
 
 type core20181108 struct {
 	genesisRepresentation  entity.Representation
 	walletRepresentation   entity.Representation
+	requestRepresentation  entity.Representation
+	voteRepresentation     entity.Representation
 	entityMetaDatas        map[string]entity.MetaData
 	entityRepresentations  map[string]entity.Representation
 	requestRepresentations map[string]entity.Representation
@@ -42,6 +52,8 @@ func createCore20181108() *core20181108 {
 	out := core20181108{
 		genesisRepresentation: genesis.SDKFunc.CreateRepresentation(),
 		walletRepresentation:  walletRepresentation,
+		requestRepresentation: request.SDKFunc.CreateRepresentation(),
+		voteRepresentation:    vote.SDKFunc.CreateRepresentation(),
 		entityMetaDatas: map[string]entity.MetaData{
 			"genesis": genesis.SDKFunc.CreateMetaData(),
 			"wallet":  walletRepresentation.MetaData(),
@@ -80,8 +92,8 @@ func create20181106(
 	store.Roles().EnableWriteAccess(routerRoleKey, "/genesis")
 	store.Roles().EnableWriteAccess(routerRoleKey, "/[a-z-]+")
 	store.Roles().EnableWriteAccess(routerRoleKey, "/[a-z-]+/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
-	store.Roles().EnableWriteAccess(routerRoleKey, "/requests/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[a-z-]+/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
-	store.Roles().EnableWriteAccess(routerRoleKey, "/requests/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[a-z-]+/vote/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
+	store.Roles().EnableWriteAccess(routerRoleKey, "/[a-z-]+/requests")
+	store.Roles().EnableWriteAccess(routerRoleKey, "/[a-z-]+/requests/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 
 	// create core:
 	core := createCore20181108()
@@ -370,7 +382,7 @@ func (app *core20181108) deleteEntityByID() routers.CreateRouteParams {
 
 func (app *core20181108) saveRequest() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
-		Pattern: "/requests/<walletid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>/<name|[a-z-]+>/<requestid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
+		Pattern: "/<name|[a-z-]+>/requests",
 		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
 
 			// create the dependencies:
@@ -383,10 +395,17 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 				return nil, errors.New(str)
 			}
 
+			// convert the data to the incoming request:
+			ptr := new(incomingRequest)
+			jsErr := cdc.UnmarshalJSON(data, ptr)
+			if jsErr != nil {
+				return nil, jsErr
+			}
+
 			// parse the walletID:
-			walletID, walletIDErr := uuid.FromString(params["walletid"])
+			walletID, walletIDErr := uuid.FromString(ptr.WalletID)
 			if walletIDErr != nil {
-				str := fmt.Sprintf("the given walletID (%s) is invalid: %s", params["walletid"], walletIDErr.Error())
+				str := fmt.Sprintf("the given walletID (%s) is invalid: %s", ptr.WalletID, walletIDErr.Error())
 				return nil, errors.New(str)
 			}
 
@@ -397,9 +416,9 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 			}
 
 			// parse the requestID:
-			reqID, reqIDErr := uuid.FromString(params["requestid"])
+			reqID, reqIDErr := uuid.FromString(ptr.ID)
 			if reqIDErr != nil {
-				str := fmt.Sprintf("the given requestID (%s) is invalid: %s", params["requestid"], reqIDErr.Error())
+				str := fmt.Sprintf("the given requestID (%s) is invalid: %s", ptr.ID, reqIDErr.Error())
 				return nil, errors.New(str)
 			}
 
@@ -415,7 +434,7 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 					// retrieve the entity representation:
 					if representation, ok := app.requestRepresentations[name]; ok {
 						// converts the data to an entity:
-						ins, insErr := representation.MetaData().ToEntity()(dep.entityRepository, data)
+						ins, insErr := representation.MetaData().ToEntity()(dep.entityRepository, ptr.EntityJSON)
 						if insErr != nil {
 							return nil, insErr
 						}
@@ -476,10 +495,10 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 
 func (app *core20181108) saveRequestVote() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
-		Pattern: "/requests/<requestid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>/vote/<voteid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
+		Pattern: "/<name|[a-z-]+>/requests/<requestid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
 		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
 			// create the dependencies:
-			/*dep := createDependencies(store)
+			dep := createDependencies(store)
 
 			// retrieve the genesis:
 			gen, genErr := dep.genesisRepository.Retrieve()
@@ -488,106 +507,101 @@ func (app *core20181108) saveRequestVote() routers.CreateRouteParams {
 				return nil, errors.New(str)
 			}
 
-			// retrieve the from user:
-			fromUser, fromUserErr := dep.userRepository.RetrieveByPubKey(from)
-			if fromUserErr != nil {
-				str := fmt.Sprintf("the from user (pubKey: %s) could not be found", from.String())
+			// parse the requestID:
+			requestID, requestIDErr := uuid.FromString(params["requestid"])
+			if requestIDErr != nil {
+				str := fmt.Sprintf("the given requestID (%s) is invalid: %s", params["requestid"], requestIDErr.Error())
 				return nil, errors.New(str)
 			}
 
-			// is approved:
-			ptr := new(incomingVote)
-			jsErr := cdc.UnmarshalJSON(data, ptr)
-			if jsErr != nil {
-				return nil, jsErr
+			// retrieve the request:
+			reqIns, reqInsErr := dep.entityRepository.RetrieveByID(app.requestRepresentation.MetaData(), &requestID)
+			if reqInsErr != nil {
+				return nil, reqInsErr
 			}
 
-			// retrieve the name:
-			if name, ok := params["name"]; ok {
-				// retireve the representation:
-				if representation, ok := app.requestRepresentations[name]; ok {
-					// retrieve the requestID:
-					if requestIDAsString, ok := params["id"]; ok {
-						requestID, requestIDErr := uuid.FromString(requestIDAsString)
-						if requestIDErr != nil {
-							str := fmt.Sprintf("the given ID (%s) is invalid: %s", params["id"], requestIDErr.Error())
+			if req, ok := reqIns.(request.Request); ok {
+				// convert the data to the incoming vote:
+				ptr := new(incomingVote)
+				jsErr := cdc.UnmarshalJSON(data, ptr)
+				if jsErr != nil {
+					return nil, jsErr
+				}
+
+				// retrieve the name:
+				if name, ok := params["name"]; ok {
+					// retrieve the representation:
+					if representation, ok := app.requestRepresentations[name]; ok {
+
+						// retrieve the voter:
+						voter, voterErr := dep.userRepository.RetrieveByPubKeyAndWallet(from, req.From().Wallet())
+						if voterErr != nil {
+							return nil, voterErr
+						}
+
+						voteID, voteIDErr := uuid.FromString(ptr.ID)
+						if voteIDErr != nil {
+							str := fmt.Sprintf("the given voteID (%s) is invalid: %s", ptr.ID, voteIDErr.Error())
 							return nil, errors.New(str)
 						}
 
-						if voteIDAsString, ok := params["voteID"]; ok {
-							voteID, voteIDErr := uuid.FromString(voteIDAsString)
-							if voteIDErr != nil {
-								str := fmt.Sprintf("the given voteID (%s) is invalid: %s", params["id"], voteIDErr.Error())
-								return nil, errors.New(str)
-							}
+						// create the vote:
+						voteIns := vote.SDKFunc.Create(vote.CreateParams{
+							ID:         &voteID,
+							Request:    req,
+							Voter:      voter,
+							IsApproved: ptr.IsApproved,
+						})
 
-							// retrieve the request:
-							req, reqErr := dep.entityRepository.RetrieveByID(request.SDKFunc.CreateMetaData(), &requestID)
+						// save the vote:
+						voteService := vote.SDKFunc.CreateService(vote.CreateServiceParams{
+							EntityRepository: dep.entityRepository,
+							EntityService:    dep.entityService,
+						})
 
-							if reqErr != nil {
-								return nil, reqErr
-							}
-
-							// create the vote:
-							voteIns := vote.SDKFunc.Create(vote.CreateParams{
-								ID:         &voteID,
-								Request:    req.(request.Request),
-								Voter:      fromUser,
-								IsApproved: ptr.IsApproved,
-							})
-
-							// save the vote:
-							voteService := vote.SDKFunc.CreateService(vote.CreateServiceParams{
-								EntityRepository:        dep.entityRepository,
-								EntityService:           dep.entityService,
-								RequestRepresentation:   request.SDKFunc.CreateRepresentation(),
-								NewEntityRepresentation: representation,
-							})
-
-							saveErr := voteService.Save(voteIns)
-							if saveErr != nil {
-								return nil, saveErr
-							}
-
-							// convert to json:
-							storable, storableErr := representation.ToStorable()(voteIns)
-							if storableErr != nil {
-								return nil, storableErr
-							}
-
-							jsData, jsDataErr := cdc.MarshalJSON(storable)
-							if jsDataErr != nil {
-								return nil, jsDataErr
-							}
-
-							// create the gaz price:
-							gazUsed := int(unsafe.Sizeof(jsData)) * gen.GazPricePerKb()
-
-							// return the response:
-							resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
-								Code:    routers.IsSuccessful,
-								Log:     "success",
-								GazUsed: int64(gazUsed),
-								Tags: map[string][]byte{
-									path: jsData,
-								},
-							})
-
-							return resp, nil
+						saveErr := voteService.Save(voteIns, representation)
+						if saveErr != nil {
+							return nil, saveErr
 						}
 
-						return nil, errors.New("the voteID is mandatory")
+						// convert to json:
+						storable, storableErr := app.voteRepresentation.ToStorable()(voteIns)
+						if storableErr != nil {
+							return nil, storableErr
+						}
+
+						jsData, jsDataErr := cdc.MarshalJSON(storable)
+						if jsDataErr != nil {
+							return nil, jsDataErr
+						}
+
+						// create the gaz price:
+						gazUsed := int(unsafe.Sizeof(jsData)) * gen.GazPricePerKb()
+
+						// return the response:
+						resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
+							Code:    routers.IsSuccessful,
+							Log:     "success",
+							GazUsed: int64(gazUsed),
+							Tags: map[string][]byte{
+								path: jsData,
+							},
+						})
+
+						return resp, nil
+
 					}
 
-					return nil, errors.New("the requestID is mandatory")
+					str := fmt.Sprintf("the given entity name (%s) is not supported", name)
+					return nil, errors.New(str)
 				}
 
-				str := fmt.Sprintf("the given entity name (%s) is not supported", name)
-				return nil, errors.New(str)
+				return nil, errors.New("an entity name must be provided")
 			}
 
-			return nil, errors.New("an entity name must be provided")*/
-			return nil, nil
+			str := fmt.Sprintf("the entity (ID: %s) was expected to be a request instance", reqIns.ID().String())
+			return nil, errors.New(str)
+
 		},
 	}
 }

@@ -65,7 +65,7 @@ var SDKFunc = struct {
 					}, nil
 				}
 
-				str := fmt.Sprintf("the given entity (ID: %s) is not a valid Deposit instance", ins.ID().String())
+				str := fmt.Sprintf("the given entity (ID: %s) is not a valid Pledge instance", ins.ID().String())
 				return nil, errors.New(str)
 			},
 			Sync: func(rep entity.Repository, service entity.Service, ins entity.Entity) error {

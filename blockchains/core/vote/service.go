@@ -9,11 +9,10 @@ import (
 )
 
 type voteService struct {
-	repository              entity.Repository
-	service                 entity.Service
-	voteRepresentation      entity.Representation
-	requestRepresentation   entity.Representation
-	newEntityRepresentation entity.Representation
+	repository            entity.Repository
+	service               entity.Service
+	voteRepresentation    entity.Representation
+	requestRepresentation entity.Representation
 }
 
 func createVoteService(
@@ -21,21 +20,19 @@ func createVoteService(
 	service entity.Service,
 	voteRepresentation entity.Representation,
 	requestRepresentation entity.Representation,
-	newEntityRepresentation entity.Representation,
 ) Service {
 	out := voteService{
-		repository:              repository,
-		service:                 service,
-		voteRepresentation:      voteRepresentation,
-		requestRepresentation:   requestRepresentation,
-		newEntityRepresentation: newEntityRepresentation,
+		repository:            repository,
+		service:               service,
+		voteRepresentation:    voteRepresentation,
+		requestRepresentation: requestRepresentation,
 	}
 
 	return &out
 }
 
 // Save saves a Vote instance
-func (app *voteService) Save(vote Vote) error {
+func (app *voteService) Save(vote Vote, rep entity.Representation) error {
 	// saves the entity:
 	saveErr := app.service.Save(vote, app.voteRepresentation)
 	if saveErr != nil {
@@ -78,7 +75,7 @@ func (app *voteService) Save(vote Vote) error {
 	if approved >= neededConcensus {
 		// insert the new entity:
 		newEntity := req.New()
-		saveNewErr := app.service.Save(newEntity, app.newEntityRepresentation)
+		saveNewErr := app.service.Save(newEntity, rep)
 		if saveNewErr != nil {
 			str := fmt.Sprintf("there was an error while saving the new Entity instance (ID: %s): %s", newEntity.ID().String(), saveNewErr.Error())
 			return errors.New(str)

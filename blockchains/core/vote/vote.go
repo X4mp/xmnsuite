@@ -36,6 +36,35 @@ func createVote(id *uuid.UUID, req request.Request, votr user.User, isApproved b
 	return &out, nil
 }
 
+func createVoteFromNormalized(normalized *normalizedVote) (Vote, error) {
+	id, idErr := uuid.FromString(normalized.ID)
+	if idErr != nil {
+		return nil, idErr
+	}
+
+	reqIns, reqInsErr := request.SDKFunc.CreateMetaData().Denormalize()(normalized.Request)
+	if reqInsErr != nil {
+		return nil, reqInsErr
+	}
+
+	voterIns, voterInsErr := user.SDKFunc.CreateMetaData().Denormalize()(normalized.Voter)
+	if voterInsErr != nil {
+		return nil, voterInsErr
+	}
+
+	if req, ok := reqIns.(request.Request); ok {
+		if voter, ok := voterIns.(user.User); ok {
+			return createVote(&id, req, voter, normalized.IsApproved)
+		}
+
+		str := fmt.Sprintf("the entity (ID: %s) is not a valid User instance", voterIns.ID().String())
+		return nil, errors.New(str)
+	}
+
+	str := fmt.Sprintf("the entity (ID: %s) is not a valid Request instance", reqIns.ID().String())
+	return nil, errors.New(str)
+}
+
 // ID returns the ID
 func (obj *vote) ID() *uuid.UUID {
 	return obj.UUID

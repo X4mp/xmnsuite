@@ -11,7 +11,7 @@ type normalizedRequest struct {
 }
 
 func createNormalizedRequest(req Request) (*normalizedRequest, error) {
-	js, jsErr := cdc.MarshalJSON(req.New())
+	js, jsErr := reg.FromEntityToJSON(req.New())
 	if jsErr != nil {
 		return nil, jsErr
 	}

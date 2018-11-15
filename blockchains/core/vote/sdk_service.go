@@ -1,4 +1,4 @@
-package request
+package vote
 
 import (
 	"errors"
@@ -9,6 +9,11 @@ import (
 	"github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/routers"
 )
+
+type outgoingVote struct {
+	ID         string `json:"id"`
+	IsApproved bool   `json:"is_approved"`
+}
 
 type sdkService struct {
 	pk     crypto.PrivateKey
@@ -24,19 +29,21 @@ func createSDKService(pk crypto.PrivateKey, client applications.Client) Service 
 }
 
 // Save saves a request instance to the service
-func (app *sdkService) Save(req Request, rep entity.Representation) error {
-	normalized, normalizedErr := rep.MetaData().Normalize()(req.New())
-	if normalizedErr != nil {
-		return normalizedErr
+func (app *sdkService) Save(ins Vote, rep entity.Representation) error {
+	// create the vote:
+	outVote := outgoingVote{
+		ID:         ins.ID().String(),
+		IsApproved: ins.IsApproved(),
 	}
 
-	js, jsErr := cdc.MarshalJSON(normalized)
+	// marshals to JSON:
+	js, jsErr := cdc.MarshalJSON(&outVote)
 	if jsErr != nil {
 		return jsErr
 	}
 
 	// create the resource:
-	route := fmt.Sprintf("/requests/%s/%s/%s", req.From().Wallet().ID().String(), rep.MetaData().Keyname(), req.ID().String())
+	route := fmt.Sprintf("/%s/requests/%s", rep.MetaData().Keyname(), ins.Request().ID().String())
 	firstRes := routers.SDKFunc.CreateResource(routers.CreateResourceParams{
 		ResPtr: routers.SDKFunc.CreateResourcePointer(routers.CreateResourcePointerParams{
 			From: app.pk.PublicKey(),
