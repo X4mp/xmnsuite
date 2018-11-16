@@ -14,7 +14,6 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/vote"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
 	"github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
 	"github.com/xmnservices/xmnsuite/routers"
@@ -47,7 +46,6 @@ func createCore20181108() *core20181108 {
 	request.SDKFunc.Register(pledge.SDKFunc.CreateMetaData())
 
 	walletRepresentation := wallet.SDKFunc.CreateRepresentation()
-	tokenRepresentation := token.SDKFunc.CreateRepresentation()
 	pledgeRepresentation := pledge.SDKFunc.CreateRepresentation()
 	validatorRepresentation := validator.SDKFunc.CreateRepresentation()
 
@@ -59,12 +57,10 @@ func createCore20181108() *core20181108 {
 		entityMetaDatas: map[string]entity.MetaData{
 			"genesis":   genesis.SDKFunc.CreateMetaData(),
 			"wallet":    walletRepresentation.MetaData(),
-			"token":     tokenRepresentation.MetaData(),
 			"validator": validatorRepresentation.MetaData(),
 		},
 		entityRepresentations: map[string]entity.Representation{
 			"wallet":    walletRepresentation,
-			"token":     tokenRepresentation,
 			"validator": validatorRepresentation,
 		},
 		requestRepresentations: map[string]entity.Representation{

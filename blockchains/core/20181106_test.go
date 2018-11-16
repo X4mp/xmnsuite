@@ -49,13 +49,6 @@ func TestSaveGenesis_thenCRUD_Success(t *testing.T) {
 				wallet.CompareWalletsForTests(t, first.(wallet.Wallet), second.(wallet.Wallet))
 			},
 		},
-		{
-			Ins:            token.CreateTokenForTests(),
-			Representation: token.SDKFunc.CreateRepresentation(),
-			Compare: func(t *testing.T, first entity.Entity, second entity.Entity) {
-				token.CompareTokensForTests(t, first.(token.Token), second.(token.Token))
-			},
-		},
 	}
 
 	genIns := genesis.CreateGenesisForTests()
