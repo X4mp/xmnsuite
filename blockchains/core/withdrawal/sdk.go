@@ -22,6 +22,11 @@ type Withdrawal interface {
 type Normalized interface {
 }
 
+// Repository represents the withdrawal repository
+type Repository interface {
+	RetrieveSetByFromWalletAndToken(wal wallet.Wallet, tok token.Token) (entity.PartialSet, error)
+}
+
 // CreateParams represents the Create params
 type CreateParams struct {
 	ID     *uuid.UUID
@@ -65,8 +70,8 @@ var SDKFunc = struct {
 					base := retrieveAllWithdrawalsKeyname()
 					return []string{
 						base,
-						fmt.Sprintf("%s:by_from_wallet_id:%s", base, withdrawal.From().ID().String()),
-						fmt.Sprintf("%s:by_token_id:%s", base, withdrawal.Token().ID().String()),
+						retrieveWithdrawalsByTokenIDKeyname(withdrawal.Token().ID()),
+						retrieveWithdrawalsByToWalletIDKeyname(withdrawal.From().ID()),
 					}, nil
 				}
 

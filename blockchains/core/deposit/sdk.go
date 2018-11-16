@@ -22,6 +22,11 @@ type Deposit interface {
 type Normalized interface {
 }
 
+// Repository represents the deposit Repository
+type Repository interface {
+	RetrieveSetByToWalletAndToken(wal wallet.Wallet, tok token.Token) (entity.PartialSet, error)
+}
+
 // CreateParams represents the Create params
 type CreateParams struct {
 	ID     *uuid.UUID
