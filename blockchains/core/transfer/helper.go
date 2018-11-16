@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/withdrawal"
+	"github.com/xmnservices/xmnsuite/blockchains/core/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/crypto"
+	"github.com/xmnservices/xmnsuite/blockchains/core/withdrawal"
 )
 
 func retrieveAllTransfersKeyname() string {
@@ -29,20 +29,33 @@ func createMetaData() entity.MetaData {
 					return nil, withdrawalIDErr
 				}
 
-				pubkey := crypto.SDKFunc.CreatePubKey(crypto.CreatePubKeyParams{
-					PubKeyAsString: storable.PubKey,
-				})
+				depositID, depositIDErr := uuid.FromString(storable.DepositID)
+				if depositIDErr != nil {
+					return nil, depositIDErr
+				}
 
-				// retrieve the transfer:
+				// retrieve the withdrawal:
 				withdrawalMetaData := withdrawal.SDKFunc.CreateMetaData()
 				withdrawalIns, withdrawalInsErr := rep.RetrieveByID(withdrawalMetaData, &withdrawalID)
 				if withdrawalInsErr != nil {
 					return nil, withdrawalInsErr
 				}
 
+				// retrieve the deposit:
+				depositMetaData := deposit.SDKFunc.CreateMetaData()
+				depositIns, depositInsErr := rep.RetrieveByID(depositMetaData, &depositID)
+				if depositInsErr != nil {
+					return nil, depositInsErr
+				}
+
 				if withdrawl, ok := withdrawalIns.(withdrawal.Withdrawal); ok {
-					out := createTransfer(&id, withdrawl, storable.Content, pubkey)
-					return out, nil
+					if dep, ok := depositIns.(deposit.Deposit); ok {
+						out := createTransfer(&id, withdrawl, dep)
+						return out, nil
+					}
+
+					str := fmt.Sprintf("the entity (ID: %s) is not a valid Deposit instance", depositID.String())
+					return nil, errors.New(str)
 				}
 
 				str := fmt.Sprintf("the entity (ID: %s) is not a valid Withdrawal instance", withdrawalID.String())

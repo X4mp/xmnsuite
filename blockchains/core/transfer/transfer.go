@@ -2,23 +2,21 @@ package transfer
 
 import (
 	uuid "github.com/satori/go.uuid"
+	"github.com/xmnservices/xmnsuite/blockchains/core/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/withdrawal"
-	"github.com/xmnservices/xmnsuite/crypto"
 )
 
 type transfer struct {
 	UUID   *uuid.UUID            `json:"id"`
 	Withdr withdrawal.Withdrawal `json:"withdrawal"`
-	Cnt    string                `json:"content"`
-	PKey   crypto.PublicKey      `json:"public_key"`
+	Dep    deposit.Deposit       `json:"deposit"`
 }
 
-func createTransfer(id *uuid.UUID, withdrawal withdrawal.Withdrawal, content string, pubKey crypto.PublicKey) Transfer {
+func createTransfer(id *uuid.UUID, withdrawal withdrawal.Withdrawal, dep deposit.Deposit) Transfer {
 	out := transfer{
 		UUID:   id,
 		Withdr: withdrawal,
-		Cnt:    content,
-		PKey:   pubKey,
+		Dep:    dep,
 	}
 
 	return &out
@@ -34,12 +32,7 @@ func (obj *transfer) Withdrawal() withdrawal.Withdrawal {
 	return obj.Withdr
 }
 
-// Content returns the content
-func (obj *transfer) Content() string {
-	return obj.Cnt
-}
-
-// PubKey returns the public key
-func (obj *transfer) PubKey() crypto.PublicKey {
-	return obj.PKey
+// Deposit returns the deposit
+func (obj *transfer) Deposit() deposit.Deposit {
+	return nil
 }

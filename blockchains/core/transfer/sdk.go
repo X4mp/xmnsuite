@@ -5,17 +5,16 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
+	"github.com/xmnservices/xmnsuite/blockchains/core/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/withdrawal"
-	"github.com/xmnservices/xmnsuite/crypto"
 )
 
 // Transfer represents a transfer of token that can be claimed
 type Transfer interface {
 	ID() *uuid.UUID
 	Withdrawal() withdrawal.Withdrawal
-	Content() string
-	PubKey() crypto.PublicKey
+	Deposit() deposit.Deposit
 }
 
 // SDKFunc represents the Transfer SDK func
