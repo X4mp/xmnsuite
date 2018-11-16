@@ -104,8 +104,7 @@ func (app *repository) RetrieveSetByIntersectKeynames(met MetaData, keynames []s
 	destination := fmt.Sprintf("inter:%s", strings.Join(keynames, "|"))
 	amountInDest := app.store.Sets().InterStore(destination, keynames...)
 	if amountInDest <= 0 {
-		str := fmt.Sprintf("there is no elements that intersect the given keynames (%s)", strings.Join(keynames, ","))
-		return nil, errors.New(str)
+		return createEntityPartialSet([]Entity{}, 0, 0)
 	}
 
 	// retrieve set by keyname:

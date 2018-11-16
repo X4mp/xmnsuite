@@ -23,7 +23,7 @@ func createRepository(entityRepository entity.Repository, depositMetaData entity
 // RetrieveSetByFromWalletAndToken retrieves a withdrawal partial set related to a wallet and token:
 func (app *repository) RetrieveSetByFromWalletAndToken(wal wallet.Wallet, tok token.Token) (entity.PartialSet, error) {
 	keynames := []string{
-		retrieveWithdrawalsByToWalletIDKeyname(wal.ID()),
+		retrieveWithdrawalsByFromWalletIDKeyname(wal.ID()),
 		retrieveWithdrawalsByTokenIDKeyname(tok.ID()),
 	}
 

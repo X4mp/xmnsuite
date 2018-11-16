@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/withdrawal"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/withdrawal"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 
@@ -16,11 +16,6 @@ type Transfer interface {
 	Withdrawal() withdrawal.Withdrawal
 	Content() string
 	PubKey() crypto.PublicKey
-}
-
-// Service represents a transfer service
-type Service interface {
-	Save(ins Transfer) error
 }
 
 // SDKFunc represents the Transfer SDK func

@@ -34,9 +34,6 @@ func TestSaveGenesis_thenRetrieveByID_Success(t *testing.T) {
 }
 
 func TestSaveGenesis_thenCRUD_Success(t *testing.T) {
-
-	pldge := pledge.CreatePledgeForTests()
-
 	// variables:
 	testEntities := []struct {
 		Ins            entity.Entity
@@ -57,17 +54,6 @@ func TestSaveGenesis_thenCRUD_Success(t *testing.T) {
 			Representation: token.SDKFunc.CreateRepresentation(),
 			Compare: func(t *testing.T, first entity.Entity, second entity.Entity) {
 				token.CompareTokensForTests(t, first.(token.Token), second.(token.Token))
-			},
-		},
-		{
-			Ins:            pldge,
-			Representation: pledge.SDKFunc.CreateRepresentation(),
-			Prepare: func(repository entity.Repository, service entity.Service) {
-				service.Save(pldge.From().From(), wallet.SDKFunc.CreateRepresentation())
-				service.Save(pldge.From().Token(), token.SDKFunc.CreateRepresentation())
-			},
-			Compare: func(t *testing.T, first entity.Entity, second entity.Entity) {
-				pledge.ComparePledgesForTests(t, first.(pledge.Pledge), second.(pledge.Pledge))
 			},
 		},
 	}
@@ -143,9 +129,7 @@ func TestSaveGenesis_savePledgeRequest_saveVotesOnRequest_Success(t *testing.T) 
 
 	pldge := pledge.SDKFunc.Create(pledge.CreateParams{
 		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
-			From: wallet.SDKFunc.Create(wallet.CreateParams{
-				ConcensusNeeded: rand.Int() % 30,
-			}),
+			From:   fromWallet,
 			Token:  tok,
 			Amount: pledgeAmount,
 		}),

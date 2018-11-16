@@ -8,6 +8,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/user"
+	"github.com/xmnservices/xmnsuite/datastore"
 )
 
 func keyname() string {
@@ -122,13 +123,17 @@ func representation() entity.Representation {
 				keyname(),
 			}, nil
 		},
-		Sync: func(rep entity.Repository, service entity.Service, ins entity.Entity) error {
+		Sync: func(ds datastore.DataStore, ins entity.Entity) error {
 			if gen, ok := ins.(Genesis); ok {
+
+				// create the repository and service:
+				repository := entity.SDKFunc.CreateRepository(ds)
+				service := entity.SDKFunc.CreateService(ds)
 
 				// deposit:
 				dep := gen.Deposit()
 				depRepresentation := deposit.SDKFunc.CreateRepresentation()
-				_, retDepErr := rep.RetrieveByID(depRepresentation.MetaData(), dep.ID())
+				_, retDepErr := repository.RetrieveByID(depRepresentation.MetaData(), dep.ID())
 				if retDepErr == nil {
 					str := fmt.Sprintf("the Genesis instance contains a Deposit instance (ID: %s) that is already saved", dep.ID().String())
 					return errors.New(str)
@@ -142,7 +147,7 @@ func representation() entity.Representation {
 				// user:
 				usr := gen.User()
 				usrRepresentation := user.SDKFunc.CreateRepresentation()
-				_, retUsrErr := rep.RetrieveByID(usrRepresentation.MetaData(), usr.ID())
+				_, retUsrErr := repository.RetrieveByID(usrRepresentation.MetaData(), usr.ID())
 				if retUsrErr == nil {
 					str := fmt.Sprintf("the Genesis instance contains a User instance (ID: %s) that is already saved", usr.ID().String())
 					return errors.New(str)

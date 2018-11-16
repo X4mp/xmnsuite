@@ -58,12 +58,10 @@ func createCore20181108() *core20181108 {
 			"genesis": genesis.SDKFunc.CreateMetaData(),
 			"wallet":  walletRepresentation.MetaData(),
 			"token":   tokenRepresentation.MetaData(),
-			"pledge":  pledgeRepresentation.MetaData(),
 		},
 		entityRepresentations: map[string]entity.Representation{
 			"wallet": walletRepresentation,
 			"token":  tokenRepresentation,
-			"pledge": pledgeRepresentation,
 		},
 		requestRepresentations: map[string]entity.Representation{
 			"pledge": pledgeRepresentation,

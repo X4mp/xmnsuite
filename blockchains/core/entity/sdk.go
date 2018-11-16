@@ -12,13 +12,13 @@ import (
 type ToStorable func(ins Entity) (interface{}, error)
 
 // ToEntity represents the ToEntity func type
-type ToEntity func(rep Repository, data interface{}) (Entity, error)
+type ToEntity func(repository Repository, data interface{}) (Entity, error)
 
 // Keynames returns the keynames related to the entity
 type Keynames func(ins Entity) ([]string, error)
 
 // Sync syncs the sub entities with the database.  Can be used to store the sub entities in the database, before storing the current entity
-type Sync func(rep Repository, service Service, ins Entity) error
+type Sync func(ds datastore.DataStore, ins Entity) error
 
 // Normalize normalized an entity
 type Normalize func(ins Entity) (interface{}, error)
@@ -151,22 +151,11 @@ var SDKFunc = struct {
 		return met
 	},
 	CreateRepresentation: func(params CreateRepresentationParams) Representation {
-		if params.Keynames != nil && params.Sync != nil {
-			out := createRepresentationWithKeynamesAndSync(params.Met, params.ToStorable, params.Keynames, params.Sync)
-			return out
+		out, outErr := createRepresentation(params.Met, params.ToStorable, params.Keynames, params.Sync)
+		if outErr != nil {
+			panic(outErr)
 		}
 
-		if params.Keynames != nil {
-			out := createRepresentationWithKeynames(params.Met, params.ToStorable, params.Keynames)
-			return out
-		}
-
-		if params.Sync != nil {
-			out := createRepresentationWithSync(params.Met, params.ToStorable, params.Sync)
-			return out
-		}
-
-		out := createRepresentation(params.Met, params.ToStorable)
 		return out
 	},
 	CreateRepository: func(ds datastore.DataStore) Repository {

@@ -1,5 +1,7 @@
 package entity
 
+import "errors"
+
 type representation struct {
 	met      MetaData
 	keynames Keynames
@@ -7,19 +9,16 @@ type representation struct {
 	sync     Sync
 }
 
-func createRepresentation(met MetaData, toData ToStorable) Representation {
-	return createRepresentationWithKeynamesAndSync(met, toData, nil, nil)
-}
+func createRepresentation(met MetaData, toData ToStorable, keynames Keynames, sync Sync) (Representation, error) {
 
-func createRepresentationWithKeynames(met MetaData, toData ToStorable, keynames Keynames) Representation {
-	return createRepresentationWithKeynamesAndSync(met, toData, keynames, nil)
-}
+	if met == nil {
+		return nil, errors.New("the metadata is mandatory in order to create a representation instance")
+	}
 
-func createRepresentationWithSync(met MetaData, toData ToStorable, sync Sync) Representation {
-	return createRepresentationWithKeynamesAndSync(met, toData, nil, sync)
-}
+	if toData == nil {
+		return nil, errors.New("the toData is mandatory in order to create a representation instance")
+	}
 
-func createRepresentationWithKeynamesAndSync(met MetaData, toData ToStorable, keynames Keynames, sync Sync) Representation {
 	out := representation{
 		met:      met,
 		keynames: keynames,
@@ -27,7 +26,7 @@ func createRepresentationWithKeynamesAndSync(met MetaData, toData ToStorable, ke
 		sync:     sync,
 	}
 
-	return &out
+	return &out, nil
 }
 
 // MetaData returns the MetaData instance

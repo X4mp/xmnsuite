@@ -70,6 +70,7 @@ var SDKFunc = struct {
 			Keynames: func(ins entity.Entity) ([]string, error) {
 				if deposit, ok := ins.(Deposit); ok {
 					base := retrieveAllDepositsKeyname()
+
 					return []string{
 						base,
 						retrieveDepositsByToWalletIDKeyname(deposit.To().ID()),
@@ -81,7 +82,11 @@ var SDKFunc = struct {
 				return nil, errors.New(str)
 
 			},
-			Sync: func(rep entity.Repository, service entity.Service, ins entity.Entity) error {
+			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+
+				// create the entity repository and service:
+				repository := entity.SDKFunc.CreateRepository(ds)
+				service := entity.SDKFunc.CreateService(ds)
 
 				walletRepresentation := wallet.SDKFunc.CreateRepresentation()
 				tokRepresentation := token.SDKFunc.CreateRepresentation()
@@ -89,7 +94,7 @@ var SDKFunc = struct {
 				if deposit, ok := ins.(Deposit); ok {
 					// try to retrieve the wallet:
 					toWallet := deposit.To()
-					_, retToWalletErr := rep.RetrieveByID(walletRepresentation.MetaData(), toWallet.ID())
+					_, retToWalletErr := repository.RetrieveByID(walletRepresentation.MetaData(), toWallet.ID())
 					if retToWalletErr != nil {
 						// save the wallet:
 						saveErr := service.Save(toWallet, walletRepresentation)
@@ -100,7 +105,7 @@ var SDKFunc = struct {
 
 					// try to retrieve the token:
 					tok := deposit.Token()
-					_, retTokErr := rep.RetrieveByID(tokRepresentation.MetaData(), tok.ID())
+					_, retTokErr := repository.RetrieveByID(tokRepresentation.MetaData(), tok.ID())
 					if retTokErr != nil {
 						// save the token:
 						saveErr := service.Save(tok, tokRepresentation)

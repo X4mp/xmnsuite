@@ -8,6 +8,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/withdrawal"
+	"github.com/xmnservices/xmnsuite/datastore"
 )
 
 // Pledge represents a pledge
@@ -68,14 +69,19 @@ var SDKFunc = struct {
 				str := fmt.Sprintf("the given entity (ID: %s) is not a valid Pledge instance", ins.ID().String())
 				return nil, errors.New(str)
 			},
-			Sync: func(rep entity.Repository, service entity.Service, ins entity.Entity) error {
+			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+				// create the repository and service:
+				repository := entity.SDKFunc.CreateRepository(ds)
+				service := entity.SDKFunc.CreateService(ds)
+
+				// create the representations:
 				withdrawalRepresentation := withdrawal.SDKFunc.CreateRepresentation()
 				walletRepresentation := wallet.SDKFunc.CreateRepresentation()
 
 				if pledge, ok := ins.(Pledge); ok {
 					// try to retrieve the withdrawal, send an error if it exists:
 					from := pledge.From()
-					_, retFromErr := rep.RetrieveByID(withdrawalRepresentation.MetaData(), from.ID())
+					_, retFromErr := repository.RetrieveByID(withdrawalRepresentation.MetaData(), from.ID())
 					if retFromErr == nil {
 						str := fmt.Sprintf("the Pledge instance (ID: %s) contains a Withdrawal instance that already exists", from.ID().String())
 						return errors.New(str)
@@ -89,7 +95,7 @@ var SDKFunc = struct {
 
 					// try to retrieve the wallet:
 					to := pledge.To()
-					_, retToErr := rep.RetrieveByID(walletRepresentation.MetaData(), to.ID())
+					_, retToErr := repository.RetrieveByID(walletRepresentation.MetaData(), to.ID())
 					if retToErr != nil {
 						// save the wallet:
 						saveErr := service.Save(to, walletRepresentation)

@@ -19,7 +19,7 @@ func retrieveWithdrawalsByTokenIDKeyname(tokenID *uuid.UUID) string {
 	return fmt.Sprintf("%s:by_token_id:%s", base, tokenID.String())
 }
 
-func retrieveWithdrawalsByToWalletIDKeyname(toWalletID *uuid.UUID) string {
+func retrieveWithdrawalsByFromWalletIDKeyname(toWalletID *uuid.UUID) string {
 	base := retrieveAllWithdrawalsKeyname()
 	return fmt.Sprintf("%s:by_from_wallet_id:%s", base, toWalletID.String())
 }
