@@ -8,6 +8,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 	"github.com/xmnservices/xmnsuite/crypto"
+	"github.com/xmnservices/xmnsuite/datastore"
 )
 
 // User represents a user
@@ -27,11 +28,6 @@ type Repository interface {
 	RetrieveByPubKeyAndWallet(pubKey crypto.PublicKey, wal wallet.Wallet) (User, error)
 }
 
-// CreateRepositoryParams represents the CreateRepository params
-type CreateRepositoryParams struct {
-	EntityRepository entity.Repository
-}
-
 // CreateParams represents the Create params
 type CreateParams struct {
 	ID     *uuid.UUID
@@ -43,7 +39,7 @@ type CreateParams struct {
 // SDKFunc represents the User SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) User
-	CreateRepository     func(params CreateRepositoryParams) Repository
+	CreateRepository     func(ds datastore.DataStore) Repository
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 }{
@@ -56,9 +52,10 @@ var SDKFunc = struct {
 		out := createUser(params.ID, params.PubKey, params.Shares, params.Wallet)
 		return out
 	},
-	CreateRepository: func(params CreateRepositoryParams) Repository {
+	CreateRepository: func(ds datastore.DataStore) Repository {
+		entityRepository := entity.SDKFunc.CreateRepository(ds)
 		userMetaData := createMetaData()
-		out := createRepository(userMetaData, params.EntityRepository)
+		out := createRepository(userMetaData, entityRepository)
 		return out
 	},
 	CreateMetaData: func() entity.MetaData {

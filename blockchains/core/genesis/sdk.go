@@ -5,6 +5,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/user"
+	"github.com/xmnservices/xmnsuite/datastore"
 )
 
 // Genesis represents the genesis instance
@@ -30,17 +31,6 @@ type Repository interface {
 	Retrieve() (Genesis, error)
 }
 
-// CreateRepositoryParams represents the CreateRepository params
-type CreateRepositoryParams struct {
-	EntityRepository entity.Repository
-}
-
-// CreateServiceParams represents the CreateService params
-type CreateServiceParams struct {
-	EntityService    entity.Service
-	EntityRepository entity.Repository
-}
-
 // CreateParams represents the Create params
 type CreateParams struct {
 	ID                    *uuid.UUID
@@ -53,8 +43,8 @@ type CreateParams struct {
 // SDKFunc represents the Genesis SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Genesis
-	CreateRepository     func(params CreateRepositoryParams) Repository
-	CreateService        func(params CreateServiceParams) Service
+	CreateRepository     func(ds datastore.DataStore) Repository
+	CreateService        func(ds datastore.DataStore) Service
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 }{
@@ -67,16 +57,19 @@ var SDKFunc = struct {
 		out := createGenesis(params.ID, params.GazPricePerKb, params.MaxAmountOfValidators, params.Deposit, params.User)
 		return out
 	},
-	CreateRepository: func(params CreateRepositoryParams) Repository {
+	CreateRepository: func(ds datastore.DataStore) Repository {
 		met := createMetaData()
-		out := createRepository(params.EntityRepository, met)
+		entityRepository := entity.SDKFunc.CreateRepository(ds)
+		out := createRepository(entityRepository, met)
 		return out
 	},
-	CreateService: func(params CreateServiceParams) Service {
+	CreateService: func(ds datastore.DataStore) Service {
 		met := createMetaData()
-		repository := createRepository(params.EntityRepository, met)
 		rep := representation()
-		out := createService(params.EntityService, params.EntityRepository, repository, rep)
+		entityRepository := entity.SDKFunc.CreateRepository(ds)
+		repository := createRepository(entityRepository, met)
+		entityService := entity.SDKFunc.CreateService(ds)
+		out := createService(entityService, entityRepository, repository, rep)
 		return out
 	},
 	CreateMetaData: func() entity.MetaData {

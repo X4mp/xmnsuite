@@ -102,16 +102,6 @@ type CreateRepresentationParams struct {
 	Sync       Sync
 }
 
-// CreateRepositoryParams represents the Repository params
-type CreateRepositoryParams struct {
-	Store datastore.DataStore
-}
-
-// CreateServiceParams represents the Service params
-type CreateServiceParams struct {
-	Store datastore.DataStore
-}
-
 // CreateSDKRepositoryParams represents the CreateSDKRepository params
 type CreateSDKRepositoryParams struct {
 	PK     crypto.PrivateKey
@@ -138,8 +128,8 @@ type CreateControllersParams struct {
 var SDKFunc = struct {
 	CreateMetaData       func(params CreateMetaDataParams) MetaData
 	CreateRepresentation func(params CreateRepresentationParams) Representation
-	CreateRepository     func(params CreateRepositoryParams) Repository
-	CreateService        func(params CreateServiceParams) Service
+	CreateRepository     func(ds datastore.DataStore) Repository
+	CreateService        func(ds datastore.DataStore) Service
 	CreateControllers    func(params CreateControllersParams) Controllers
 	CreateSDKRepository  func(params CreateSDKRepositoryParams) Repository
 	CreateSDKService     func(params CreateSDKServiceParams) Service
@@ -179,13 +169,13 @@ var SDKFunc = struct {
 		out := createRepresentation(params.Met, params.ToStorable)
 		return out
 	},
-	CreateRepository: func(params CreateRepositoryParams) Repository {
-		out := createRepository(params.Store)
+	CreateRepository: func(ds datastore.DataStore) Repository {
+		out := createRepository(ds)
 		return out
 	},
-	CreateService: func(params CreateServiceParams) Service {
-		rep := createRepository(params.Store)
-		out := createService(params.Store, rep)
+	CreateService: func(ds datastore.DataStore) Service {
+		rep := createRepository(ds)
+		out := createService(ds, rep)
 		return out
 	},
 	CreateControllers: func(params CreateControllersParams) Controllers {

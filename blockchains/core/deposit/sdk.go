@@ -8,6 +8,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
+	"github.com/xmnservices/xmnsuite/datastore"
 )
 
 // Deposit represents the initial deposit
@@ -40,6 +41,7 @@ var SDKFunc = struct {
 	Create               func(params CreateParams) Deposit
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
+	CreateRepository     func(ds datastore.DataStore) Repository
 }{
 	Create: func(params CreateParams) Deposit {
 		if params.ID == nil {
@@ -114,5 +116,11 @@ var SDKFunc = struct {
 				return errors.New(str)
 			},
 		})
+	},
+	CreateRepository: func(ds datastore.DataStore) Repository {
+		met := createMetaData()
+		entityRepository := entity.SDKFunc.CreateRepository(ds)
+		out := createRepository(entityRepository, met)
+		return out
 	},
 }

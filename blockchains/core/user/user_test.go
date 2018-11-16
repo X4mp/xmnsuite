@@ -14,16 +14,10 @@ func TestUser_Success(t *testing.T) {
 	usr := CreateUserForTests()
 	anotherUsr := CreateUserWithWalletForTests(usr.Wallet())
 
-	// create repository:
+	// create repository and services:
 	store := datastore.SDKFunc.Create()
-	repository := entity.SDKFunc.CreateRepository(entity.CreateRepositoryParams{
-		Store: store,
-	})
-
-	// create the service:
-	service := entity.SDKFunc.CreateService(entity.CreateServiceParams{
-		Store: store,
-	})
+	repository := entity.SDKFunc.CreateRepository(store)
+	service := entity.SDKFunc.CreateService(store)
 
 	// create the metadata and representation:
 	metadata := SDKFunc.CreateMetaData()
