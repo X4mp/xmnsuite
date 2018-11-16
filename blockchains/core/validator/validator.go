@@ -1,6 +1,9 @@
 package validator
 
 import (
+	"errors"
+	"fmt"
+
 	uuid "github.com/satori/go.uuid"
 	tcrypto "github.com/tendermint/tendermint/crypto"
 	"github.com/xmnservices/xmnsuite/blockchains/core/pledge"
@@ -20,6 +23,33 @@ func createValidator(id *uuid.UUID, pkey tcrypto.PubKey, pldge pledge.Pledge) Va
 	}
 
 	return &out
+}
+
+func createValidatorFromNormalized(normalized *normalizedValidator) (Validator, error) {
+	id, idErr := uuid.FromString(normalized.ID)
+	if idErr != nil {
+		return nil, idErr
+	}
+
+	pubkey, pubKeyErr := fromEncodedStringToPubKey(normalized.PubKey)
+	if pubKeyErr != nil {
+		str := fmt.Sprintf("the normalized pubKey (%s) is invalid: %s", normalized.PubKey, pubKeyErr.Error())
+		return nil, errors.New(str)
+	}
+
+	pldgeIns, pldgeInsErr := pledge.SDKFunc.CreateMetaData().Denormalize()(normalized.Pledge)
+	if pldgeInsErr != nil {
+		return nil, pldgeInsErr
+	}
+
+	if pldge, ok := pldgeIns.(pledge.Pledge); ok {
+		out := createValidator(&id, pubkey, pldge)
+		return out, nil
+	}
+
+	str := fmt.Sprintf("the entity (ID: %s) is not a valid Validator instance", pldgeIns.ID().String())
+	return nil, errors.New(str)
+
 }
 
 // ID returns the ID

@@ -1,7 +1,7 @@
 package tendermint
 
 import (
-	"fmt"
+	"log"
 
 	types "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
@@ -28,6 +28,41 @@ func createABCIApplication(apps applications.Applications) (*abciApplication, er
 	return &out, nil
 }
 
+// EndBlock signals the end of a block, returns changes to the validator set
+func (app *abciApplication) EndBlock(req types.RequestEndBlock) types.ResponseEndBlock {
+	// retrieve the app:
+	curApp, curAppErr := app.apps.RetrieveByBlockIndex(app.blkHeight)
+	if curAppErr != nil {
+		panic(curAppErr)
+	}
+
+	// retrieve the validators:
+	vals, valsErr := curApp.Validators()
+	if valsErr != nil {
+		log.Printf("there was an error while updating the blockchain validators: %s", valsErr.Error())
+
+		// return:
+		return types.ResponseEndBlock{}
+	}
+
+	// port the validators:
+	valUps := []types.ValidatorUpdate{}
+	for _, oneVal := range vals {
+		valUps = append(valUps, types.ValidatorUpdate{
+			PubKey: types.PubKey{
+				Type: "ed25519",
+				Data: oneVal.PubKey().Bytes(),
+			},
+			Power: oneVal.Power(),
+		})
+	}
+
+	// returns:
+	return types.ResponseEndBlock{
+		ValidatorUpdates: valUps,
+	}
+}
+
 // Info outputs information related to the abciApplication state
 func (app *abciApplication) Info(req types.RequestInfo) types.ResponseInfo {
 	// retrieve the app:
@@ -52,7 +87,7 @@ func (app *abciApplication) Info(req types.RequestInfo) types.ResponseInfo {
 		panic(js)
 	}
 
-	fmt.Printf("Info last height: %d, last AppHash: %X\n", app.blkHeight, resp.State().Hash())
+	log.Printf("Info last height: %d, last AppHash: %X\n", app.blkHeight, resp.State().Hash())
 
 	if resp.State().Size() > 0 {
 		return types.ResponseInfo{
@@ -151,7 +186,7 @@ func (app *abciApplication) Commit() types.ResponseCommit {
 	// update the block height:
 	app.blkHeight = resp.BlockHeight()
 
-	fmt.Printf("Commit height: %d, AppHash: %X\n", app.blkHeight, appHash)
+	log.Printf("Commit height: %d, AppHash: %X\n", app.blkHeight, appHash)
 
 	// return the value:
 	return types.ResponseCommit{Data: appHash}

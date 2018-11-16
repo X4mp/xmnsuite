@@ -62,6 +62,9 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 		Version:        version,
 		DirPath:        rootDir,
 		Store:          ds,
+		RetrieveValidators: func(ds datastore.DataStore) ([]applications.Validator, error) {
+			return []applications.Validator{}, nil
+		},
 		RouterParams: routers.CreateRouterParams{
 			DataStore: routerDS,
 			RoleKey:   routerRoleKey,

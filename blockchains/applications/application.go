@@ -13,12 +13,13 @@ import (
  */
 
 type application struct {
-	fromIndex int64
-	toIndex   int64
-	version   string
-	stateKey  string
-	router    routers.Router
-	db        Database
+	fromIndex          int64
+	toIndex            int64
+	version            string
+	stateKey           string
+	router             routers.Router
+	db                 Database
+	retrieveValidators RetrieveValidators
 }
 
 func createApplication(
@@ -27,13 +28,15 @@ func createApplication(
 	version string,
 	db Database,
 	router routers.Router,
+	retrieveValidators RetrieveValidators,
 ) (*application, error) {
 	out := application{
-		fromIndex: fromIndex,
-		toIndex:   toIndex,
-		version:   version,
-		db:        db,
-		router:    router,
+		fromIndex:          fromIndex,
+		toIndex:            toIndex,
+		version:            version,
+		db:                 db,
+		router:             router,
+		retrieveValidators: retrieveValidators,
 	}
 
 	return &out, nil
@@ -52,6 +55,11 @@ func (app *application) ToBlockIndex() int64 {
 // GetBlockIndex returns the block index
 func (app *application) GetBlockIndex() int64 {
 	return app.db.State(app.version).Height()
+}
+
+// Validators returns the validators
+func (app *application) Validators() ([]Validator, error) {
+	return app.retrieveValidators(app.db.DataStore().DataStore())
 }
 
 // Info returns the application's information

@@ -1,5 +1,7 @@
 package validator
 
+import "encoding/hex"
+
 type storableValidator struct {
 	ID       string `json:"id"`
 	PubKey   string `json:"pubkey"`
@@ -9,7 +11,7 @@ type storableValidator struct {
 func createStorableValidator(ins Validator) *storableValidator {
 	out := storableValidator{
 		ID:       ins.ID().String(),
-		PubKey:   string(ins.PubKey().Bytes()),
+		PubKey:   hex.EncodeToString(ins.PubKey().Bytes()),
 		PledgeID: ins.Pledge().ID().String(),
 	}
 

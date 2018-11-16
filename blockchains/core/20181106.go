@@ -12,6 +12,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/token"
+	"github.com/xmnservices/xmnsuite/blockchains/core/validator"
 	"github.com/xmnservices/xmnsuite/blockchains/core/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 	"github.com/xmnservices/xmnsuite/crypto"
@@ -48,6 +49,7 @@ func createCore20181108() *core20181108 {
 	walletRepresentation := wallet.SDKFunc.CreateRepresentation()
 	tokenRepresentation := token.SDKFunc.CreateRepresentation()
 	pledgeRepresentation := pledge.SDKFunc.CreateRepresentation()
+	validatorRepresentation := validator.SDKFunc.CreateRepresentation()
 
 	out := core20181108{
 		genesisRepresentation: genesis.SDKFunc.CreateRepresentation(),
@@ -55,13 +57,15 @@ func createCore20181108() *core20181108 {
 		requestRepresentation: request.SDKFunc.CreateRepresentation(),
 		voteRepresentation:    vote.SDKFunc.CreateRepresentation(),
 		entityMetaDatas: map[string]entity.MetaData{
-			"genesis": genesis.SDKFunc.CreateMetaData(),
-			"wallet":  walletRepresentation.MetaData(),
-			"token":   tokenRepresentation.MetaData(),
+			"genesis":   genesis.SDKFunc.CreateMetaData(),
+			"wallet":    walletRepresentation.MetaData(),
+			"token":     tokenRepresentation.MetaData(),
+			"validator": validatorRepresentation.MetaData(),
 		},
 		entityRepresentations: map[string]entity.Representation{
-			"wallet": walletRepresentation,
-			"token":  tokenRepresentation,
+			"wallet":    walletRepresentation,
+			"token":     tokenRepresentation,
+			"validator": validatorRepresentation,
 		},
 		requestRepresentations: map[string]entity.Representation{
 			"pledge": pledgeRepresentation,
@@ -107,6 +111,34 @@ func create20181106(
 		Version:        version,
 		DirPath:        rootDir,
 		Store:          ds,
+		RetrieveValidators: func(ds datastore.DataStore) ([]applications.Validator, error) {
+			// retrieve the genesis:
+			genRepository := genesis.SDKFunc.CreateRepository(ds)
+			gen, genErr := genRepository.Retrieve()
+			if genErr != nil {
+				return nil, genErr
+			}
+
+			// retrieve the validators:
+			validatorRepository := validator.SDKFunc.CreateRepository(ds)
+			valPS, valPSErr := validatorRepository.RetrieveSet(gen.MaxAmountOfValidators())
+			if valPSErr != nil {
+				return nil, valPSErr
+			}
+
+			// create the application validators:
+			valsIns := valPS.Instances()
+			appVals := []applications.Validator{}
+			for _, oneValIns := range valsIns {
+				oneVal := oneValIns.(validator.Validator)
+				appVals = append(appVals, applications.SDKFunc.CreateValidator(applications.CreateValidatorParams{
+					PubKey: oneVal.PubKey(),
+					Power:  int64(oneVal.Pledge().From().Amount()),
+				}))
+			}
+
+			return appVals, nil
+		},
 		RouterParams: routers.CreateRouterParams{
 			DataStore: ds.DataStore(),
 			RoleKey:   routerRoleKey,

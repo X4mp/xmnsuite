@@ -18,6 +18,10 @@ type Pledge interface {
 	To() wallet.Wallet
 }
 
+// Normalized represents a normalized pledge
+type Normalized interface {
+}
+
 // CreateParams represents the create params
 type CreateParams struct {
 	ID   *uuid.UUID

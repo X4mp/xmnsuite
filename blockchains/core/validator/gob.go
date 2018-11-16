@@ -11,4 +11,5 @@ func init() {
 // RegisterGob registers the hashtree for gob
 func RegisterGob() {
 	gob.Register(&validator{})
+	gob.Register(&normalizedValidator{})
 }

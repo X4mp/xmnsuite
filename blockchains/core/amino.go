@@ -8,6 +8,7 @@ import (
 	pledge "github.com/xmnservices/xmnsuite/blockchains/core/pledge"
 	request "github.com/xmnservices/xmnsuite/blockchains/core/request"
 	token "github.com/xmnservices/xmnsuite/blockchains/core/token"
+	validator "github.com/xmnservices/xmnsuite/blockchains/core/validator"
 	vote "github.com/xmnservices/xmnsuite/blockchains/core/vote"
 	wallet "github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 )
@@ -23,6 +24,7 @@ func init() {
 	pledge.Register(cdc)
 	request.Register(cdc)
 	vote.Register(cdc)
+	validator.Register(cdc)
 
 	// replace:
 	entity.Replace(cdc)

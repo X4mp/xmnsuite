@@ -10,6 +10,9 @@ const (
 
 	// XMNSuiteApplicationsXMNPledge represents the xmnsuite xmn Pledge resource
 	XMNSuiteApplicationsXMNPledge = "xmnsuite/xmn/Pledge"
+
+	// XMNSuiteApplicationsXMNNormalizedPledge represents the xmnsuite xmn Normalized Pledge resource
+	XMNSuiteApplicationsXMNNormalizedPledge = "xmnsuite/xmn/NormalizedPledge"
 )
 
 var cdc = amino.NewCodec()
@@ -31,5 +34,14 @@ func Register(codec *amino.Codec) {
 		}()
 		codec.RegisterInterface((*Pledge)(nil), nil)
 		codec.RegisterConcrete(&pledge{}, XMNSuiteApplicationsXMNPledge, nil)
+	}()
+
+	// Normalized
+	func() {
+		defer func() {
+			recover()
+		}()
+		codec.RegisterInterface((*Normalized)(nil), nil)
+		codec.RegisterConcrete(&normalizedPledge{}, XMNSuiteApplicationsXMNNormalizedPledge, nil)
 	}()
 }

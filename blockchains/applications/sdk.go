@@ -2,9 +2,13 @@ package applications
 
 import (
 	uuid "github.com/satori/go.uuid"
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
 	"github.com/xmnservices/xmnsuite/routers"
 )
+
+// RetrieveValidators is a func that retrieve validators
+type RetrieveValidators func(ds datastore.DataStore) ([]Validator, error)
 
 // InfoRequest represents an info request
 type InfoRequest interface {
@@ -24,11 +28,18 @@ type CommitResponse interface {
 	BlockHeight() int64
 }
 
+// Validator represents a validator
+type Validator interface {
+	PubKey() crypto.PubKey
+	Power() int64
+}
+
 // Application represents an application
 type Application interface {
 	GetBlockIndex() int64
 	FromBlockIndex() int64
 	ToBlockIndex() int64
+	Validators() ([]Validator, error)
 	Info(req InfoRequest) InfoResponse
 	Transact(req routers.TransactionRequest) routers.TransactionResponse
 	CheckTransact(req routers.TransactionRequest) routers.TransactionResponse
@@ -91,15 +102,16 @@ type CreateInfoRequestParams struct {
 
 // CreateApplicationParams represents the CreateApplication params
 type CreateApplicationParams struct {
-	Namespace      string
-	Name           string
-	ID             *uuid.UUID
-	DirPath        string
-	FromBlockIndex int64
-	ToBlockIndex   int64
-	Version        string
-	Store          datastore.StoredDataStore
-	RouterParams   routers.CreateRouterParams
+	Namespace          string
+	Name               string
+	ID                 *uuid.UUID
+	DirPath            string
+	FromBlockIndex     int64
+	ToBlockIndex       int64
+	Version            string
+	Store              datastore.StoredDataStore
+	RouterParams       routers.CreateRouterParams
+	RetrieveValidators RetrieveValidators
 }
 
 // CreateApplicationsParams represents the CreateApplications params
@@ -115,13 +127,24 @@ type CreateClientTransactionResponseParams struct {
 	Hash   []byte
 }
 
+// CreateValidatorParams represents the CreateValidator params
+type CreateValidatorParams struct {
+	PubKey crypto.PubKey
+	Power  int64
+}
+
 // SDKFunc represents the applications SDK func
 var SDKFunc = struct {
+	CreateValidator                 func(params CreateValidatorParams) Validator
 	CreateInfoRequest               func(params CreateInfoRequestParams) InfoRequest
 	CreateApplication               func(params CreateApplicationParams) Application
 	CreateApplications              func(params CreateApplicationsParams) Applications
 	CreateClientTransactionResponse func(params CreateClientTransactionResponseParams) ClientTransactionResponse
 }{
+	CreateValidator: func(params CreateValidatorParams) Validator {
+		out := createValidator(params.PubKey, params.Power)
+		return out
+	},
 	CreateInfoRequest: func(params CreateInfoRequestParams) InfoRequest {
 		out := createInfoRequest(params.Version)
 		return out
@@ -140,7 +163,7 @@ var SDKFunc = struct {
 		}
 
 		//create the application:
-		app, appErr := createApplication(params.FromBlockIndex, params.ToBlockIndex, params.Version, db, rter)
+		app, appErr := createApplication(params.FromBlockIndex, params.ToBlockIndex, params.Version, db, rter, params.RetrieveValidators)
 		if appErr != nil {
 			panic(appErr)
 		}
