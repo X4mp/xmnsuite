@@ -8,14 +8,14 @@ import (
 
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/withdrawal"
-	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
-	"github.com/xmnservices/xmnsuite/blockchains/core/wallet/request"
-	"github.com/xmnservices/xmnsuite/blockchains/core/wallet/request/entities/pledge"
-	"github.com/xmnservices/xmnsuite/blockchains/core/wallet/request/entities/user"
-	"github.com/xmnservices/xmnsuite/blockchains/core/wallet/request/vote"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 

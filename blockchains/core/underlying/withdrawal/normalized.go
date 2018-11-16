@@ -2,7 +2,7 @@ package withdrawal
 
 import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
-	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
 )
 
 type normalizedWithdrawal struct {

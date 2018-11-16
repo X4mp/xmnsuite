@@ -2,7 +2,7 @@ package genesis
 
 import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
-	"github.com/xmnservices/xmnsuite/blockchains/core/wallet/request/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/user"
 )
 
 type normalizedGenesis struct {

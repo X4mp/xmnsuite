@@ -7,7 +7,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/wallet/request/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/user"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
 

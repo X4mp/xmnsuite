@@ -3,7 +3,7 @@ package validator
 import (
 	"encoding/hex"
 
-	"github.com/xmnservices/xmnsuite/blockchains/core/wallet/request/entities/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/pledge"
 )
 
 type normalizedValidator struct {

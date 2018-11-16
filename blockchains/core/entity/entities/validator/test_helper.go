@@ -8,7 +8,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/xmnservices/xmnsuite/blockchains/core/wallet/request/entities/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/pledge"
 )
 
 // CreateValidatorForTests creates a Validator instance for tests

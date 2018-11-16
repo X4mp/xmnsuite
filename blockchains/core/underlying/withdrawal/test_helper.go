@@ -7,7 +7,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
-	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
 )
 
 // CreateWithdrawalForTests creates a withdrawal instance for tests
