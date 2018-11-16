@@ -2,14 +2,14 @@ package core
 
 import (
 	amino "github.com/tendermint/go-amino"
-	deposit "github.com/xmnservices/xmnsuite/blockchains/core/deposit"
+	deposit "github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 	entity "github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	genesis "github.com/xmnservices/xmnsuite/blockchains/core/genesis"
-	pledge "github.com/xmnservices/xmnsuite/blockchains/core/pledge"
-	request "github.com/xmnservices/xmnsuite/blockchains/core/request"
-	token "github.com/xmnservices/xmnsuite/blockchains/core/token"
-	validator "github.com/xmnservices/xmnsuite/blockchains/core/validator"
-	vote "github.com/xmnservices/xmnsuite/blockchains/core/vote"
+	genesis "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
+	pledge "github.com/xmnservices/xmnsuite/blockchains/core/wallet/request/entities/pledge"
+	request "github.com/xmnservices/xmnsuite/blockchains/core/wallet/request"
+	token "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
+	validator "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/validator"
+	vote "github.com/xmnservices/xmnsuite/blockchains/core/wallet/request/vote"
 	wallet "github.com/xmnservices/xmnsuite/blockchains/core/wallet"
 )
 

@@ -9,7 +9,7 @@ import (
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 

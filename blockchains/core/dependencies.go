@@ -2,8 +2,8 @@ package core
 
 import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/genesis"
-	"github.com/xmnservices/xmnsuite/blockchains/core/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/core/wallet/request/entities/user"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
 

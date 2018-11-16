@@ -1,0 +1,103 @@
+package genesis
+
+import (
+	"math/rand"
+	"testing"
+
+	initial "github.com/xmnservices/xmnsuite/blockchains/core/initial_deposit"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
+	"github.com/xmnservices/xmnsuite/blockchains/core/wallet/request/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/wallet"
+	"github.com/xmnservices/xmnsuite/datastore"
+	"github.com/xmnservices/xmnsuite/tests"
+)
+
+func createGenesisForTests() Genesis {
+	gazPricePerKb := rand.Int()
+	maxAmountOfValidators := rand.Intn(200)
+	dep := initial.CreateInitialDepositForTests()
+	tok := token.CreateTokenForTests()
+	out := createGenesis(gazPricePerKb, maxAmountOfValidators, dep, tok)
+	return out
+}
+
+func createGenesisWithSharesAndConcensusForTests(shares int, concensusNeeded int) Genesis {
+	gazPricePerKb := rand.Int()
+	maxAmountOfValidators := rand.Intn(200)
+	dep := initial.CreateInitialDepositWithSharesAndConcensusForTests(shares, concensusNeeded)
+	tok := token.CreateTokenForTests()
+	out := createGenesis(gazPricePerKb, maxAmountOfValidators, dep, tok)
+	return out
+}
+
+func compareGenesisForTests(t *testing.T, first Genesis, second Genesis) {
+	if first.GazPricePerKb() != second.GazPricePerKb() {
+		t.Errorf("the returned gaz price is invalid.  Expected: %d, Returned: %d", first.GazPricePerKb(), second.GazPricePerKb())
+		return
+	}
+
+	if first.MaxAmountOfValidators() != second.MaxAmountOfValidators() {
+		t.Errorf("the returned maximum amount of validatoirs is invalid.  Expected: %d, Returned: %d", first.MaxAmountOfValidators(), second.MaxAmountOfValidators())
+		return
+	}
+
+	initial.CompareInitialDepositForTests(t, first.Deposit(), second.Deposit())
+	token.CompareTokensForTests(t, first.Token(), second.Token())
+}
+
+func TestGenesis_Success(t *testing.T) {
+	gen := createGenesisForTests()
+
+	// create services:
+	store := datastore.SDKFunc.Create()
+	walService := wallet.SDKFunc.CreateService(wallet.CreateServiceParams{
+		Store: store,
+	})
+
+	tokenService := token.SDKFunc.CreateService(token.CreateServiceParams{
+		Store: store,
+	})
+
+	userService := user.SDKFunc.CreateService(user.CreateServiceParams{
+		Store:         store,
+		WalletService: walService,
+	})
+
+	initialDepService := initial.SDKFunc.CreateService(initial.CreateServiceParams{
+		Store:         store,
+		WalletService: walService,
+		UserService:   userService,
+	})
+
+	genesisService := createGenesisService(store, walService, tokenService, initialDepService)
+
+	// save the genesis:
+	saveErr := genesisService.Save(gen)
+	if saveErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", saveErr.Error())
+		return
+	}
+
+	// sagain again, returns error:
+	saveAgainErr := genesisService.Save(gen)
+	if saveAgainErr == nil {
+		t.Errorf("the returned was expected to be valid, nil returned")
+		return
+	}
+
+	// retrieve genesis:
+	retGen, retGenErr := genesisService.Retrieve()
+	if retGenErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", retGenErr.Error())
+		return
+	}
+
+	// compare:
+	compareGenesisForTests(t, gen, retGen)
+
+	empty := new(genesis)
+	tests.ConvertToBinary(t, gen, empty, cdc)
+
+	anotherEmpty := new(genesis)
+	tests.ConvertToJSON(t, gen, anotherEmpty, cdc)
+}
