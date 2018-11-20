@@ -11,7 +11,7 @@ import (
 
 // CreateWalletWithPublicKeyForTests creates a Wallet instance, for tests
 func CreateWalletWithPublicKeyForTests(pubKey crypto.PublicKey) Wallet {
-	concensusNeeded := rand.Int()
+	concensusNeeded := rand.Int() % 100
 	return CreateWalletWithPubKeyAndConcensusNeededForTests(pubKey, concensusNeeded)
 }
 

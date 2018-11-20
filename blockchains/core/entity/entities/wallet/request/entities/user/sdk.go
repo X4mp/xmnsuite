@@ -86,6 +86,42 @@ var SDKFunc = struct {
 				return nil, errors.New(str)
 
 			},
+			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+
+				if usr, ok := ins.(User); ok {
+
+					//create the metadata and representation:
+					metaData := createMetaData()
+					walRepresentation := wallet.SDKFunc.CreateRepresentation()
+
+					// create the repositories and services:
+					entityRepository := entity.SDKFunc.CreateRepository(ds)
+					repository := createRepository(metaData, entityRepository)
+					entityService := entity.SDKFunc.CreateService(ds)
+
+					// make sure there is no other user with the given public key, on the same wallet:
+					_, retUserErr := repository.RetrieveByPubKeyAndWallet(usr.PubKey(), usr.Wallet())
+					if retUserErr == nil {
+						str := fmt.Sprintf("the User instance (PubKey: %s, WalletID: %s) already exists: %s", usr.PubKey().String(), usr.Wallet().ID().String(), retUserErr.Error())
+						return errors.New(str)
+					}
+
+					// if the wallet does not exists, create it:
+					wal := usr.Wallet()
+					_, retWalErr := entityRepository.RetrieveByID(walRepresentation.MetaData(), wal.ID())
+					if retWalErr != nil {
+						saveWalErr := entityService.Save(wal, walRepresentation)
+						if saveWalErr != nil {
+							return saveWalErr
+						}
+					}
+
+					return nil
+				}
+
+				str := fmt.Sprintf("the given entity (ID: %s) is not a valid User instance", ins.ID().String())
+				return errors.New(str)
+			},
 		})
 	},
 }

@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 )
 
 /*
@@ -21,7 +21,14 @@ type genesis struct {
 	Dep                  deposit.Deposit `json:"deposit"`
 }
 
-func createGenesis(id *uuid.UUID, gazPricePerKb int, maxAmountOfValidators int, dep deposit.Deposit, usr user.User) Genesis {
+func createGenesis(id *uuid.UUID, gazPricePerKb int, maxAmountOfValidators int, dep deposit.Deposit, usr user.User) (Genesis, error) {
+
+	// the user must have enough shares in order to fill the concensus, on genesis:
+	if usr.Shares() < dep.To().ConcensusNeeded() {
+		str := fmt.Sprintf("the genesis user (ID: %s) does not have enough shares (%d) in order to convert the concensus of the genesis wallet (ID: %s ConcensusNeeded: %d)", usr.ID().String(), usr.Shares(), dep.To().ID(), dep.To().ConcensusNeeded())
+		return nil, errors.New(str)
+	}
+
 	out := genesis{
 		UUID:                 id,
 		GzPricePerKb:         gazPricePerKb,
@@ -30,7 +37,7 @@ func createGenesis(id *uuid.UUID, gazPricePerKb int, maxAmountOfValidators int, 
 		Dep:                  dep,
 	}
 
-	return &out
+	return &out, nil
 }
 
 func createGenesisFromNormalized(ins *normalizedGenesis) (Genesis, error) {
@@ -51,8 +58,7 @@ func createGenesisFromNormalized(ins *normalizedGenesis) (Genesis, error) {
 
 	if dep, ok := depIns.(deposit.Deposit); ok {
 		if usr, ok := usrIns.(user.User); ok {
-			out := createGenesis(&id, ins.GzPricePerKb, ins.MxAmountOfValidators, dep, usr)
-			return out, nil
+			return createGenesis(&id, ins.GzPricePerKb, ins.MxAmountOfValidators, dep, usr)
 		}
 
 		str := fmt.Sprintf("the entity (ID: %s) is not a valid User instance", usrIns.ID().String())

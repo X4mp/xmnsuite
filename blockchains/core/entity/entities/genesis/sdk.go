@@ -2,9 +2,9 @@ package genesis
 
 import (
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
 
@@ -54,7 +54,11 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out := createGenesis(params.ID, params.GazPricePerKb, params.MaxAmountOfValidators, params.Deposit, params.User)
+		out, outErr := createGenesis(params.ID, params.GazPricePerKb, params.MaxAmountOfValidators, params.Deposit, params.User)
+		if outErr != nil {
+			panic(outErr)
+		}
+
 		return out
 	},
 	CreateRepository: func(ds datastore.DataStore) Repository {

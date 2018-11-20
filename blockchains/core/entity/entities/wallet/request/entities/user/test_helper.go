@@ -14,7 +14,7 @@ import (
 func CreateUserForTests() User {
 	id := uuid.NewV4()
 	pubKey := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{}).PublicKey()
-	shares := rand.Int()
+	shares := rand.Int() % 100
 	wal := wallet.CreateWalletWithPublicKeyForTests(pubKey)
 	out := createUser(&id, pubKey, shares, wal)
 	return out
@@ -42,7 +42,7 @@ func createUserWithSharesForTests(shares int) User {
 func CreateUserWithWalletForTests(wal wallet.Wallet) User {
 	id := uuid.NewV4()
 	pubKey := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{}).PublicKey()
-	shares := rand.Int()
+	shares := rand.Int() % 100
 	out := createUser(&id, pubKey, shares, wal)
 	return out
 }
@@ -50,7 +50,7 @@ func CreateUserWithWalletForTests(wal wallet.Wallet) User {
 // CreateUserWithPublicKeyForTests creates a User with PubKey for tests
 func CreateUserWithPublicKeyForTests(pubKey crypto.PublicKey) User {
 	id := uuid.NewV4()
-	shares := rand.Int()
+	shares := rand.Int() % 100
 	wal := wallet.CreateWalletWithPublicKeyForTests(pubKey)
 	out := createUser(&id, pubKey, shares, wal)
 	return out
@@ -59,7 +59,14 @@ func CreateUserWithPublicKeyForTests(pubKey crypto.PublicKey) User {
 // CreateUserWithWalletAndPublicKeyForTests creates a User with Wallet and PubKey for tests
 func CreateUserWithWalletAndPublicKeyForTests(wal wallet.Wallet, pubKey crypto.PublicKey) User {
 	id := uuid.NewV4()
-	shares := rand.Int()
+	shares := rand.Int() % 100
+	out := createUser(&id, pubKey, shares, wal)
+	return out
+}
+
+// CreateUserWithWalletAndPublicKeyAndSharesForTests creates a User with Wallet and PubKey and shares for tests
+func CreateUserWithWalletAndPublicKeyAndSharesForTests(wal wallet.Wallet, pubKey crypto.PublicKey, shares int) User {
+	id := uuid.NewV4()
 	out := createUser(&id, pubKey, shares, wal)
 	return out
 }

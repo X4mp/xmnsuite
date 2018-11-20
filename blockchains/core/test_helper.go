@@ -10,45 +10,10 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/vote"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
-
-func saveEntityThenRetrieveEntityByIDThenDeleteEntityByID(
-	t *testing.T,
-	ins entity.Entity,
-	representation entity.Representation,
-	service entity.Service,
-	repository entity.Repository,
-) entity.Entity {
-	// save the first entity:
-	firstSaveErr := service.Save(ins, representation)
-	if firstSaveErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", firstSaveErr.Error())
-		return nil
-	}
-
-	// retrieve the entity by ID:
-	retInsID, retInsIDErr := repository.RetrieveByID(representation.MetaData(), ins.ID())
-	if retInsIDErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", retInsIDErr.Error())
-		return nil
-	}
-
-	if retInsID == nil {
-		t.Errorf("the returned entity was expected to be valid, nil returned")
-		return nil
-	}
-
-	// delete the entity:
-	delErr := service.Delete(ins, representation)
-	if delErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", delErr.Error())
-		return nil
-	}
-
-	// return the retrieved entity:
-	return retInsID
-}
 
 func spawnBlockchainForTests(t *testing.T, pk crypto.PrivateKey, rootPath string) (applications.Node, applications.Client, entity.Service, entity.Repository) {
 	// variables:
@@ -119,4 +84,86 @@ func spawnBlockchainWithGenesisForTests(t *testing.T, pk crypto.PrivateKey, root
 
 	// returns:
 	return node, client, service, repository
+}
+
+func saveEntityThenRetrieveEntityByIDThenDeleteEntityByID(
+	t *testing.T,
+	ins entity.Entity,
+	representation entity.Representation,
+	service entity.Service,
+	repository entity.Repository,
+) entity.Entity {
+	// save the first entity:
+	firstSaveErr := service.Save(ins, representation)
+	if firstSaveErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", firstSaveErr.Error())
+		return nil
+	}
+
+	// retrieve the entity by ID:
+	retInsID, retInsIDErr := repository.RetrieveByID(representation.MetaData(), ins.ID())
+	if retInsIDErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", retInsIDErr.Error())
+		return nil
+	}
+
+	if retInsID == nil {
+		t.Errorf("the returned entity was expected to be valid, nil returned")
+		return nil
+	}
+
+	// delete the entity:
+	delErr := service.Delete(ins, representation)
+	if delErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", delErr.Error())
+		return nil
+	}
+
+	// return the retrieved entity:
+	return retInsID
+}
+
+func spawnBlockchainWithGenesisThenSaveRequestThenSaveVotesForTests(
+	t *testing.T,
+	pk crypto.PrivateKey,
+	rootPath string,
+	gen genesis.Genesis,
+	reqRepresentation entity.Representation,
+	voteRepresentation entity.Representation,
+	req request.Request,
+	reqVotes []vote.Vote,
+) (applications.Node, applications.Client, entity.Service, entity.Repository, request.Service, vote.Service) {
+	// spawn bockchain with genesis instance:
+	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, gen)
+
+	// create the request service:
+	requestService := request.SDKFunc.CreateSDKService(request.CreateSDKServiceParams{
+		PK:     pk,
+		Client: client,
+	})
+
+	// create the vote service:
+	voteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
+		PK:     pk,
+		Client: client,
+	})
+
+	// save the request:
+	saveRequestErr := requestService.Save(req, reqRepresentation)
+	if saveRequestErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", saveRequestErr.Error())
+		return nil, nil, nil, nil, nil, nil
+	}
+
+	// save the votes:
+	for _, oneVote := range reqVotes {
+		// save the vote:
+		savedVoteErr := voteService.Save(oneVote, voteRepresentation)
+		if savedVoteErr != nil {
+			t.Errorf("the returned error was expected to be nil, error returned: %s", savedVoteErr.Error())
+			return nil, nil, nil, nil, nil, nil
+		}
+	}
+
+	return node, client, service, repository, requestService, voteService
 }

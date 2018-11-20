@@ -51,8 +51,7 @@ func createMetaData() entity.MetaData {
 
 				if deposit, ok := depIns.(deposit.Deposit); ok {
 					if usr, ok := usrIns.(user.User); ok {
-						out := createGenesis(&id, storable.GzPricePerKb, storable.MxAmountOfValidators, deposit, usr)
-						return out, nil
+						return createGenesis(&id, storable.GzPricePerKb, storable.MxAmountOfValidators, deposit, usr)
 					}
 
 					str := fmt.Sprintf("the entity (ID: %s) is not a valid User instance", userID.String())

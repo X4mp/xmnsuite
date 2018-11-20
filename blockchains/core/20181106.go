@@ -13,6 +13,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/vote"
 	"github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
@@ -42,12 +43,15 @@ type core20181108 struct {
 
 func createCore20181108() *core20181108 {
 
-	// register the possible requests:
-	request.SDKFunc.Register(pledge.SDKFunc.CreateMetaData())
-
+	// create the repreesentations:
 	walletRepresentation := wallet.SDKFunc.CreateRepresentation()
-	pledgeRepresentation := pledge.SDKFunc.CreateRepresentation()
 	validatorRepresentation := validator.SDKFunc.CreateRepresentation()
+	pledgeRepresentation := pledge.SDKFunc.CreateRepresentation()
+	userRepresentation := user.SDKFunc.CreateRepresentation()
+
+	// register the possible requests:
+	request.SDKFunc.Register(pledgeRepresentation.MetaData())
+	request.SDKFunc.Register(userRepresentation.MetaData())
 
 	out := core20181108{
 		genesisRepresentation: genesis.SDKFunc.CreateRepresentation(),
@@ -58,6 +62,7 @@ func createCore20181108() *core20181108 {
 			"genesis":   genesis.SDKFunc.CreateMetaData(),
 			"wallet":    walletRepresentation.MetaData(),
 			"validator": validatorRepresentation.MetaData(),
+			"user":      userRepresentation.MetaData(),
 		},
 		entityRepresentations: map[string]entity.Representation{
 			"wallet":    walletRepresentation,
@@ -65,6 +70,7 @@ func createCore20181108() *core20181108 {
 		},
 		requestRepresentations: map[string]entity.Representation{
 			"pledge": pledgeRepresentation,
+			"user":   userRepresentation,
 		},
 	}
 
@@ -452,7 +458,8 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 				// retrieve the user:
 				usr, usrErr := dep.userRepository.RetrieveByPubKeyAndWallet(from, wal)
 				if usrErr != nil {
-					return nil, usrErr
+					str := fmt.Sprintf("the requester PublicKey (%s) is not a user on the given wallet (ID: %s)", from.String(), wal.ID().String())
+					return nil, errors.New(str)
 				}
 
 				// retrieve the name:
