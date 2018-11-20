@@ -6,8 +6,8 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
 )
 
 func retrieveAllWithdrawalsKeyname() string {

@@ -2,7 +2,7 @@ package external
 
 import (
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/link"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/request/entities/link"
 )
 
 type external struct {

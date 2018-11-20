@@ -15,7 +15,7 @@ func CreateUserForTests() User {
 	id := uuid.NewV4()
 	pubKey := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{}).PublicKey()
 	shares := rand.Int()
-	wal := wallet.CreateWalletForTests()
+	wal := wallet.CreateWalletWithPublicKeyForTests(pubKey)
 	out := createUser(&id, pubKey, shares, wal)
 	return out
 }
@@ -24,7 +24,7 @@ func CreateUserForTests() User {
 func CreateUserWithSharesAndConcensusNeededForTests(concensusNeeded int, shares int) User {
 	id := uuid.NewV4()
 	pubKey := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{}).PublicKey()
-	wal := wallet.CreateWalletWithConcensusNeededForTests(concensusNeeded)
+	wal := wallet.CreateWalletWithPubKeyAndConcensusNeededForTests(pubKey, concensusNeeded)
 	out := createUser(&id, pubKey, shares, wal)
 	return out
 }
@@ -33,7 +33,7 @@ func CreateUserWithSharesAndConcensusNeededForTests(concensusNeeded int, shares 
 func createUserWithSharesForTests(shares int) User {
 	id := uuid.NewV4()
 	pubKey := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{}).PublicKey()
-	wal := wallet.CreateWalletForTests()
+	wal := wallet.CreateWalletWithPublicKeyForTests(pubKey)
 	out := createUser(&id, pubKey, shares, wal)
 	return out
 }
@@ -51,7 +51,7 @@ func CreateUserWithWalletForTests(wal wallet.Wallet) User {
 func CreateUserWithPublicKeyForTests(pubKey crypto.PublicKey) User {
 	id := uuid.NewV4()
 	shares := rand.Int()
-	wal := wallet.CreateWalletForTests()
+	wal := wallet.CreateWalletWithPublicKeyForTests(pubKey)
 	out := createUser(&id, pubKey, shares, wal)
 	return out
 }

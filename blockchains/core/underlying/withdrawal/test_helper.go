@@ -6,14 +6,15 @@ import (
 	"testing"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
+	"github.com/xmnservices/xmnsuite/crypto"
 )
 
-// CreateWithdrawalForTests creates a withdrawal instance for tests
-func CreateWithdrawalForTests() Withdrawal {
+// CreateWithdrawalWithPublicKeyForTests creates a withdrawal instance for tests
+func CreateWithdrawalWithPublicKeyForTests(pubKey crypto.PublicKey) Withdrawal {
 	id := uuid.NewV4()
-	fromWallet := wallet.CreateWalletForTests()
+	fromWallet := wallet.CreateWalletWithPublicKeyForTests(pubKey)
 	tok := token.CreateTokenForTests()
 	amount := rand.Int() % 200
 	out := createWithdrawal(&id, fromWallet, tok, amount)

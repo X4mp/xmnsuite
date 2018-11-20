@@ -5,16 +5,17 @@ import (
 	"testing"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
+	"github.com/xmnservices/xmnsuite/crypto"
 )
 
-// CreateGenesisForTests creates a Genesis for tests
-func CreateGenesisForTests() Genesis {
+// CreateGenesisWithPubKeyForTests creates a Genesis for tests
+func CreateGenesisWithPubKeyForTests(pubKey crypto.PublicKey) Genesis {
 	id := uuid.NewV4()
 	gazPricePerKb := rand.Int() % 30
 	maxAmountOfValidators := rand.Int() % 20
-	dep := deposit.CreateDepositForTests()
+	dep := deposit.CreateDepositWithPubKeyForTests(pubKey)
 	usr := user.CreateUserWithWalletForTests(dep.To())
 	out := createGenesis(&id, gazPricePerKb, maxAmountOfValidators, dep, usr)
 	return out

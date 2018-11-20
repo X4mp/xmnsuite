@@ -6,18 +6,19 @@ import (
 	"testing"
 
 	uuid "github.com/satori/go.uuid"
+	"github.com/xmnservices/xmnsuite/crypto"
 )
 
-// CreateWalletForTests creates a Wallet instance, for tests
-func CreateWalletForTests() Wallet {
+// CreateWalletWithPublicKeyForTests creates a Wallet instance, for tests
+func CreateWalletWithPublicKeyForTests(pubKey crypto.PublicKey) Wallet {
 	concensusNeeded := rand.Int()
-	return CreateWalletWithConcensusNeededForTests(concensusNeeded)
+	return CreateWalletWithPubKeyAndConcensusNeededForTests(pubKey, concensusNeeded)
 }
 
-// CreateWalletWithConcensusNeededForTests creates a Wallet instance with a required concensus, for tests
-func CreateWalletWithConcensusNeededForTests(concensusNeeded int) Wallet {
+// CreateWalletWithPubKeyAndConcensusNeededForTests creates a Wallet instance with a required concensus, for tests
+func CreateWalletWithPubKeyAndConcensusNeededForTests(pubKey crypto.PublicKey, concensusNeeded int) Wallet {
 	id := uuid.NewV4()
-	out := createWallet(&id, concensusNeeded)
+	out := createWallet(&id, pubKey, concensusNeeded)
 	return out
 }
 

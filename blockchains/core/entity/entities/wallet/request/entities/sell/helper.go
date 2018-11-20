@@ -6,8 +6,8 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/external"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/external"
 )
 
 func retrieveAllSellsKeyname() string {

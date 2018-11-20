@@ -3,11 +3,13 @@ package wallet
 import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/crypto"
 )
 
 // Wallet represents a wallet
 type Wallet interface {
 	ID() *uuid.UUID
+	Creator() crypto.PublicKey
 	ConcensusNeeded() int
 }
 
@@ -18,6 +20,7 @@ type Normalized interface {
 // CreateParams represents the Create params
 type CreateParams struct {
 	ID              *uuid.UUID
+	Creator         crypto.PublicKey
 	ConcensusNeeded int
 }
 
@@ -33,7 +36,7 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out := createWallet(params.ID, params.ConcensusNeeded)
+		out := createWallet(params.ID, params.Creator, params.ConcensusNeeded)
 		return out
 	},
 	CreateMetaData: func() entity.MetaData {

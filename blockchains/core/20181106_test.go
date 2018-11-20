@@ -21,8 +21,9 @@ import (
 
 func TestSaveGenesis_thenRetrieveByID_Success(t *testing.T) {
 	// variables:
-	genIns := genesis.CreateGenesisForTests()
 	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
 	rootPath := filepath.Join("./test_files")
 	defer func() {
 		os.RemoveAll(rootPath)
@@ -35,6 +36,8 @@ func TestSaveGenesis_thenRetrieveByID_Success(t *testing.T) {
 
 func TestSaveGenesis_thenCRUD_Success(t *testing.T) {
 	// variables:
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
 	testEntities := []struct {
 		Ins            entity.Entity
 		Representation entity.Representation
@@ -43,7 +46,7 @@ func TestSaveGenesis_thenCRUD_Success(t *testing.T) {
 		Compare        func(t *testing.T, first entity.Entity, second entity.Entity)
 	}{
 		{
-			Ins:            wallet.CreateWalletForTests(),
+			Ins:            wallet.CreateWalletWithPublicKeyForTests(pubKey),
 			Representation: wallet.SDKFunc.CreateRepresentation(),
 			Compare: func(t *testing.T, first entity.Entity, second entity.Entity) {
 				wallet.CompareWalletsForTests(t, first.(wallet.Wallet), second.(wallet.Wallet))
@@ -51,8 +54,7 @@ func TestSaveGenesis_thenCRUD_Success(t *testing.T) {
 		},
 	}
 
-	genIns := genesis.CreateGenesisForTests()
-	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
 	rootPath := filepath.Join("./test_files")
 	defer func() {
 		os.RemoveAll(rootPath)
@@ -96,10 +98,12 @@ func TestSaveGenesis_savePledgeRequest_saveVotesOnRequest_Success(t *testing.T) 
 	})
 
 	fromWallet := wallet.SDKFunc.Create(wallet.CreateParams{
+		Creator:         pk.PublicKey(),
 		ConcensusNeeded: rand.Int() % 30,
 	})
 
 	toWallet := wallet.SDKFunc.Create(wallet.CreateParams{
+		Creator:         pk.PublicKey(),
 		ConcensusNeeded: rand.Int() % 200,
 	})
 

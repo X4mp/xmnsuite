@@ -4,25 +4,23 @@ import (
 	"testing"
 
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
 	"github.com/xmnservices/xmnsuite/tests"
 )
 
 func TestWallet_Success(t *testing.T) {
 	// variables:
-	wal := CreateWalletForTests()
-	anotherWal := CreateWalletForTests()
+	privKey := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := privKey.PublicKey()
 
-	// create repository:
+	wal := CreateWalletWithPublicKeyForTests(pubKey)
+	anotherWal := CreateWalletWithPublicKeyForTests(pubKey)
+
+	// create repository and service:
 	store := datastore.SDKFunc.Create()
-	repository := entity.SDKFunc.CreateRepository(entity.CreateRepositoryParams{
-		Store: store,
-	})
-
-	// create the service:
-	service := entity.SDKFunc.CreateService(entity.CreateServiceParams{
-		Store: store,
-	})
+	repository := entity.SDKFunc.CreateRepository(store)
+	service := entity.SDKFunc.CreateService(store)
 
 	// create the metadata and representation:
 	metadata := SDKFunc.CreateMetaData()

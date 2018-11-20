@@ -5,14 +5,15 @@ import (
 	"testing"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
+	"github.com/xmnservices/xmnsuite/crypto"
 )
 
-// CreateDepositForTests creates an Deposit for tests
-func CreateDepositForTests() Deposit {
+// CreateDepositWithPubKeyForTests creates an Deposit for tests
+func CreateDepositWithPubKeyForTests(pubKey crypto.PublicKey) Deposit {
 	id := uuid.NewV4()
-	wal := wallet.CreateWalletForTests()
+	wal := wallet.CreateWalletWithPublicKeyForTests(pubKey)
 	tok := token.CreateTokenForTests()
 	amount := rand.Int()
 	out := createDeposit(&id, wal, tok, amount)
