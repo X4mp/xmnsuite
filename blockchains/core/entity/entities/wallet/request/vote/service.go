@@ -33,7 +33,25 @@ func createVoteService(
 
 // Save saves a Vote instance
 func (app *voteService) Save(vote Vote, rep entity.Representation) error {
-	// saves the entity:
+	// make sure the vote doesnt exists:
+	_, retVoteErr := app.repository.RetrieveByID(app.voteRepresentation.MetaData(), vote.ID())
+	if retVoteErr == nil {
+		str := fmt.Sprintf("the Vote (ID: %s) already exists", vote.ID().String())
+		return errors.New(str)
+	}
+
+	// make sure the voter did not already vote:
+	_, retVoteByVoterErr := app.repository.RetrieveByIntersectKeynames(app.voteRepresentation.MetaData(), []string{
+		retrieveVotesByRequestIDKeyname(vote.Request().ID()),
+		retrieveVotesByVoterIDKeyname(vote.Voter().ID()),
+	})
+
+	if retVoteByVoterErr == nil {
+		str := fmt.Sprintf("the Request (ID: %s) has already been voted on by the given Voter (ID: %s)", vote.Request().ID().String(), vote.Voter().ID().String())
+		return errors.New(str)
+	}
+
+	// saves the vote:
 	saveErr := app.service.Save(vote, app.voteRepresentation)
 	if saveErr != nil {
 		return saveErr
@@ -72,7 +90,8 @@ func (app *voteService) Save(vote Vote, rep entity.Representation) error {
 	}
 
 	// vote is approved, insert the new entity:
-	if approved >= neededConcensus {
+	isApproved := approved >= neededConcensus
+	if isApproved {
 		// insert the new entity:
 		newEntity := req.New()
 		saveNewErr := app.service.Save(newEntity, rep)
@@ -82,19 +101,26 @@ func (app *voteService) Save(vote Vote, rep entity.Representation) error {
 		}
 	}
 
-	// delete the votes:
-	for _, oneVote := range votesIns {
-		delVoteErr := app.service.Delete(oneVote, app.voteRepresentation)
-		if delVoteErr != nil {
-			log.Printf("there was an error while deleting a Vote (ID: %s) after concensus was reached: %s", oneVote.ID().String(), delVoteErr.Error())
+	// if vote is approved or disapproved, delete the votes and request:
+	isDisapproved := disapproved >= neededConcensus
+	if isApproved || isDisapproved {
+		// delete the votes:
+		for _, oneVote := range votesIns {
+			delVoteErr := app.service.Delete(oneVote, app.voteRepresentation)
+			if delVoteErr != nil {
+				log.Printf("there was an error while deleting a Vote (ID: %s) after concensus was reached: %s", oneVote.ID().String(), delVoteErr.Error())
+			}
 		}
+
+		// delete the request:
+		delReqErr := app.service.Delete(req, app.requestRepresentation)
+		if delReqErr != nil {
+			log.Printf("there was an error while deleting a Request (ID: %s) after concensus was reached: %s", reqID.String(), delReqErr.Error())
+		}
+
+		return nil
 	}
 
-	// delete the request:
-	delReqErr := app.service.Delete(req, app.requestRepresentation)
-	if delReqErr != nil {
-		log.Printf("there was an error while deleting a Request (ID: %s) after concensus was reached: %s", reqID.String(), delReqErr.Error())
-	}
-
+	// the voting is still going on:
 	return nil
 }

@@ -24,7 +24,7 @@ func createService(serv entity.Service, entityRepository entity.Repository, rep 
 
 // Save saves an InitialDeposit instance
 func (app *service) Save(ins Genesis) error {
-	// if there is already a gensis instance, return an error:
+	// if there is already a Genesis instance, return an error:
 	_, retGenErr := app.repository.Retrieve()
 	if retGenErr == nil {
 		return retGenErr

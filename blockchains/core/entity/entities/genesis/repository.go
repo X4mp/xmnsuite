@@ -23,10 +23,10 @@ func createRepository(rep entity.Repository, genMetaData entity.MetaData) Reposi
 
 // Retrieve retrieves the genesis instance
 func (app *repository) Retrieve() (Genesis, error) {
-	// if there is already a gensis instance, return an error:
+	// if there is already a Genesis instance, return an error:
 	retGen, retGenErr := app.repository.RetrieveByIntersectKeynames(app.genMetaData, []string{keyname()})
 	if retGenErr != nil {
-		str := fmt.Sprintf("there was an error while retrieving the Genesis nstance: %s", retGenErr.Error())
+		str := fmt.Sprintf("there was an error while retrieving the Genesis instance: %s", retGenErr.Error())
 		return nil, errors.New(str)
 	}
 

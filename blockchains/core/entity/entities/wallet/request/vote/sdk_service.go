@@ -30,6 +30,12 @@ func createSDKService(pk crypto.PrivateKey, client applications.Client) Service 
 
 // Save saves a request instance to the service
 func (app *sdkService) Save(ins Vote, rep entity.Representation) error {
+	// make sure the voter matches the pk:
+	if !ins.Voter().PubKey().Equals(app.pk.PublicKey()) {
+		str := fmt.Sprintf("the Voter PubKey was not created by the service's PK")
+		return errors.New(str)
+	}
+
 	// create the vote:
 	outVote := outgoingVote{
 		ID:         ins.ID().String(),

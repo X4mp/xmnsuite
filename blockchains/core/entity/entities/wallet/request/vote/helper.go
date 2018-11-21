@@ -19,6 +19,11 @@ func retrieveVotesByRequestIDKeyname(reqID *uuid.UUID) string {
 	return fmt.Sprintf("%s:by_request_id:%s", base, reqID.String())
 }
 
+func retrieveVotesByVoterIDKeyname(voterID *uuid.UUID) string {
+	base := retrieveAllVotesKeyname()
+	return fmt.Sprintf("%s:by_voter_id:%s", base, voterID.String())
+}
+
 func createMetaData() entity.MetaData {
 	return entity.SDKFunc.CreateMetaData(entity.CreateMetaDataParams{
 		Name: "Vote",
@@ -123,7 +128,7 @@ func createRepresentation() entity.Representation {
 				return []string{
 					base,
 					retrieveVotesByRequestIDKeyname(vote.Request().ID()),
-					fmt.Sprintf("%s:by_voter_id:%s", base, vote.Voter().ID().String()),
+					retrieveVotesByVoterIDKeyname(vote.Voter().ID()),
 				}, nil
 			}
 

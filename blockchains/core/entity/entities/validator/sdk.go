@@ -82,10 +82,19 @@ var SDKFunc = struct {
 				repository := entity.SDKFunc.CreateRepository(ds)
 				service := entity.SDKFunc.CreateService(ds)
 
-				// create the representations:
+				// create the metadata and representations:
+				metaData := createMetaData()
 				pledgeRepresentation := pledge.SDKFunc.CreateRepresentation()
 
 				if val, ok := ins.(Validator); ok {
+
+					// if the validator already exists, return an error:
+					_, retValidatorErr := repository.RetrieveByID(metaData, val.ID())
+					if retValidatorErr != nil {
+						str := fmt.Sprintf("the given Validator (ID: %s) already exists", val.ID().String())
+						return errors.New(str)
+					}
+
 					// try to retrieve the pledge, save it if it doesnt exists:
 					pldge := val.Pledge()
 					_, retPledgeErr := repository.RetrieveByID(pledgeRepresentation.MetaData(), pldge.ID())

@@ -128,42 +128,58 @@ func spawnBlockchainWithGenesisThenSaveRequestThenSaveVotesForTests(
 	pk crypto.PrivateKey,
 	rootPath string,
 	gen genesis.Genesis,
-	reqRepresentation entity.Representation,
-	voteRepresentation entity.Representation,
+	representation entity.Representation,
 	req request.Request,
+	votesPK []crypto.PrivateKey,
 	reqVotes []vote.Vote,
-) (applications.Node, applications.Client, entity.Service, entity.Repository, request.Service, vote.Service) {
+) (applications.Node, applications.Client, entity.Service, entity.Repository, request.Service) {
 	// spawn bockchain with genesis instance:
 	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, gen)
 
+	// save the request then save votes:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, representation, req, votesPK, reqVotes)
+
+	// return:
+	return node, client, service, repository, requestService
+}
+
+func saveRequestThenSaveVotesForTests(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	representation entity.Representation,
+	req request.Request,
+	votesPK []crypto.PrivateKey,
+	reqVotes []vote.Vote,
+) request.Service {
 	// create the request service:
 	requestService := request.SDKFunc.CreateSDKService(request.CreateSDKServiceParams{
 		PK:     pk,
 		Client: client,
 	})
 
-	// create the vote service:
-	voteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
-		PK:     pk,
-		Client: client,
-	})
-
 	// save the request:
-	saveRequestErr := requestService.Save(req, reqRepresentation)
+	saveRequestErr := requestService.Save(req, representation)
 	if saveRequestErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", saveRequestErr.Error())
-		return nil, nil, nil, nil, nil, nil
+		return nil
 	}
 
 	// save the votes:
-	for _, oneVote := range reqVotes {
+	for index, oneVote := range reqVotes {
+		// create the vote service:
+		oneVoteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
+			PK:     votesPK[index],
+			Client: client,
+		})
+
 		// save the vote:
-		savedVoteErr := voteService.Save(oneVote, voteRepresentation)
+		savedVoteErr := oneVoteService.Save(oneVote, representation)
 		if savedVoteErr != nil {
 			t.Errorf("the returned error was expected to be nil, error returned: %s", savedVoteErr.Error())
-			return nil, nil, nil, nil, nil, nil
+			return nil
 		}
 	}
 
-	return node, client, service, repository, requestService, voteService
+	return requestService
 }

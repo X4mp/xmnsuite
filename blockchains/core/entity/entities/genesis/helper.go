@@ -125,6 +125,14 @@ func representation() entity.Representation {
 		Sync: func(ds datastore.DataStore, ins entity.Entity) error {
 			if gen, ok := ins.(Genesis); ok {
 
+				// the user must have enough shares in order to fill the concensus, on genesis:
+				genUser := gen.User()
+				genTo := gen.Deposit().To()
+				if genUser.Shares() < genTo.ConcensusNeeded() {
+					str := fmt.Sprintf("the genesis user (ID: %s) does not have enough shares (%d) in order to convert the concensus of the genesis wallet (ID: %s ConcensusNeeded: %d)", genUser.ID().String(), genUser.Shares(), genTo.ID(), genTo.ConcensusNeeded())
+					return errors.New(str)
+				}
+
 				// create the repository and service:
 				repository := entity.SDKFunc.CreateRepository(ds)
 				service := entity.SDKFunc.CreateService(ds)

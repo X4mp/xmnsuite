@@ -52,6 +52,7 @@ func createCore20181108() *core20181108 {
 	// register the possible requests:
 	request.SDKFunc.Register(pledgeRepresentation.MetaData())
 	request.SDKFunc.Register(userRepresentation.MetaData())
+	request.SDKFunc.Register(walletRepresentation.MetaData()) // for updates
 
 	out := core20181108{
 		genesisRepresentation: genesis.SDKFunc.CreateRepresentation(),
@@ -71,6 +72,7 @@ func createCore20181108() *core20181108 {
 		requestRepresentations: map[string]entity.Representation{
 			"pledge": pledgeRepresentation,
 			"user":   userRepresentation,
+			"wallet": walletRepresentation, // for updates
 		},
 	}
 
@@ -222,7 +224,7 @@ func (app *core20181108) saveEntity() routers.CreateRouteParams {
 			// retrieve the genesis:
 			gen, genErr := dep.genesisRepository.Retrieve()
 			if genErr != nil {
-				str := fmt.Sprintf("there was an error while retrieving the Gensis instance: %s", genErr.Error())
+				str := fmt.Sprintf("there was an error while retrieving the Genesis instance: %s", genErr.Error())
 				return nil, errors.New(str)
 			}
 
@@ -234,6 +236,13 @@ func (app *core20181108) saveEntity() routers.CreateRouteParams {
 					ins, insErr := representation.MetaData().ToEntity()(dep.entityRepository, data)
 					if insErr != nil {
 						return nil, insErr
+					}
+
+					// make sure the entity does not already exists:
+					_, alreadyExistsErr := dep.entityRepository.RetrieveByID(representation.MetaData(), ins.ID())
+					if alreadyExistsErr == nil {
+						str := fmt.Sprintf("the entity (Name: %s, ID: %s) already exists and therefore cannot be updated directly", representation.MetaData().Name(), ins.ID().String())
+						return nil, errors.New(str)
 					}
 
 					// save the entity:
@@ -423,7 +432,7 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 			// retrieve the genesis:
 			gen, genErr := dep.genesisRepository.Retrieve()
 			if genErr != nil {
-				str := fmt.Sprintf("there was an error while retrieving the Gensis instance: %s", genErr.Error())
+				str := fmt.Sprintf("there was an error while retrieving the Genesis instance: %s", genErr.Error())
 				return nil, errors.New(str)
 			}
 
@@ -536,7 +545,7 @@ func (app *core20181108) saveRequestVote() routers.CreateRouteParams {
 			// retrieve the genesis:
 			gen, genErr := dep.genesisRepository.Retrieve()
 			if genErr != nil {
-				str := fmt.Sprintf("there was an error while retrieving the Gensis instance: %s", genErr.Error())
+				str := fmt.Sprintf("there was an error while retrieving the Genesis instance: %s", genErr.Error())
 				return nil, errors.New(str)
 			}
 

@@ -30,13 +30,6 @@ func (app *service) Save(ins Entity, rep Representation) error {
 	name := met.Name()
 	toStorableFunc := rep.ToStorable()
 
-	// make sure the entity does not exists already:
-	_, retErr := app.repository.RetrieveByID(met, ins.ID())
-	if retErr == nil {
-		str := fmt.Sprintf("the %s instance (ID: %s) already exists", name, ins.ID().String())
-		return errors.New(str)
-	}
-
 	// sync the entity:
 	if rep.HasSync() {
 		syncErr := rep.Sync()(app.store, ins)
@@ -76,15 +69,10 @@ func (app *service) Save(ins Entity, rep Representation) error {
 		return keynamesErr
 	}
 
-	amountAdded := app.store.Sets().AddMul(keynames, ins.ID().String())
-	if amountAdded != 1 {
-		// revert:
-		app.store.Sets().DelMul(keynames, ins.ID().String())
+	// add the IDs to the keyname:
+	app.store.Sets().AddMul(keynames, ins.ID().String())
 
-		str := fmt.Sprintf("there was an error while saving the %s ID (%s) to the sets... reverting", name, ins.ID().String())
-		return errors.New(str)
-	}
-
+	// returns:
 	return nil
 }
 
