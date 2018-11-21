@@ -6,8 +6,8 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
 
@@ -49,7 +49,11 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out := createDeposit(params.ID, params.To, params.Token, params.Amount)
+		out, outErr := createDeposit(params.ID, params.To, params.Token, params.Amount)
+		if outErr != nil {
+			panic(outErr)
+		}
+
 		return out
 	},
 	CreateMetaData: func() entity.MetaData {

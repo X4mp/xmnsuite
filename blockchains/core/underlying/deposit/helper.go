@@ -63,8 +63,7 @@ func createMetaData() entity.MetaData {
 
 				if wal, ok := walletIns.(wallet.Wallet); ok {
 					if tok, ok := tokenIns.(token.Token); ok {
-						out := createDeposit(&id, wal, tok, storable.Amount)
-						return out, nil
+						return createDeposit(&id, wal, tok, storable.Amount)
 					}
 
 					str := fmt.Sprintf("the entity (ID: %s) is not a valid Token instance", tokenID.String())

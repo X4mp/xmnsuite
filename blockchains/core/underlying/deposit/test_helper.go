@@ -15,8 +15,8 @@ func CreateDepositWithPubKeyForTests(pubKey crypto.PublicKey) Deposit {
 	id := uuid.NewV4()
 	wal := wallet.CreateWalletWithPublicKeyForTests(pubKey)
 	tok := token.CreateTokenForTests()
-	amount := rand.Int()
-	out := createDeposit(&id, wal, tok, amount)
+	amount := rand.Int() % 200
+	out, _ := createDeposit(&id, wal, tok, amount)
 	return out
 }
 

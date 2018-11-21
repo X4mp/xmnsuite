@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
 
@@ -50,7 +50,11 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out := createWithdrawal(params.ID, params.From, params.Token, params.Amount)
+		out, outErr := createWithdrawal(params.ID, params.From, params.Token, params.Amount)
+		if outErr != nil {
+			panic(outErr)
+		}
+
 		return out
 	},
 	CreateMetaData: func() entity.MetaData {

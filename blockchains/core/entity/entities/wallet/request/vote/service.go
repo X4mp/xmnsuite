@@ -86,7 +86,6 @@ func (app *voteService) Save(vote Vote, rep entity.Representation) error {
 		}
 
 		log.Printf("the entity (ID: %s) is not a valid Vote instance", oneVoteIns.ID().String())
-
 	}
 
 	// vote is approved, insert the new entity:

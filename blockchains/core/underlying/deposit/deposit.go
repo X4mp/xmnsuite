@@ -3,10 +3,11 @@ package deposit
 import (
 	"errors"
 	"fmt"
+	"math"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
 )
 
 type deposit struct {
@@ -16,7 +17,17 @@ type deposit struct {
 	Am       int           `json:"amount"`
 }
 
-func createDeposit(id *uuid.UUID, toWallet wallet.Wallet, tok token.Token, amount int) Deposit {
+func createDeposit(id *uuid.UUID, toWallet wallet.Wallet, tok token.Token, amount int) (Deposit, error) {
+
+	if amount <= 0 {
+		return nil, errors.New("the amount (%d) must be bigger than 0")
+	}
+
+	if amount > math.MaxInt64-1 {
+		str := fmt.Sprintf("the amount (%d) cannot be bigger than %d", amount, math.MaxInt64-1)
+		return nil, errors.New(str)
+	}
+
 	out := deposit{
 		UUID:     id,
 		ToWallet: toWallet,
@@ -24,7 +35,7 @@ func createDeposit(id *uuid.UUID, toWallet wallet.Wallet, tok token.Token, amoun
 		Am:       amount,
 	}
 
-	return &out
+	return &out, nil
 }
 
 func createDepositFromNormalized(ins *normalizedDeposit) (Deposit, error) {
@@ -46,8 +57,7 @@ func createDepositFromNormalized(ins *normalizedDeposit) (Deposit, error) {
 
 	if toWallet, ok := toWalletIns.(wallet.Wallet); ok {
 		if tok, ok := tokenIns.(token.Token); ok {
-			out := createDeposit(&id, toWallet, tok, ins.Amount)
-			return out, nil
+			return createDeposit(&id, toWallet, tok, ins.Amount)
 		}
 
 		str := fmt.Sprintf("the entity (ID: %s) is not  avalid Token instance", tokenIns.ID().String())

@@ -64,6 +64,9 @@ func createCore20181108() *core20181108 {
 			"wallet":    walletRepresentation.MetaData(),
 			"validator": validatorRepresentation.MetaData(),
 			"user":      userRepresentation.MetaData(),
+			"request":   request.SDKFunc.CreateMetaData(),
+			"vote":      vote.SDKFunc.CreateMetaData(),
+			"pledge":    pledge.SDKFunc.CreateMetaData(),
 		},
 		entityRepresentations: map[string]entity.Representation{
 			"wallet":    walletRepresentation,

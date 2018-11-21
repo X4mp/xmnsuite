@@ -9,6 +9,13 @@ import (
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 
+// CreateWalletForTests creates a Wallet instance, for tests
+func CreateWalletForTests() Wallet {
+	pubKey := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{}).PublicKey()
+	concensusNeeded := rand.Int() % 100
+	return CreateWalletWithPubKeyAndConcensusNeededForTests(pubKey, concensusNeeded)
+}
+
 // CreateWalletWithPublicKeyForTests creates a Wallet instance, for tests
 func CreateWalletWithPublicKeyForTests(pubKey crypto.PublicKey) Wallet {
 	concensusNeeded := rand.Int() % 100

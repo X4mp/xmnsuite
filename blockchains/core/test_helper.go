@@ -137,7 +137,7 @@ func spawnBlockchainWithGenesisThenSaveRequestThenSaveVotesForTests(
 	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, gen)
 
 	// save the request then save votes:
-	requestService := saveRequestThenSaveVotesForTests(t, client, pk, representation, req, votesPK, reqVotes)
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, representation, req, votesPK, reqVotes)
 
 	// return:
 	return node, client, service, repository, requestService
@@ -147,11 +147,16 @@ func saveRequestThenSaveVotesForTests(
 	t *testing.T,
 	client applications.Client,
 	pk crypto.PrivateKey,
+	repository entity.Repository,
 	representation entity.Representation,
 	req request.Request,
 	votesPK []crypto.PrivateKey,
 	reqVotes []vote.Vote,
 ) request.Service {
+	// create the metadata:
+	requestMetaData := request.SDKFunc.CreateMetaData()
+	voteMetaData := vote.SDKFunc.CreateMetaData()
+
 	// create the request service:
 	requestService := request.SDKFunc.CreateSDKService(request.CreateSDKServiceParams{
 		PK:     pk,
@@ -164,6 +169,16 @@ func saveRequestThenSaveVotesForTests(
 		t.Errorf("the returned error was expected to be nil, error returned: %s", saveRequestErr.Error())
 		return nil
 	}
+
+	// retrieve the request and compare them:
+	retRequest, retRequesterr := repository.RetrieveByID(requestMetaData, req.ID())
+	if retRequesterr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", retRequesterr.Error())
+		return nil
+	}
+
+	// compare the requests:
+	request.CompareRequestForTests(t, req, retRequest.(request.Request))
 
 	// save the votes:
 	for index, oneVote := range reqVotes {
@@ -179,6 +194,40 @@ func saveRequestThenSaveVotesForTests(
 			t.Errorf("the returned error was expected to be nil, error returned: %s", savedVoteErr.Error())
 			return nil
 		}
+
+		if (index + 1) < len(reqVotes) {
+			retVote, retVoteErr := repository.RetrieveByID(voteMetaData, oneVote.ID())
+			if retVoteErr != nil {
+				t.Errorf("the returned error was expected to be nil, error returned: %s", retVoteErr.Error())
+				return nil
+			}
+
+			// compare the votes:
+			vote.CompareVoteForTests(t, oneVote, retVote.(vote.Vote))
+		}
+	}
+
+	// the request should no longer exists:
+	_, retRequestErr := repository.RetrieveByID(requestMetaData, req.ID())
+	if retRequestErr == nil {
+		t.Errorf("the returned error was expected to be valid, nil returned")
+		return nil
+	}
+
+	// the votes should no longer exists:
+	for _, oneVote := range reqVotes {
+		_, retVoteErr := repository.RetrieveByID(voteMetaData, oneVote.ID())
+		if retVoteErr == nil {
+			t.Errorf("the returned error was expected to be valid, nil returned")
+			return nil
+		}
+	}
+
+	// the new entity should now be an entity:
+	_, retInsErr := repository.RetrieveByID(representation.MetaData(), req.New().ID())
+	if retInsErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", retInsErr.Error())
+		return nil
 	}
 
 	return requestService

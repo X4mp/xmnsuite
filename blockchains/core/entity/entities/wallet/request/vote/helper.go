@@ -81,13 +81,13 @@ func createMetaData() entity.MetaData {
 				return fromStorableToEntity(storable)
 			}
 
-			ptr := new(storableVote)
+			ptr := new(normalizedVote)
 			jsErr := cdc.UnmarshalJSON(data.([]byte), ptr)
 			if jsErr != nil {
 				return nil, jsErr
 			}
 
-			return fromStorableToEntity(ptr)
+			return createVoteFromNormalized(ptr)
 
 		},
 		Normalize: func(ins entity.Entity) (interface{}, error) {

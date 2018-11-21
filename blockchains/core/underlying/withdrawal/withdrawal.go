@@ -3,10 +3,11 @@ package withdrawal
 import (
 	"errors"
 	"fmt"
+	"math"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
 )
 
 type withdrawal struct {
@@ -16,7 +17,17 @@ type withdrawal struct {
 	Am         int           `json:"amount"`
 }
 
-func createWithdrawal(id *uuid.UUID, fromWallet wallet.Wallet, tok token.Token, amount int) Withdrawal {
+func createWithdrawal(id *uuid.UUID, fromWallet wallet.Wallet, tok token.Token, amount int) (Withdrawal, error) {
+
+	if amount <= 0 {
+		return nil, errors.New("the amount (%d) must be bigger than 0")
+	}
+
+	if amount > math.MaxInt64-1 {
+		str := fmt.Sprintf("the amount (%d) cannot be bigger than %d", amount, math.MaxInt64-1)
+		return nil, errors.New(str)
+	}
+
 	out := withdrawal{
 		UUID:       id,
 		FromWallet: fromWallet,
@@ -24,7 +35,7 @@ func createWithdrawal(id *uuid.UUID, fromWallet wallet.Wallet, tok token.Token, 
 		Am:         amount,
 	}
 
-	return &out
+	return &out, nil
 }
 
 func createWithdrawalFromNormalized(ins *normalizedWithdrawal) (Withdrawal, error) {
@@ -46,8 +57,7 @@ func createWithdrawalFromNormalized(ins *normalizedWithdrawal) (Withdrawal, erro
 
 	if from, ok := fromIns.(wallet.Wallet); ok {
 		if tok, ok := tokIns.(token.Token); ok {
-			out := createWithdrawal(&id, from, tok, ins.Amount)
-			return out, nil
+			return createWithdrawal(&id, from, tok, ins.Amount)
 		}
 
 		str := fmt.Sprintf("the entity (ID: %s) is not a valid Token instance", tokIns.ID().String())

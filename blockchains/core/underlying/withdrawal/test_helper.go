@@ -17,7 +17,7 @@ func CreateWithdrawalWithPublicKeyForTests(pubKey crypto.PublicKey) Withdrawal {
 	fromWallet := wallet.CreateWalletWithPublicKeyForTests(pubKey)
 	tok := token.CreateTokenForTests()
 	amount := rand.Int() % 200
-	out := createWithdrawal(&id, fromWallet, tok, amount)
+	out, _ := createWithdrawal(&id, fromWallet, tok, amount)
 	return out
 }
 
