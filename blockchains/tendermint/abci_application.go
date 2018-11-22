@@ -4,6 +4,7 @@ import (
 	"log"
 
 	types "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	applications "github.com/xmnservices/xmnsuite/blockchains/applications"
 	routers "github.com/xmnservices/xmnsuite/routers"
@@ -48,13 +49,25 @@ func (app *abciApplication) EndBlock(req types.RequestEndBlock) types.ResponseEn
 	// port the validators:
 	valUps := []types.ValidatorUpdate{}
 	for _, oneVal := range vals {
-		valUps = append(valUps, types.ValidatorUpdate{
-			PubKey: types.PubKey{
-				Type: "ed25519",
-				Data: oneVal.PubKey().Bytes(),
-			},
-			Power: oneVal.Power(),
-		})
+		if castedPubKey, ok := oneVal.PubKey().(*ed25519.PubKeyEd25519); ok {
+			pubKeyData := []byte{}
+			for _, oneByte := range castedPubKey {
+				pubKeyData = append(pubKeyData, oneByte)
+			}
+
+			valUps = append(valUps, types.ValidatorUpdate{
+				PubKey: types.PubKey{
+					Type: "ed25519",
+					Data: pubKeyData,
+				},
+				Power: oneVal.Power(),
+			})
+
+			log.Printf("added validator (PubKey: %X, Power: %d)", oneVal.PubKey().Bytes(), oneVal.Power())
+			continue
+		}
+
+		log.Printf("the validator update added a validator with an invalid pubKey (PubKey: %X), skipping...", oneVal.PubKey().Bytes())
 	}
 
 	// returns:

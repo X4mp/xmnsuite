@@ -85,7 +85,7 @@ var SDKFunc = struct {
 
 				if pledge, ok := ins.(Pledge); ok {
 					// make sure the from wallet is not the same as the to wallet:
-					if bytes.Compare(pledge.From().From().ID().Bytes(), pledge.To().ID().Bytes()) != 0 {
+					if bytes.Compare(pledge.From().From().ID().Bytes(), pledge.To().ID().Bytes()) == 0 {
 						str := fmt.Sprintf("the wallet of the from withdrawal (ID: %s) cannot be the same as the to wallet (ID: %s)", pledge.From().From().ID().String(), pledge.To().ID().String())
 						return errors.New(str)
 					}

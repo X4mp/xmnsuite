@@ -87,10 +87,9 @@ var SDKFunc = struct {
 				pledgeRepresentation := pledge.SDKFunc.CreateRepresentation()
 
 				if val, ok := ins.(Validator); ok {
-
 					// if the validator already exists, return an error:
 					_, retValidatorErr := repository.RetrieveByID(metaData, val.ID())
-					if retValidatorErr != nil {
+					if retValidatorErr == nil {
 						str := fmt.Sprintf("the given Validator (ID: %s) already exists", val.ID().String())
 						return errors.New(str)
 					}

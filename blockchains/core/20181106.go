@@ -52,6 +52,7 @@ func createCore20181108() *core20181108 {
 	// register the possible requests:
 	request.SDKFunc.Register(pledgeRepresentation.MetaData())
 	request.SDKFunc.Register(userRepresentation.MetaData())
+	request.SDKFunc.Register(validatorRepresentation.MetaData())
 	request.SDKFunc.Register(walletRepresentation.MetaData()) // for updates
 
 	out := core20181108{
@@ -69,13 +70,13 @@ func createCore20181108() *core20181108 {
 			"pledge":    pledge.SDKFunc.CreateMetaData(),
 		},
 		entityRepresentations: map[string]entity.Representation{
-			"wallet":    walletRepresentation,
-			"validator": validatorRepresentation,
+			"wallet": walletRepresentation,
 		},
 		requestRepresentations: map[string]entity.Representation{
-			"pledge": pledgeRepresentation,
-			"user":   userRepresentation,
-			"wallet": walletRepresentation, // for updates
+			"pledge":    pledgeRepresentation,
+			"user":      userRepresentation,
+			"validator": validatorRepresentation,
+			"wallet":    walletRepresentation, // for updates
 		},
 	}
 
