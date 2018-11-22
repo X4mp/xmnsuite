@@ -13,6 +13,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/transfer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/vote"
 	"github.com/xmnservices/xmnsuite/crypto"
@@ -47,10 +48,12 @@ func createCore20181108() *core20181108 {
 	walletRepresentation := wallet.SDKFunc.CreateRepresentation()
 	validatorRepresentation := validator.SDKFunc.CreateRepresentation()
 	pledgeRepresentation := pledge.SDKFunc.CreateRepresentation()
+	transferRepresentation := transfer.SDKFunc.CreateRepresentation()
 	userRepresentation := user.SDKFunc.CreateRepresentation()
 
 	// register the possible requests:
 	request.SDKFunc.Register(pledgeRepresentation.MetaData())
+	request.SDKFunc.Register(transferRepresentation.MetaData())
 	request.SDKFunc.Register(userRepresentation.MetaData())
 	request.SDKFunc.Register(validatorRepresentation.MetaData())
 	request.SDKFunc.Register(walletRepresentation.MetaData()) // for updates
@@ -68,12 +71,14 @@ func createCore20181108() *core20181108 {
 			"request":   request.SDKFunc.CreateMetaData(),
 			"vote":      vote.SDKFunc.CreateMetaData(),
 			"pledge":    pledge.SDKFunc.CreateMetaData(),
+			"transfer":  transfer.SDKFunc.CreateMetaData(),
 		},
 		entityRepresentations: map[string]entity.Representation{
 			"wallet": walletRepresentation,
 		},
 		requestRepresentations: map[string]entity.Representation{
 			"pledge":    pledgeRepresentation,
+			"transfer":  transferRepresentation,
 			"user":      userRepresentation,
 			"validator": validatorRepresentation,
 			"wallet":    walletRepresentation, // for updates

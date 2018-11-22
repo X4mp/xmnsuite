@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/withdrawal"
 )
 
@@ -66,15 +66,31 @@ func createMetaData() entity.MetaData {
 				return fromStorableToEntity(storable)
 			}
 
-			ptr := new(storableTransfer)
+			ptr := new(normalizedTransfer)
 			jsErr := cdc.UnmarshalJSON(data.([]byte), ptr)
 			if jsErr != nil {
 				return nil, jsErr
 			}
 
-			return fromStorableToEntity(ptr)
+			return createTransferFromNormalized(ptr)
 
 		},
-		EmptyStorable: new(storableTransfer),
+		Normalize: func(ins entity.Entity) (interface{}, error) {
+			if trsf, ok := ins.(Transfer); ok {
+				return createNormalizedTransfer(trsf)
+			}
+
+			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Transfer instance", ins.ID().String())
+			return nil, errors.New(str)
+		},
+		Denormalize: func(ins interface{}) (entity.Entity, error) {
+			if normalized, ok := ins.(*normalizedTransfer); ok {
+				return createTransferFromNormalized(normalized)
+			}
+
+			return nil, errors.New("the given instance is not a valid normalized Transfer instance")
+		},
+		EmptyStorable:   new(storableTransfer),
+		EmptyNormalized: new(normalizedTransfer),
 	})
 }
