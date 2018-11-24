@@ -38,6 +38,6 @@ func (app *repository) RetrieveByPubKeyAndWallet(pubKey crypto.PublicKey, wal wa
 		return usr, nil
 	}
 
-	str := fmt.Sprintf("the entity (ID: %s) retrieved (using pubKey: %s) is not a valid User instance", ins.ID().String(), pubKey.String())
+	str := fmt.Sprintf("the entity (ID: %s) retrieved (using pubKey: %s, walletID: %s) is not a valid User instance", ins.ID().String(), pubKey.String(), wal.ID().String())
 	return nil, errors.New(str)
 }

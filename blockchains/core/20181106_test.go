@@ -310,7 +310,7 @@ func TestSaveGenesis_addUserToWallet_increaseTheNeededConcensus_voteUsingTwoUser
 	})
 }
 
-func TestSaveGenesis_createNewWallet_createPledge_Success(t *testing.T) {
+func TestSaveGenesis_createNewWallet_createPledge_transferPledgeTokens_returnsError(t *testing.T) {
 	// variables:
 	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
 	pubKey := pk.PublicKey()
@@ -319,7 +319,7 @@ func TestSaveGenesis_createNewWallet_createPledge_Success(t *testing.T) {
 	walPK := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
 	walPubKey := walPK.PublicKey()
 	walletIns := wallet.CreateWalletWithPublicKeyForTests(walPubKey)
-	userIns := user.CreateUserWithWalletForTests(walletIns)
+	userIns := user.CreateUserWithWalletAndPublicKeyAndSharesForTests(walletIns, walPubKey, genIns.Deposit().Amount()*2)
 	pldge := pledge.SDKFunc.Create(pledge.CreateParams{
 		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   genIns.Deposit().To(),
@@ -333,6 +333,7 @@ func TestSaveGenesis_createNewWallet_createPledge_Success(t *testing.T) {
 	walletRepresentation := wallet.SDKFunc.CreateRepresentation()
 	userRepresentation := user.SDKFunc.CreateRepresentation()
 	pldgeRepresentation := pledge.SDKFunc.CreateRepresentation()
+	transferRepresentation := transfer.SDKFunc.CreateRepresentation()
 
 	rootPath := filepath.Join("./test_files")
 	defer func() {
@@ -384,6 +385,58 @@ func TestSaveGenesis_createNewWallet_createPledge_Success(t *testing.T) {
 	saveRequestThenSaveVotesForTests(t, client, pk, repository, pldgeRepresentation, pldgeRequest, []crypto.PrivateKey{pk}, []vote.Vote{
 		pldgeRequestVote,
 	})
+
+	// transfer the pledge funds, returns error:
+	trsf := transfer.SDKFunc.Create(transfer.CreateParams{
+		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   walletIns,
+			Token:  genIns.Deposit().Token(),
+			Amount: pldge.From().Amount(),
+		}),
+		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
+			To:     genIns.Deposit().To(),
+			Token:  genIns.Deposit().Token(),
+			Amount: pldge.From().Amount(),
+		}),
+	})
+
+	// create the user in wallet request:
+	trsfRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:  userIns,
+		NewEntity: trsf,
+	})
+
+	// create our user vote:
+	trsfRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    trsfRequest,
+		Voter:      userIns,
+		IsApproved: true,
+	})
+
+	// create the request service:
+	requestService := request.SDKFunc.CreateSDKService(request.CreateSDKServiceParams{
+		PK:     walPK,
+		Client: client,
+	})
+
+	// save the request, returns error
+	saveRequestErr := requestService.Save(trsfRequest, transferRepresentation)
+	if saveRequestErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", saveRequestErr.Error())
+		return
+	}
+
+	// create the vote service:
+	voteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
+		PK:     walPK,
+		Client: client,
+	})
+
+	// save the vote, it should returns an error:
+	savedVoteErr := voteService.Save(trsfRequestVote, transferRepresentation)
+	if savedVoteErr == nil {
+		t.Errorf("the returned error was expected to be valid, nil returned")
+	}
 }
 
 func TestSaveGenesis_createNewWallet_createValidator_Success(t *testing.T) {

@@ -102,7 +102,7 @@ var SDKFunc = struct {
 					// make sure there is no other user with the given public key, on the same wallet:
 					_, retUserErr := repository.RetrieveByPubKeyAndWallet(usr.PubKey(), usr.Wallet())
 					if retUserErr == nil {
-						str := fmt.Sprintf("the User instance (PubKey: %s, WalletID: %s) already exists: %s", usr.PubKey().String(), usr.Wallet().ID().String(), retUserErr.Error())
+						str := fmt.Sprintf("the User instance (PubKey: %s, WalletID: %s) already exists", usr.PubKey().String(), usr.Wallet().ID().String())
 						return errors.New(str)
 					}
 
