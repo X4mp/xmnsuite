@@ -4,7 +4,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/user"
-	"github.com/xmnservices/xmnsuite/blockchains/core/retrievers/balance"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/balance"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
 
