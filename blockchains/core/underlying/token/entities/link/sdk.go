@@ -13,7 +13,6 @@ import (
 // Link represents a blockchain link
 type Link interface {
 	ID() *uuid.UUID
-	Keyname() string
 	Title() string
 	Description() string
 	Nodes() []node.Node
@@ -26,7 +25,6 @@ type Normalized interface {
 // CreateParams represents a Create params
 type CreateParams struct {
 	ID          *uuid.UUID
-	Keyname     string
 	Title       string
 	Description string
 	Node        node.Node
@@ -44,7 +42,7 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out, outErr := createLink(params.ID, params.Keyname, params.Title, params.Description, []node.Node{
+		out, outErr := createLink(params.ID, params.Title, params.Description, []node.Node{
 			params.Node,
 		})
 

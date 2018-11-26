@@ -10,13 +10,12 @@ import (
 
 type link struct {
 	UUID *uuid.UUID  `json:"id"`
-	Key  string      `json:"keyname"`
 	Titl string      `json:"title"`
 	Desc string      `json:"description"`
 	Nods []node.Node `json:"nodes"`
 }
 
-func createLink(id *uuid.UUID, keyname string, title string, description string, nodes []node.Node) (Link, error) {
+func createLink(id *uuid.UUID, title string, description string, nodes []node.Node) (Link, error) {
 
 	if len(nodes) <= 0 {
 		return nil, errors.New("the link must contain at least 1 Node")
@@ -24,7 +23,6 @@ func createLink(id *uuid.UUID, keyname string, title string, description string,
 
 	out := link{
 		UUID: id,
-		Key:  keyname,
 		Titl: title,
 		Desc: description,
 		Nods: nodes,
@@ -57,17 +55,12 @@ func createLinkFromNormalized(normalized *normalizedLink) (Link, error) {
 
 	}
 
-	return createLink(&id, normalized.Keyname, normalized.Title, normalized.Description, nodes)
+	return createLink(&id, normalized.Title, normalized.Description, nodes)
 }
 
 // ID returns the ID
 func (obj *link) ID() *uuid.UUID {
 	return obj.UUID
-}
-
-// Keyname returns the keyname
-func (obj *link) Keyname() string {
-	return obj.Key
 }
 
 // Title returns the title

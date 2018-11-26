@@ -613,7 +613,6 @@ func TestSaveGenesis_CreateLink_voteOnLink_Success(t *testing.T) {
 	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
 
 	lnk := link.SDKFunc.Create(link.CreateParams{
-		Keyname:     "projects",
 		Title:       "Projects",
 		Description: "The XMN projects belongs on that blockchain",
 		Node: node.SDKFunc.Create(node.CreateParams{

@@ -27,7 +27,6 @@ func createNormalizedLink(link Link) (*normalizedLink, error) {
 
 	out := normalizedLink{
 		ID:          link.ID().String(),
-		Keyname:     link.Keyname(),
 		Title:       link.Title(),
 		Description: link.Description(),
 		Nodes:       normalizedNodes,

@@ -46,7 +46,7 @@ func createMetaData() entity.MetaData {
 					return nil, errors.New(str)
 				}
 
-				return createLink(&id, storable.Keyname, storable.Title, storable.Description, nodes)
+				return createLink(&id, storable.Title, storable.Description, nodes)
 			}
 
 			if storable, ok := data.(*storableLink); ok {
