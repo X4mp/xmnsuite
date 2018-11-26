@@ -1,14 +1,11 @@
-package link
+package node
 
 import (
 	amino "github.com/tendermint/go-amino"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/request/entities/node"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/user"
 )
 
 const (
-
-	// XMNSuiteApplicationsXMNLink represents the xmnsuite xmn Link resource
-	XMNSuiteApplicationsXMNLink = "xmnsuite/xmn/Link"
 
 	// XMNSuiteApplicationsXMNNode represents the xmnsuite xmn Node resource
 	XMNSuiteApplicationsXMNNode = "xmnsuite/xmn/Node"
@@ -23,14 +20,14 @@ func init() {
 // Register registers all the interface -> struct to amino
 func Register(codec *amino.Codec) {
 	// Dependencies
-	node.Register(codec)
+	user.Register(codec)
 
-	// Link
+	// Node
 	func() {
 		defer func() {
 			recover()
 		}()
-		codec.RegisterInterface((*Link)(nil), nil)
-		codec.RegisterConcrete(&link{}, XMNSuiteApplicationsXMNLink, nil)
+		codec.RegisterInterface((*Node)(nil), nil)
+		codec.RegisterConcrete(&node{}, XMNSuiteApplicationsXMNNode, nil)
 	}()
 }

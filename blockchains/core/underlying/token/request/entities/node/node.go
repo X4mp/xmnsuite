@@ -1,4 +1,4 @@
-package link
+package node
 
 import (
 	"net"
@@ -25,6 +25,10 @@ func createNode(id *uuid.UUID, pubKey tcrypto.PubKey, power int, ip net.IP, port
 	}
 
 	return &out
+}
+
+func createNodeFromStorable(storable *storableNode) (Node, error) {
+	return nil, nil
 }
 
 // ID returns the ID

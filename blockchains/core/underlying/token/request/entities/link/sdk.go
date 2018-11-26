@@ -3,11 +3,10 @@ package link
 import (
 	"errors"
 	"fmt"
-	"net"
 
 	uuid "github.com/satori/go.uuid"
-	tcrypto "github.com/tendermint/tendermint/crypto"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/request/entities/node"
 )
 
 // Link represents a blockchain link
@@ -16,22 +15,11 @@ type Link interface {
 	Keyname() string
 	Title() string
 	Description() string
-	Nodes() []Node
+	Nodes() []node.Node
 }
 
-// Node represents a node on a blockchain link
-type Node interface {
-	ID() *uuid.UUID
-	PublicKey() tcrypto.PubKey
-	Power() int
-	IP() net.IP
-	Port() int
-}
-
-// Daemon represents the daemon
-type Daemon interface {
-	Start() error
-	Stop() error
+// Normalized represents the normalized link
+type Normalized interface {
 }
 
 // SDKFunc represents the Link SDK func

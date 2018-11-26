@@ -1,4 +1,4 @@
-package link
+package node
 
 import (
 	"encoding/gob"
@@ -10,5 +10,5 @@ func init() {
 
 // RegisterGob registers the hashtree for gob
 func RegisterGob() {
-	gob.Register(&link{})
+	gob.Register(&node{})
 }

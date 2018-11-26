@@ -1,39 +1,19 @@
 package link
 
-type storableNode struct {
-	ID     string `json:"id"`
-	PubKey string `json:"pubkey"`
-	Pow    int    `json:"power"`
-	IP     string `json:"ip"`
-	Port   int    `json:"port"`
-}
-
-func createStorableNode(ins Node) *storableNode {
-	out := storableNode{
-		ID:     ins.ID().String(),
-		PubKey: string(ins.PublicKey().Bytes()),
-		Pow:    ins.Power(),
-		IP:     ins.IP().String(),
-		Port:   ins.Port(),
-	}
-
-	return &out
-}
-
 type storableLink struct {
-	ID          string          `json:"id"`
-	Keyname     string          `json:"keyname"`
-	Title       string          `json:"title"`
-	Description string          `json:"description"`
-	Nodes       []*storableNode `json:"nodes"`
+	ID          string   `json:"id"`
+	Keyname     string   `json:"keyname"`
+	Title       string   `json:"title"`
+	Description string   `json:"description"`
+	NodeIDs     []string `json:"node_ids"`
 }
 
 func createStorableLink(ins Link) *storableLink {
 
 	nodes := ins.Nodes()
-	storableNodes := []*storableNode{}
+	nodeIDs := []string{}
 	for _, oneNode := range nodes {
-		storableNodes = append(storableNodes, createStorableNode(oneNode))
+		nodeIDs = append(nodeIDs, oneNode.ID().String())
 	}
 
 	out := storableLink{
@@ -41,7 +21,7 @@ func createStorableLink(ins Link) *storableLink {
 		Keyname:     ins.Keyname(),
 		Title:       ins.Title(),
 		Description: ins.Description(),
-		Nodes:       storableNodes,
+		NodeIDs:     nodeIDs,
 	}
 
 	return &out

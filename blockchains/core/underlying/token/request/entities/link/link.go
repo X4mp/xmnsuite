@@ -1,13 +1,19 @@
 package link
 
-import uuid "github.com/satori/go.uuid"
+import (
+	"errors"
+	"fmt"
+
+	uuid "github.com/satori/go.uuid"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/request/entities/node"
+)
 
 type link struct {
-	UUID *uuid.UUID `json:"id"`
-	Key  string     `json:"keyname"`
-	Titl string     `json:"title"`
-	Desc string     `json:"description"`
-	Nods []Node
+	UUID *uuid.UUID  `json:"id"`
+	Key  string      `json:"keyname"`
+	Titl string      `json:"title"`
+	Desc string      `json:"description"`
+	Nods []node.Node `json:"nodes"`
 }
 
 func createLink(id *uuid.UUID, keyname string, title string, description string) Link {
@@ -16,12 +22,13 @@ func createLink(id *uuid.UUID, keyname string, title string, description string)
 		Key:  keyname,
 		Titl: title,
 		Desc: description,
-		Nods: []Node{},
+		Nods: []node.Node{},
 	}
 
 	return &out
 }
-func createLinkWithNodes(id *uuid.UUID, keyname string, title string, description string, nodes []Node) Link {
+
+func createLinkWithNodes(id *uuid.UUID, keyname string, title string, description string, nodes []node.Node) Link {
 	out := link{
 		UUID: id,
 		Key:  keyname,
@@ -31,6 +38,34 @@ func createLinkWithNodes(id *uuid.UUID, keyname string, title string, descriptio
 	}
 
 	return &out
+}
+
+func createLinkFromNormalized(normalized *normalizedLink) (Link, error) {
+	id, idErr := uuid.FromString(normalized.ID)
+	if idErr != nil {
+		return nil, idErr
+	}
+
+	nodes := []node.Node{}
+	nodeMetaData := node.SDKFunc.CreateMetaData()
+	for _, oneNormalizedNode := range normalized.Nodes {
+		oneNode, oneNodeErr := nodeMetaData.Denormalize()(oneNormalizedNode)
+		if oneNodeErr != nil {
+			return nil, oneNodeErr
+		}
+
+		if nod, ok := oneNode.(node.Node); ok {
+			nodes = append(nodes, nod)
+			continue
+		}
+
+		str := fmt.Sprintf("there is at least one entity (ID: %s) that was expected to be a node in the link (ID: %s), but is not", oneNode.ID().String(), id.String())
+		return nil, errors.New(str)
+
+	}
+
+	out := createLinkWithNodes(&id, normalized.Keyname, normalized.Title, normalized.Description, nodes)
+	return out, nil
 }
 
 // ID returns the ID
@@ -54,6 +89,6 @@ func (obj *link) Description() string {
 }
 
 // Nodes returns the nodes
-func (obj *link) Nodes() []Node {
+func (obj *link) Nodes() []node.Node {
 	return obj.Nods
 }
