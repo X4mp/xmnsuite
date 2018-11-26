@@ -9,6 +9,9 @@ const (
 
 	// XMNSuiteApplicationsXMNNode represents the xmnsuite xmn Node resource
 	XMNSuiteApplicationsXMNNode = "xmnsuite/xmn/Node"
+
+	// XMNSuiteApplicationsXMNNormalizedNode represents the xmnsuite xmn Normalized Node resource
+	XMNSuiteApplicationsXMNNormalizedNode = "xmnsuite/xmn/NormalizedNode"
 )
 
 var cdc = amino.NewCodec()
@@ -29,5 +32,14 @@ func Register(codec *amino.Codec) {
 		}()
 		codec.RegisterInterface((*Node)(nil), nil)
 		codec.RegisterConcrete(&node{}, XMNSuiteApplicationsXMNNode, nil)
+	}()
+
+	// Normalized
+	func() {
+		defer func() {
+			recover()
+		}()
+		codec.RegisterInterface((*Normalized)(nil), nil)
+		codec.RegisterConcrete(&storableNode{}, XMNSuiteApplicationsXMNNormalizedNode, nil)
 	}()
 }

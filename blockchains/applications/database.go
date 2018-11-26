@@ -163,8 +163,7 @@ func (app *database) Update(version string) (State, error) {
 	// add the new state in the list:
 	amountAdded := app.DataStore().DataStore().Sets().Add(app.stateKey, app.states[version].Hash())
 	if amountAdded != 1 {
-		str := fmt.Sprintf("the hash: %s, already exists in the state key: %s.  Skipping...\n", hashAsString, app.stateKey)
-		fmt.Printf(str)
+		fmt.Printf("the hash: %s, already exists in the state key: %s.  Skipping...\n", hashAsString, app.stateKey)
 		return app.states[version], nil
 	}
 

@@ -8,7 +8,16 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/user"
 	"github.com/xmnservices/xmnsuite/crypto"
+	"github.com/xmnservices/xmnsuite/datastore"
 )
+
+// CalculateFn represents the vote calculation func.
+// First bool = concensus is reached
+// Second bool = the vote passed
+type CalculateFn func(votes entity.PartialSet) (bool, bool, error)
+
+// CreateRouteFn creates a route
+type CreateRouteFn func(ins Vote, rep entity.Representation) (string, error)
 
 // Vote represents a request vote
 type Vote interface {
@@ -37,14 +46,15 @@ type CreateParams struct {
 
 // CreateServiceParams represents the CreateService params
 type CreateServiceParams struct {
-	EntityRepository entity.Repository
-	EntityService    entity.Service
+	CalculateVoteFn CalculateFn
+	DS              datastore.DataStore
 }
 
 // CreateSDKServiceParams represents the CreateSDKService params
 type CreateSDKServiceParams struct {
-	PK     crypto.PrivateKey
-	Client applications.Client
+	PK              crypto.PrivateKey
+	Client          applications.Client
+	CreateRouteFunc CreateRouteFn
 }
 
 // SDKFunc represents the vote SDK func
@@ -77,11 +87,13 @@ var SDKFunc = struct {
 	CreateService: func(params CreateServiceParams) Service {
 		voteRepresentation := createRepresentation()
 		requestRepresentation := request.SDKFunc.CreateRepresentation()
-		out := createVoteService(params.EntityRepository, params.EntityService, voteRepresentation, requestRepresentation)
+		entityRepository := entity.SDKFunc.CreateRepository(params.DS)
+		entityService := entity.SDKFunc.CreateService(params.DS)
+		out := createVoteService(params.CalculateVoteFn, entityRepository, entityService, voteRepresentation, requestRepresentation)
 		return out
 	},
 	CreateSDKService: func(params CreateSDKServiceParams) Service {
-		out := createSDKService(params.PK, params.Client)
+		out := createSDKService(params.PK, params.Client, params.CreateRouteFunc)
 		return out
 	},
 }

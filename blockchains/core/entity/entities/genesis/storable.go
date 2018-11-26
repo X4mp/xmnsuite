@@ -2,6 +2,7 @@ package genesis
 
 type storableGenesis struct {
 	ID                   string `json:"id"`
+	ConcensusNeeded      int    `json:"concensus_needed"`
 	GzPricePerKb         int    `json:"gaz_price_per_kb"`
 	MxAmountOfValidators int    `json:"max_amount_of_validators"`
 	UserID               string `json:"user_id"`
@@ -11,6 +12,7 @@ type storableGenesis struct {
 func createStorableGenesis(gen Genesis) *storableGenesis {
 	out := storableGenesis{
 		ID:                   gen.ID().String(),
+		ConcensusNeeded:      gen.ConcensusNeeded(),
 		GzPricePerKb:         gen.GazPricePerKb(),
 		MxAmountOfValidators: gen.MaxAmountOfValidators(),
 		UserID:               gen.User().ID().String(),

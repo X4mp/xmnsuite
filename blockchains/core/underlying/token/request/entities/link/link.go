@@ -16,19 +16,12 @@ type link struct {
 	Nods []node.Node `json:"nodes"`
 }
 
-func createLink(id *uuid.UUID, keyname string, title string, description string) Link {
-	out := link{
-		UUID: id,
-		Key:  keyname,
-		Titl: title,
-		Desc: description,
-		Nods: []node.Node{},
+func createLink(id *uuid.UUID, keyname string, title string, description string, nodes []node.Node) (Link, error) {
+
+	if len(nodes) <= 0 {
+		return nil, errors.New("the link must contain at least 1 Node")
 	}
 
-	return &out
-}
-
-func createLinkWithNodes(id *uuid.UUID, keyname string, title string, description string, nodes []node.Node) Link {
 	out := link{
 		UUID: id,
 		Key:  keyname,
@@ -37,7 +30,7 @@ func createLinkWithNodes(id *uuid.UUID, keyname string, title string, descriptio
 		Nods: nodes,
 	}
 
-	return &out
+	return &out, nil
 }
 
 func createLinkFromNormalized(normalized *normalizedLink) (Link, error) {
@@ -64,8 +57,7 @@ func createLinkFromNormalized(normalized *normalizedLink) (Link, error) {
 
 	}
 
-	out := createLinkWithNodes(&id, normalized.Keyname, normalized.Title, normalized.Description, nodes)
-	return out, nil
+	return createLink(&id, normalized.Keyname, normalized.Title, normalized.Description, nodes)
 }
 
 // ID returns the ID

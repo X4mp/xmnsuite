@@ -1,11 +1,6 @@
 package datastore
 
 import (
-	"encoding/hex"
-	"errors"
-
-	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/xmnservices/xmnsuite/datastore/keys"
 	lua "github.com/yuin/gopher-lua"
 )
@@ -123,19 +118,4 @@ func delFn(p keys.Keys) lua.LGFunction {
 	}
 
 	return fn
-}
-
-func fromStringToPubKey(pubKeyAsString string) (crypto.PubKey, error) {
-	pubKeyAsBytes, pubKeyAsBytesErr := hex.DecodeString(pubKeyAsString)
-	if pubKeyAsBytesErr != nil {
-		return nil, errors.New("the encoded public key is invalid")
-	}
-
-	pubKey := new(ed25519.PubKeyEd25519)
-	pubKeyErr := cdc.UnmarshalBinaryBare(pubKeyAsBytes, pubKey)
-	if pubKeyErr != nil {
-		return nil, errors.New("the public key []byte is invalid")
-	}
-
-	return pubKey, nil
 }

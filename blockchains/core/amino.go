@@ -12,6 +12,7 @@ import (
 	vote "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/vote"
 	deposit "github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 	token "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
+	link "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/request/entities/link"
 )
 
 var cdc = amino.NewCodec()
@@ -27,6 +28,7 @@ func init() {
 	request.Register(cdc)
 	vote.Register(cdc)
 	validator.Register(cdc)
+	link.Register(cdc)
 
 	// replace:
 	entity.Replace(cdc)

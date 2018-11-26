@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"math/rand"
 	"net"
 	"testing"
@@ -14,6 +15,18 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/vote"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
+
+func createEntityVoteRouteFunc() vote.CreateRouteFn {
+	return func(ins vote.Vote, rep entity.Representation) (string, error) {
+		return fmt.Sprintf("/%s/requests/%s", rep.MetaData().Keyname(), ins.Request().ID().String()), nil
+	}
+}
+
+func createTokenVoteRouteFunc() vote.CreateRouteFn {
+	return func(ins vote.Vote, rep entity.Representation) (string, error) {
+		return fmt.Sprintf("/token/requests/%s/%s", ins.Request().ID().String(), rep.MetaData().Keyname()), nil
+	}
+}
 
 func spawnBlockchainForTests(t *testing.T, pk crypto.PrivateKey, rootPath string) (applications.Node, applications.Client, entity.Service, entity.Repository) {
 	// variables:
@@ -132,12 +145,13 @@ func spawnBlockchainWithGenesisThenSaveRequestThenSaveVotesForTests(
 	req request.Request,
 	votesPK []crypto.PrivateKey,
 	reqVotes []vote.Vote,
+	createRouteFunc vote.CreateRouteFn,
 ) (applications.Node, applications.Client, entity.Service, entity.Repository, request.Service) {
 	// spawn bockchain with genesis instance:
 	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, gen)
 
 	// save the request then save votes:
-	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, representation, req, votesPK, reqVotes)
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, representation, req, votesPK, reqVotes, createRouteFunc)
 
 	// return:
 	return node, client, service, repository, requestService
@@ -152,6 +166,7 @@ func saveRequestThenSaveVotesForTests(
 	req request.Request,
 	votesPK []crypto.PrivateKey,
 	reqVotes []vote.Vote,
+	createRouteFunc vote.CreateRouteFn,
 ) request.Service {
 	// create the metadata:
 	requestMetaData := request.SDKFunc.CreateMetaData()
@@ -184,8 +199,9 @@ func saveRequestThenSaveVotesForTests(
 	for index, oneVote := range reqVotes {
 		// create the vote service:
 		oneVoteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
-			PK:     votesPK[index],
-			Client: client,
+			PK:              votesPK[index],
+			Client:          client,
+			CreateRouteFunc: createRouteFunc,
 		})
 
 		// save the vote:

@@ -9,6 +9,7 @@ import (
 )
 
 type voteService struct {
+	calculateVoteFn       CalculateFn
 	repository            entity.Repository
 	service               entity.Service
 	voteRepresentation    entity.Representation
@@ -16,12 +17,14 @@ type voteService struct {
 }
 
 func createVoteService(
+	calculateVoteFn CalculateFn,
 	repository entity.Repository,
 	service entity.Service,
 	voteRepresentation entity.Representation,
 	requestRepresentation entity.Representation,
 ) Service {
 	out := voteService{
+		calculateVoteFn:       calculateVoteFn,
 		repository:            repository,
 		service:               service,
 		voteRepresentation:    voteRepresentation,
@@ -67,29 +70,14 @@ func (app *voteService) Save(vote Vote, rep entity.Representation) error {
 		return errors.New(str)
 	}
 
-	// retrieve the needed concensus from the requester wallet:
-	neededConcensus := vote.Request().From().Wallet().ConcensusNeeded()
-
-	// compile the vote's concensus:
-	approved := 0
-	disapproved := 0
-	votesIns := votes.Instances()
-	for _, oneVoteIns := range votesIns {
-		if oneVote, ok := oneVoteIns.(Vote); ok {
-			if oneVote.IsApproved() {
-				approved += oneVote.Voter().Shares()
-				continue
-			}
-
-			disapproved += oneVote.Voter().Shares()
-			continue
-		}
-
-		log.Printf("the entity (ID: %s) is not a valid Vote instance", oneVoteIns.ID().String())
+	// execute the calculation func:
+	isApproved, concensusPassed, calcErr := app.calculateVoteFn(votes)
+	if calcErr != nil {
+		str := fmt.Sprintf("there was an error while executing the vote calculation: %s", calcErr.Error())
+		return errors.New(str)
 	}
 
-	// vote is approved, insert the new entity:
-	isApproved := approved >= neededConcensus
+	// if vote is approved, insert the new entity:
 	if isApproved {
 		// insert the new entity:
 		newEntity := req.New()
@@ -100,10 +88,10 @@ func (app *voteService) Save(vote Vote, rep entity.Representation) error {
 		}
 	}
 
-	// if vote is approved or disapproved, delete the votes and request:
-	isDisapproved := disapproved >= neededConcensus
-	if isApproved || isDisapproved {
+	// if concensus passed:
+	if concensusPassed {
 		// delete the votes:
+		votesIns := votes.Instances()
 		for _, oneVote := range votesIns {
 			delVoteErr := app.service.Delete(oneVote, app.voteRepresentation)
 			if delVoteErr != nil {

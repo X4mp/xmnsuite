@@ -3,10 +3,7 @@ package node
 import (
 	"errors"
 	"fmt"
-	"net"
 
-	uuid "github.com/satori/go.uuid"
-	ed25519 "github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 )
 
@@ -18,25 +15,8 @@ func createMetaData() entity.MetaData {
 	return entity.SDKFunc.CreateMetaData(entity.CreateMetaDataParams{
 		Name: "Node",
 		ToEntity: func(rep entity.Repository, data interface{}) (entity.Entity, error) {
-			fromStorableToEntity := func(storable *storableNode) (entity.Entity, error) {
-				nodeID, nodeIDErr := uuid.FromString(storable.ID)
-				if nodeIDErr != nil {
-					return nil, nodeIDErr
-				}
-
-				pubkey := new(ed25519.PubKeyEd25519)
-				pubKeyErr := cdc.UnmarshalJSON([]byte(storable.PubKey), pubkey)
-				if pubKeyErr != nil {
-					return nil, pubKeyErr
-				}
-
-				ip := net.ParseIP(storable.IP)
-				out := createNode(&nodeID, pubkey, storable.Pow, ip, storable.Port)
-				return out, nil
-			}
-
 			if storable, ok := data.(*storableNode); ok {
-				return fromStorableToEntity(storable)
+				return createNodeFromStorable(storable)
 			}
 
 			ptr := new(storableNode)
@@ -45,7 +25,7 @@ func createMetaData() entity.MetaData {
 				return nil, jsErr
 			}
 
-			return fromStorableToEntity(ptr)
+			return createNodeFromStorable(ptr)
 
 		},
 		Normalize: func(ins entity.Entity) (interface{}, error) {
