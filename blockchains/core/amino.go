@@ -4,15 +4,15 @@ import (
 	amino "github.com/tendermint/go-amino"
 	entity "github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	genesis "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
-	validator "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/validator"
+	validator "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/validator"
 	wallet "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
-	request "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request"
-	pledge "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/pledge"
-	transfer "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/transfer"
-	vote "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/vote"
+	request "github.com/xmnservices/xmnsuite/blockchains/core/request"
+	pledge "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/pledge"
+	transfer "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/transfer"
+	vote "github.com/xmnservices/xmnsuite/blockchains/core/request/vote"
 	deposit "github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 	token "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
-	link "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/request/entities/link"
+	link "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
 )
 
 var cdc = amino.NewCodec()

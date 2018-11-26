@@ -2,7 +2,7 @@ package external
 
 import (
 	amino "github.com/tendermint/go-amino"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/user"
 )
 
 const (

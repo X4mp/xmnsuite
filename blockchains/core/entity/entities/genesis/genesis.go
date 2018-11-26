@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/request/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 )
 
