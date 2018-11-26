@@ -90,8 +90,6 @@ var SDKFunc = struct {
 						return errors.New(str)
 					}
 
-					// if the link keyname already exists:
-
 					// if the nodes does not exists, save them:
 					nodes := lnk.Nodes()
 					for _, oneNode := range nodes {

@@ -424,7 +424,7 @@ func TestSaveGenesis_createNewWallet_createPledge_transferPledgeTokens_returnsEr
 		Client: client,
 	})
 
-	// save the request, returns error
+	// save the request:
 	saveRequestErr := requestService.Save(trsfRequest, transferRepresentation)
 	if saveRequestErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", saveRequestErr.Error())
@@ -648,7 +648,40 @@ func TestSaveGenesis_CreateLink_voteOnLink_Success(t *testing.T) {
 	})
 
 	// save the new token request, then save vote:
-	saveRequestThenSaveVotesForTests(t, client, pk, repository, linkRepresentation, newLinkRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, linkRepresentation, newLinkRequest, []crypto.PrivateKey{pk}, []vote.Vote{
 		newLinkRequestVote,
 	}, createTokenVoteRouteFunc())
+
+	// create the link request for the same link:
+	duplicateLinkRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:  genIns.User(),
+		NewEntity: lnk,
+	})
+
+	// create our user vote:
+	duplicateLinkRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    newLinkRequest,
+		Voter:      genIns.User(),
+		IsApproved: true,
+	})
+
+	// save the request:
+	saveDuplicateRequestErr := requestService.Save(duplicateLinkRequest, linkRepresentation)
+	if saveDuplicateRequestErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", saveDuplicateRequestErr.Error())
+		return
+	}
+
+	// create the vote service:
+	voteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
+		PK:              pk,
+		Client:          client,
+		CreateRouteFunc: createTokenVoteRouteFunc(),
+	})
+
+	// save the vote, it should returns an error:
+	saveDuplicateVoteErr := voteService.Save(duplicateLinkRequestVote, linkRepresentation)
+	if saveDuplicateVoteErr == nil {
+		t.Errorf("the returned error was expected to be valid, nil returned")
+	}
 }
