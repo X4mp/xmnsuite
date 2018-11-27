@@ -16,6 +16,9 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request/vote"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/milestone"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/project"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 
@@ -318,6 +321,129 @@ func savePledge(
 	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, pldgeRepresentation, pldgeRequest, []crypto.PrivateKey{pk}, []vote.Vote{
 		pldgeRequestVote,
 	}, createEntityVoteRouteFunc())
+
+	// returns:
+	return requestService
+}
+
+func saveDeveloper(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromUser user.User,
+	newUser user.User,
+	pldge pledge.Pledge,
+	dev developer.Developer,
+) request.Service {
+
+	// create the representations:
+	developerRepresentation := developer.SDKFunc.CreateRepresentation()
+
+	// save the pledge:
+	savePledge(t, client, pk, service, repository, fromUser, newUser, pldge)
+
+	// create the developer request:
+	newDeveloperRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:  fromUser,
+		NewEntity: dev,
+	})
+
+	// create our user vote:
+	newDeveloperRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    newDeveloperRequest,
+		Voter:      fromUser,
+		IsApproved: true,
+	})
+
+	// save the new token request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, developerRepresentation, newDeveloperRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+		newDeveloperRequestVote,
+	}, createTokenVoteRouteFunc())
+
+	// return:
+	return requestService
+}
+
+func saveProject(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromUser user.User,
+	newUser user.User,
+	pldge pledge.Pledge,
+	dev developer.Developer,
+	proj project.Project,
+) request.Service {
+
+	// create the representations:
+	projectRepresentation := project.SDKFunc.CreateRepresentation()
+
+	// save the developer:
+	saveDeveloper(t, client, pk, service, repository, fromUser, newUser, pldge, dev)
+
+	// create the project request:
+	newProjectRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:  fromUser,
+		NewEntity: proj,
+	})
+
+	// create our user vote:
+	newProjectRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    newProjectRequest,
+		Voter:      fromUser,
+		IsApproved: true,
+	})
+
+	// save the new token request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, projectRepresentation, newProjectRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+		newProjectRequestVote,
+	}, createTokenDeveloperVoteRouteFunc())
+
+	// returns:
+	return requestService
+}
+
+func saveMilestone(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromUser user.User,
+	newUser user.User,
+	pldge pledge.Pledge,
+	dev developer.Developer,
+	proj project.Project,
+	mil milestone.Milestone,
+) request.Service {
+
+	// create the representations:
+	milestoneRepresentation := milestone.SDKFunc.CreateRepresentation()
+
+	// save the project:
+	saveProject(t, client, pk, service, repository, fromUser, newUser, pldge, dev, proj)
+
+	// create the milestone request:
+	newMilestoneRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:  fromUser,
+		NewEntity: mil,
+	})
+
+	// create our user vote:
+	newMilestoneRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    newMilestoneRequest,
+		Voter:      fromUser,
+		IsApproved: true,
+	})
+
+	// save the new token request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, milestoneRepresentation, newMilestoneRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+		newMilestoneRequestVote,
+	}, createTokenDeveloperVoteRouteFunc())
 
 	// returns:
 	return requestService

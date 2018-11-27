@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
@@ -19,6 +20,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/milestone"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/project"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/node"
@@ -608,42 +610,9 @@ func TestSaveGenesis_CreateLink_voteOnLink_Success(t *testing.T) {
 	})
 
 	// save the new token request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, linkRepresentation, newLinkRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+	saveRequestThenSaveVotesForTests(t, client, pk, repository, linkRepresentation, newLinkRequest, []crypto.PrivateKey{pk}, []vote.Vote{
 		newLinkRequestVote,
 	}, createTokenVoteRouteFunc())
-
-	// create the link request for the same link:
-	duplicateLinkRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  genIns.User(),
-		NewEntity: lnk,
-	})
-
-	// create our user vote:
-	duplicateLinkRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    duplicateLinkRequest,
-		Voter:      genIns.User(),
-		IsApproved: true,
-	})
-
-	// save the request:
-	saveDuplicateRequestErr := requestService.Save(duplicateLinkRequest, linkRepresentation)
-	if saveDuplicateRequestErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", saveDuplicateRequestErr.Error())
-		return
-	}
-
-	// create the vote service:
-	voteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
-		PK:              pk,
-		Client:          client,
-		CreateRouteFunc: createTokenVoteRouteFunc(),
-	})
-
-	// save the vote, it should returns an error:
-	saveDuplicateVoteErr := voteService.Save(duplicateLinkRequestVote, linkRepresentation)
-	if saveDuplicateVoteErr == nil {
-		t.Errorf("the returned error was expected to be valid, nil returned")
-	}
 }
 
 func TestSaveGenesis_createPledge_voteOnPledge_createDeveloper_voteOnDeveloper_Success(t *testing.T) {
@@ -677,36 +646,15 @@ func TestSaveGenesis_createPledge_voteOnPledge_createDeveloper_voteOnDeveloper_S
 		os.RemoveAll(rootPath)
 	}()
 
-	// create the representations:
-	developerRepresentation := developer.SDKFunc.CreateRepresentation()
-
 	// spawn bockchain with genesis instance:
 	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
 	defer node.Stop()
 
-	// save the pledge:
-	savePledge(t, client, pk, service, repository, genIns.User(), userIns, pldge)
-
-	// create the developer request:
-	newDeveloperRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  genIns.User(),
-		NewEntity: dev,
-	})
-
-	// create our user vote:
-	newDeveloperRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    newDeveloperRequest,
-		Voter:      genIns.User(),
-		IsApproved: true,
-	})
-
-	// save the new developer request, then save vote:
-	saveRequestThenSaveVotesForTests(t, client, pk, repository, developerRepresentation, newDeveloperRequest, []crypto.PrivateKey{pk}, []vote.Vote{
-		newDeveloperRequestVote,
-	}, createTokenVoteRouteFunc())
+	// save the developer:
+	saveDeveloper(t, client, pk, service, repository, genIns.User(), userIns, pldge, dev)
 }
 
-func TestSaveGenesis_CreateDeveloper_voteOnDeveloper_CreateProject_voteOnProjectWithDeveloperUser_Success(t *testing.T) {
+func TestSaveGenesis_createProject_voteOnProjectWithDeveloperUser_Success(t *testing.T) {
 	// variables:
 	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
 	pubKey := pk.PublicKey()
@@ -737,10 +685,6 @@ func TestSaveGenesis_CreateDeveloper_voteOnDeveloper_CreateProject_voteOnProject
 		Description: "This is the project description",
 	})
 
-	// create the representations:
-	projectRepresentation := project.SDKFunc.CreateRepresentation()
-	developerRepresentation := developer.SDKFunc.CreateRepresentation()
-
 	rootPath := filepath.Join("./test_files")
 	defer func() {
 		os.RemoveAll(rootPath)
@@ -750,44 +694,8 @@ func TestSaveGenesis_CreateDeveloper_voteOnDeveloper_CreateProject_voteOnProject
 	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
 	defer node.Stop()
 
-	// save the pledge:
-	savePledge(t, client, pk, service, repository, genIns.User(), userIns, pldge)
-
-	// create the developer request:
-	newDeveloperRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  genIns.User(),
-		NewEntity: dev,
-	})
-
-	// create our user vote:
-	newDeveloperRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    newDeveloperRequest,
-		Voter:      genIns.User(),
-		IsApproved: true,
-	})
-
-	// save the new token request, then save vote:
-	saveRequestThenSaveVotesForTests(t, client, pk, repository, developerRepresentation, newDeveloperRequest, []crypto.PrivateKey{pk}, []vote.Vote{
-		newDeveloperRequestVote,
-	}, createTokenVoteRouteFunc())
-
-	// create the project request:
-	newProjectRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  genIns.User(),
-		NewEntity: proj,
-	})
-
-	// create our user vote:
-	newProjectRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    newProjectRequest,
-		Voter:      genIns.User(),
-		IsApproved: true,
-	})
-
-	// save the new token request, then save vote:
-	saveRequestThenSaveVotesForTests(t, client, pk, repository, projectRepresentation, newProjectRequest, []crypto.PrivateKey{pk}, []vote.Vote{
-		newProjectRequestVote,
-	}, createTokenDeveloperVoteRouteFunc())
+	// save the project:
+	saveProject(t, client, pk, service, repository, genIns.User(), userIns, pldge, dev, proj)
 }
 
 func TestSaveGenesis_CreateProject_voteOnProject_withoutADeveloperUser_returnsError(t *testing.T) {
@@ -851,4 +759,56 @@ func TestSaveGenesis_CreateProject_voteOnProject_withoutADeveloperUser_returnsEr
 	if saveProjectVoteErr == nil {
 		t.Errorf("the returned error was expected to be valid, nil returned")
 	}
+}
+
+func TestSaveGenesis_createMilestone_voteOnMilestone_Success(t *testing.T) {
+	// variables:
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
+
+	walPK := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	walPubKey := walPK.PublicKey()
+	walletIns := wallet.CreateWalletWithPublicKeyForTests(walPubKey)
+	userIns := user.CreateUserWithWalletAndPublicKeyAndSharesForTests(walletIns, walPubKey, genIns.Deposit().Amount()*2)
+	pldge := pledge.SDKFunc.Create(pledge.CreateParams{
+		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   genIns.Deposit().To(),
+			Token:  genIns.Deposit().Token(),
+			Amount: int(math.Floor(float64(genIns.Deposit().Amount() / 2))),
+		}),
+		To: walletIns,
+	})
+
+	dev := developer.SDKFunc.Create(developer.CreateParams{
+		Pledge: pldge,
+		User:   genIns.User(),
+		Name:   "Steve",
+		Resume: "this is a resume",
+	})
+
+	proj := project.SDKFunc.Create(project.CreateParams{
+		Title:       "This is a project",
+		Description: "This is the project description",
+	})
+
+	mils := milestone.SDKFunc.Create(milestone.CreateParams{
+		Project:     proj,
+		Title:       "This is a milestone",
+		Description: "This is a milestone description",
+		CreatedOn:   time.Now().UTC(),
+		DueOn:       time.Now().Add(time.Second * 60 * 60 * 24),
+	})
+
+	rootPath := filepath.Join("./test_files")
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// spawn bockchain with genesis instance:
+	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
+	defer node.Stop()
+
+	// save the milestone:
+	saveMilestone(t, client, pk, service, repository, genIns.User(), userIns, pldge, dev, proj, mils)
 }

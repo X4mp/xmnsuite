@@ -13,6 +13,7 @@ import (
 	deposit "github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 	token "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
 	developer "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer"
+	milestone "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/milestone"
 	project "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/project"
 	link "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
 )
@@ -33,6 +34,7 @@ func init() {
 	link.Register(cdc)
 	developer.Register(cdc)
 	project.Register(cdc)
+	milestone.Register(cdc)
 
 	// replace:
 	entity.Replace(cdc)

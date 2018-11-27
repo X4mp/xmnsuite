@@ -18,6 +18,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/milestone"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/project"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
 	"github.com/xmnservices/xmnsuite/crypto"
@@ -60,6 +61,7 @@ func createCore20181108() *core20181108 {
 	linkRepresentation := link.SDKFunc.CreateRepresentation()
 	developerRepresentation := developer.SDKFunc.CreateRepresentation()
 	projectRepresentation := project.SDKFunc.CreateRepresentation()
+	milestoneRepresentation := milestone.SDKFunc.CreateRepresentation()
 
 	// register the possible requests:
 	request.SDKFunc.Register(pledgeRepresentation.MetaData())
@@ -69,6 +71,7 @@ func createCore20181108() *core20181108 {
 	request.SDKFunc.Register(linkRepresentation.MetaData())
 	request.SDKFunc.Register(developerRepresentation.MetaData())
 	request.SDKFunc.Register(projectRepresentation.MetaData())
+	request.SDKFunc.Register(milestoneRepresentation.MetaData())
 	request.SDKFunc.Register(walletRepresentation.MetaData()) // for updates
 
 	out := core20181108{
@@ -88,6 +91,7 @@ func createCore20181108() *core20181108 {
 			"link":      linkRepresentation.MetaData(),
 			"developer": developerRepresentation.MetaData(),
 			"project":   projectRepresentation.MetaData(),
+			"milestone": milestoneRepresentation.MetaData(),
 		},
 		entityRepresentations: map[string]entity.Representation{
 			"wallet": walletRepresentation,
@@ -105,7 +109,8 @@ func createCore20181108() *core20181108 {
 			"developer": developerRepresentation,
 		},
 		developerRequestRepresentations: map[string]entity.Representation{
-			"project": projectRepresentation,
+			"project":   projectRepresentation,
+			"milestone": milestoneRepresentation,
 		},
 	}
 
