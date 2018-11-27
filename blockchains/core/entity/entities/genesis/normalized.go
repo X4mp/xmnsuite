@@ -6,12 +6,13 @@ import (
 )
 
 type normalizedGenesis struct {
-	ID                   string             `json:"id"`
-	ConcensusNeeded      int                `json:"concensus_needed"`
-	GzPricePerKb         int                `json:"gaz_price_per_kb"`
-	MxAmountOfValidators int                `json:"max_amount_of_validators"`
-	User                 user.Normalized    `json:"user"`
-	Deposit              deposit.Normalized `json:"deposit"`
+	ID                       string             `json:"id"`
+	ConcensusNeeded          int                `json:"concensus_needed"`
+	DeveloperConcensusNeeded int                `json:"developer_concensus_needed"`
+	GzPricePerKb             int                `json:"gaz_price_per_kb"`
+	MxAmountOfValidators     int                `json:"max_amount_of_validators"`
+	User                     user.Normalized    `json:"user"`
+	Deposit                  deposit.Normalized `json:"deposit"`
 }
 
 func createNormalizedGenesis(ins Genesis) (*normalizedGenesis, error) {
@@ -26,12 +27,13 @@ func createNormalizedGenesis(ins Genesis) (*normalizedGenesis, error) {
 	}
 
 	out := normalizedGenesis{
-		ID:                   ins.ID().String(),
-		ConcensusNeeded:      ins.ConcensusNeeded(),
-		GzPricePerKb:         ins.GazPricePerKb(),
-		MxAmountOfValidators: ins.MaxAmountOfValidators(),
-		User:                 normalizedUser,
-		Deposit:              normalizedDeposit,
+		ID:                       ins.ID().String(),
+		ConcensusNeeded:          ins.ConcensusNeeded(),
+		DeveloperConcensusNeeded: ins.DeveloperConcensusNeeded(),
+		GzPricePerKb:             ins.GazPricePerKb(),
+		MxAmountOfValidators:     ins.MaxAmountOfValidators(),
+		User:                     normalizedUser,
+		Deposit:                  normalizedDeposit,
 	}
 
 	return &out, nil

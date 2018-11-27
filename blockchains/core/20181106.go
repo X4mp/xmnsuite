@@ -18,6 +18,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/project"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
 	"github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
@@ -36,15 +37,16 @@ type incomingRequest struct {
 }
 
 type core20181108 struct {
-	genesisRepresentation        entity.Representation
-	walletRepresentation         entity.Representation
-	requestRepresentation        entity.Representation
-	voteRepresentation           entity.Representation
-	entityMetaDatas              map[string]entity.MetaData
-	entityRepresentations        map[string]entity.Representation
-	allRequestRepresentations    map[string]entity.Representation
-	entityRequestRepresentations map[string]entity.Representation
-	tokenRequestRepresentations  map[string]entity.Representation
+	genesisRepresentation           entity.Representation
+	walletRepresentation            entity.Representation
+	requestRepresentation           entity.Representation
+	voteRepresentation              entity.Representation
+	entityMetaDatas                 map[string]entity.MetaData
+	entityRepresentations           map[string]entity.Representation
+	allRequestRepresentations       map[string]entity.Representation
+	entityRequestRepresentations    map[string]entity.Representation
+	tokenRequestRepresentations     map[string]entity.Representation
+	developerRequestRepresentations map[string]entity.Representation
 }
 
 func createCore20181108() *core20181108 {
@@ -57,6 +59,7 @@ func createCore20181108() *core20181108 {
 	userRepresentation := user.SDKFunc.CreateRepresentation()
 	linkRepresentation := link.SDKFunc.CreateRepresentation()
 	developerRepresentation := developer.SDKFunc.CreateRepresentation()
+	projectRepresentation := project.SDKFunc.CreateRepresentation()
 
 	// register the possible requests:
 	request.SDKFunc.Register(pledgeRepresentation.MetaData())
@@ -65,6 +68,7 @@ func createCore20181108() *core20181108 {
 	request.SDKFunc.Register(validatorRepresentation.MetaData())
 	request.SDKFunc.Register(linkRepresentation.MetaData())
 	request.SDKFunc.Register(developerRepresentation.MetaData())
+	request.SDKFunc.Register(projectRepresentation.MetaData())
 	request.SDKFunc.Register(walletRepresentation.MetaData()) // for updates
 
 	out := core20181108{
@@ -83,6 +87,7 @@ func createCore20181108() *core20181108 {
 			"transfer":  transfer.SDKFunc.CreateMetaData(),
 			"link":      linkRepresentation.MetaData(),
 			"developer": developerRepresentation.MetaData(),
+			"project":   projectRepresentation.MetaData(),
 		},
 		entityRepresentations: map[string]entity.Representation{
 			"wallet": walletRepresentation,
@@ -99,6 +104,9 @@ func createCore20181108() *core20181108 {
 			"link":      linkRepresentation,
 			"developer": developerRepresentation,
 		},
+		developerRequestRepresentations: map[string]entity.Representation{
+			"project": projectRepresentation,
+		},
 	}
 
 	for keyname, oneRepresentation := range out.entityRequestRepresentations {
@@ -106,6 +114,10 @@ func createCore20181108() *core20181108 {
 	}
 
 	for keyname, oneRepresentation := range out.tokenRequestRepresentations {
+		out.allRequestRepresentations[keyname] = oneRepresentation
+	}
+
+	for keyname, oneRepresentation := range out.developerRequestRepresentations {
 		out.allRequestRepresentations[keyname] = oneRepresentation
 	}
 
@@ -134,6 +146,7 @@ func create20181106(
 	store.Roles().EnableWriteAccess(routerRoleKey, "/[a-z-]+/requests")
 	store.Roles().EnableWriteAccess(routerRoleKey, "/[a-z-]+/requests/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")
 	store.Roles().EnableWriteAccess(routerRoleKey, "/token/requests/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[a-z-]+")
+	store.Roles().EnableWriteAccess(routerRoleKey, "/token/developer/requests/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/[a-z-]+")
 
 	// create core:
 	core := createCore20181108()
@@ -188,6 +201,7 @@ func create20181106(
 				core.saveRequest(),
 				core.saveRequestVote(),
 				core.saveTokenRequestVote(),
+				core.saveTokenDeveloperRequestVote(),
 			},
 		},
 	})
@@ -593,6 +607,7 @@ func (app *core20181108) saveRequestVote() routers.CreateRouteParams {
 							if oneVote, ok := oneVoteIns.(vote.Vote); ok {
 								if oneVote.IsApproved() {
 									approved += oneVote.Voter().Shares()
+									continue
 								}
 
 								disapproved += oneVote.Voter().Shares()
@@ -661,6 +676,7 @@ func (app *core20181108) saveTokenRequestVote() routers.CreateRouteParams {
 
 							if oneVote.IsApproved() {
 								approved += balance.Amount()
+								continue
 							}
 
 							disapproved += balance.Amount()
@@ -684,6 +700,72 @@ func (app *core20181108) saveTokenRequestVote() routers.CreateRouteParams {
 			})
 
 			return app.saveRequestVoteFn(voteService, app.tokenRequestRepresentations)(store, from, path, params, data, sig)
+		},
+	}
+}
+
+func (app *core20181108) saveTokenDeveloperRequestVote() routers.CreateRouteParams {
+	return routers.CreateRouteParams{
+		Pattern: "/token/developer/requests/<requestid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>/<name|[a-z-]+>",
+		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
+			voteService := vote.SDKFunc.CreateService(vote.CreateServiceParams{
+				CalculateVoteFn: func(votes entity.PartialSet) (bool, bool, error) {
+					// retrieve the genesis:
+					dep := createDependencies(store)
+
+					// retrieve genesis:
+					gen, genErr := dep.genesisRepository.Retrieve()
+					if genErr != nil {
+						str := fmt.Sprintf("there was an error while retrieving the Genesis instance: %s", genErr.Error())
+						return false, false, errors.New(str)
+					}
+
+					// retrieve the needed concensus:
+					neededConcensus := gen.DeveloperConcensusNeeded()
+
+					// compile the vote's concensus:
+					approved := 0
+					disapproved := 0
+					votesIns := votes.Instances()
+					for _, oneVoteIns := range votesIns {
+						if oneVote, ok := oneVoteIns.(vote.Vote); ok {
+							// retrieve the developer by user:
+							usr := oneVote.Voter()
+							dev, devErr := dep.developerRepository.RetrieveByUser(usr)
+							if devErr != nil {
+								str := fmt.Sprintf("the voter (UserID: %s) is not a Developer", usr.ID().String())
+								return false, false, errors.New(str)
+							}
+
+							// retrieve the pledge:
+							amount := dev.Pledge().From().Amount()
+
+							if oneVote.IsApproved() {
+								approved += amount
+								continue
+							}
+
+							disapproved += amount
+							continue
+						}
+
+						log.Printf("the entity (ID: %s) is not a valid Vote instance", oneVoteIns.ID().String())
+					}
+
+					// if there is enugh approved or disapproved votes, the concensus passed:
+					concensusPassed := (approved >= neededConcensus) || (disapproved >= neededConcensus)
+
+					// vote is approved, insert the new entity:
+					if approved >= neededConcensus {
+						return true, concensusPassed, nil
+					}
+
+					return false, concensusPassed, nil
+				},
+				DS: store,
+			})
+
+			return app.saveRequestVoteFn(voteService, app.developerRequestRepresentations)(store, from, path, params, data, sig)
 		},
 	}
 }

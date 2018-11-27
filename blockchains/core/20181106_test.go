@@ -19,6 +19,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/project"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/node"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/withdrawal"
@@ -336,9 +337,6 @@ func TestSaveGenesis_createNewWallet_createPledge_transferPledgeTokens_returnsEr
 	})
 
 	// create the repreentations:
-	walletRepresentation := wallet.SDKFunc.CreateRepresentation()
-	userRepresentation := user.SDKFunc.CreateRepresentation()
-	pldgeRepresentation := pledge.SDKFunc.CreateRepresentation()
 	transferRepresentation := transfer.SDKFunc.CreateRepresentation()
 
 	rootPath := filepath.Join("./test_files")
@@ -350,47 +348,8 @@ func TestSaveGenesis_createNewWallet_createPledge_transferPledgeTokens_returnsEr
 	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
 	defer node.Stop()
 
-	// save the new wallet:
-	savedWallet := saveEntityThenRetrieveEntityByIDThenDeleteEntityByID(t, walletIns, walletRepresentation, service, repository)
-
-	// compare the wallets:
-	wallet.CompareWalletsForTests(t, walletIns.(wallet.Wallet), savedWallet.(wallet.Wallet))
-
-	// create the user in wallet request:
-	userInWalletRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  genIns.User(),
-		NewEntity: userIns,
-	})
-
-	// create our user vote:
-	userInWalletRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    userInWalletRequest,
-		Voter:      genIns.User(),
-		IsApproved: true,
-	})
-
-	// save the new wallet request, then save vote:
-	saveRequestThenSaveVotesForTests(t, client, pk, repository, userRepresentation, userInWalletRequest, []crypto.PrivateKey{pk}, []vote.Vote{
-		userInWalletRequestVote,
-	}, createEntityVoteRouteFunc())
-
-	// create the user in wallet request:
-	pldgeRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  genIns.User(),
-		NewEntity: pldge,
-	})
-
-	// create our user vote:
-	pldgeRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    pldgeRequest,
-		Voter:      genIns.User(),
-		IsApproved: true,
-	})
-
-	// save the new wallet request, then save vote:
-	saveRequestThenSaveVotesForTests(t, client, pk, repository, pldgeRepresentation, pldgeRequest, []crypto.PrivateKey{pk}, []vote.Vote{
-		pldgeRequestVote,
-	}, createEntityVoteRouteFunc())
+	// save the pledge:
+	savePledge(t, client, pk, service, repository, genIns.User(), userIns, pldge)
 
 	// transfer the pledge funds, returns error:
 	trsf := transfer.SDKFunc.Create(transfer.CreateParams{
@@ -636,38 +595,38 @@ func TestSaveGenesis_CreateLink_voteOnLink_Success(t *testing.T) {
 	defer node.Stop()
 
 	// create the link request:
-	newDeveloperRequest := request.SDKFunc.Create(request.CreateParams{
+	newLinkRequest := request.SDKFunc.Create(request.CreateParams{
 		FromUser:  genIns.User(),
 		NewEntity: lnk,
 	})
 
 	// create our user vote:
-	newDeveloperRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    newDeveloperRequest,
+	newLinkRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    newLinkRequest,
 		Voter:      genIns.User(),
 		IsApproved: true,
 	})
 
 	// save the new token request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, linkRepresentation, newDeveloperRequest, []crypto.PrivateKey{pk}, []vote.Vote{
-		newDeveloperRequestVote,
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, linkRepresentation, newLinkRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+		newLinkRequestVote,
 	}, createTokenVoteRouteFunc())
 
 	// create the link request for the same link:
-	duplicateDeveloperRequest := request.SDKFunc.Create(request.CreateParams{
+	duplicateLinkRequest := request.SDKFunc.Create(request.CreateParams{
 		FromUser:  genIns.User(),
 		NewEntity: lnk,
 	})
 
 	// create our user vote:
-	duplicateDeveloperRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    duplicateDeveloperRequest,
+	duplicateLinkRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    duplicateLinkRequest,
 		Voter:      genIns.User(),
 		IsApproved: true,
 	})
 
 	// save the request:
-	saveDuplicateRequestErr := requestService.Save(duplicateDeveloperRequest, linkRepresentation)
+	saveDuplicateRequestErr := requestService.Save(duplicateLinkRequest, linkRepresentation)
 	if saveDuplicateRequestErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", saveDuplicateRequestErr.Error())
 		return
@@ -681,31 +640,105 @@ func TestSaveGenesis_CreateLink_voteOnLink_Success(t *testing.T) {
 	})
 
 	// save the vote, it should returns an error:
-	saveDuplicateVoteErr := voteService.Save(duplicateDeveloperRequestVote, linkRepresentation)
+	saveDuplicateVoteErr := voteService.Save(duplicateLinkRequestVote, linkRepresentation)
 	if saveDuplicateVoteErr == nil {
 		t.Errorf("the returned error was expected to be valid, nil returned")
 	}
 }
 
-func TestSaveGenesis_CreateDeveloper_voteOnDeveloper_Success(t *testing.T) {
+func TestSaveGenesis_createPledge_voteOnPledge_createDeveloper_voteOnDeveloper_Success(t *testing.T) {
 	// variables:
 	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
 	pubKey := pk.PublicKey()
 	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
 
+	walPK := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	walPubKey := walPK.PublicKey()
+	walletIns := wallet.CreateWalletWithPublicKeyForTests(walPubKey)
+	userIns := user.CreateUserWithWalletAndPublicKeyAndSharesForTests(walletIns, walPubKey, genIns.Deposit().Amount()*2)
+	pldge := pledge.SDKFunc.Create(pledge.CreateParams{
+		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   genIns.Deposit().To(),
+			Token:  genIns.Deposit().Token(),
+			Amount: int(math.Floor(float64(genIns.Deposit().Amount() / 2))),
+		}),
+		To: walletIns,
+	})
+
 	dev := developer.SDKFunc.Create(developer.CreateParams{
+		Pledge: pldge,
 		User:   genIns.User(),
 		Name:   "Steve",
 		Resume: "this is the content of my resume",
 	})
 
-	devWithSameUser := developer.SDKFunc.Create(developer.CreateParams{
+	rootPath := filepath.Join("./test_files")
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// create the representations:
+	developerRepresentation := developer.SDKFunc.CreateRepresentation()
+
+	// spawn bockchain with genesis instance:
+	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
+	defer node.Stop()
+
+	// save the pledge:
+	savePledge(t, client, pk, service, repository, genIns.User(), userIns, pldge)
+
+	// create the developer request:
+	newDeveloperRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:  genIns.User(),
+		NewEntity: dev,
+	})
+
+	// create our user vote:
+	newDeveloperRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    newDeveloperRequest,
+		Voter:      genIns.User(),
+		IsApproved: true,
+	})
+
+	// save the new developer request, then save vote:
+	saveRequestThenSaveVotesForTests(t, client, pk, repository, developerRepresentation, newDeveloperRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+		newDeveloperRequestVote,
+	}, createTokenVoteRouteFunc())
+}
+
+func TestSaveGenesis_CreateDeveloper_voteOnDeveloper_CreateProject_voteOnProjectWithDeveloperUser_Success(t *testing.T) {
+	// variables:
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
+
+	walPK := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	walPubKey := walPK.PublicKey()
+	walletIns := wallet.CreateWalletWithPublicKeyForTests(walPubKey)
+	userIns := user.CreateUserWithWalletAndPublicKeyAndSharesForTests(walletIns, walPubKey, genIns.Deposit().Amount()*2)
+	pldge := pledge.SDKFunc.Create(pledge.CreateParams{
+		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   genIns.Deposit().To(),
+			Token:  genIns.Deposit().Token(),
+			Amount: int(math.Floor(float64(genIns.Deposit().Amount() / 2))),
+		}),
+		To: walletIns,
+	})
+
+	dev := developer.SDKFunc.Create(developer.CreateParams{
+		Pledge: pldge,
 		User:   genIns.User(),
-		Name:   "John",
-		Resume: "this is the content of john's resume",
+		Name:   "Steve",
+		Resume: "this is a resume",
+	})
+
+	proj := project.SDKFunc.Create(project.CreateParams{
+		Title:       "This is a project",
+		Description: "This is the project description",
 	})
 
 	// create the representations:
+	projectRepresentation := project.SDKFunc.CreateRepresentation()
 	developerRepresentation := developer.SDKFunc.CreateRepresentation()
 
 	rootPath := filepath.Join("./test_files")
@@ -714,8 +747,11 @@ func TestSaveGenesis_CreateDeveloper_voteOnDeveloper_Success(t *testing.T) {
 	}()
 
 	// spawn bockchain with genesis instance:
-	node, client, _, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
+	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
 	defer node.Stop()
+
+	// save the pledge:
+	savePledge(t, client, pk, service, repository, genIns.User(), userIns, pldge)
 
 	// create the developer request:
 	newDeveloperRequest := request.SDKFunc.Create(request.CreateParams{
@@ -731,27 +767,75 @@ func TestSaveGenesis_CreateDeveloper_voteOnDeveloper_Success(t *testing.T) {
 	})
 
 	// save the new token request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, developerRepresentation, newDeveloperRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+	saveRequestThenSaveVotesForTests(t, client, pk, repository, developerRepresentation, newDeveloperRequest, []crypto.PrivateKey{pk}, []vote.Vote{
 		newDeveloperRequestVote,
 	}, createTokenVoteRouteFunc())
 
-	// create the developer request for the same dev:
-	duplicateDeveloperRequest := request.SDKFunc.Create(request.CreateParams{
+	// create the project request:
+	newProjectRequest := request.SDKFunc.Create(request.CreateParams{
 		FromUser:  genIns.User(),
-		NewEntity: dev,
+		NewEntity: proj,
 	})
 
 	// create our user vote:
-	duplicateDeveloperRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    duplicateDeveloperRequest,
+	newProjectRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    newProjectRequest,
 		Voter:      genIns.User(),
 		IsApproved: true,
 	})
 
+	// save the new token request, then save vote:
+	saveRequestThenSaveVotesForTests(t, client, pk, repository, projectRepresentation, newProjectRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+		newProjectRequestVote,
+	}, createTokenDeveloperVoteRouteFunc())
+}
+
+func TestSaveGenesis_CreateProject_voteOnProject_withoutADeveloperUser_returnsError(t *testing.T) {
+	// variables:
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
+
+	proj := project.SDKFunc.Create(project.CreateParams{
+		Title:       "This is a project",
+		Description: "This is the project description",
+	})
+
+	// create the representations:
+	projectRepresentation := project.SDKFunc.CreateRepresentation()
+
+	rootPath := filepath.Join("./test_files")
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// spawn bockchain with genesis instance:
+	node, client, _, _ := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
+	defer node.Stop()
+
+	// create the project request:
+	newProjectRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:  genIns.User(),
+		NewEntity: proj,
+	})
+
+	// create our user vote:
+	newProjectRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    newProjectRequest,
+		Voter:      genIns.User(),
+		IsApproved: true,
+	})
+
+	// create the request service:
+	requestService := request.SDKFunc.CreateSDKService(request.CreateSDKServiceParams{
+		PK:     pk,
+		Client: client,
+	})
+
 	// save the request:
-	saveDuplicateRequestErr := requestService.Save(duplicateDeveloperRequest, developerRepresentation)
-	if saveDuplicateRequestErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", saveDuplicateRequestErr.Error())
+	saveProjectErr := requestService.Save(newProjectRequest, projectRepresentation)
+	if saveProjectErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", saveProjectErr.Error())
 		return
 	}
 
@@ -759,38 +843,12 @@ func TestSaveGenesis_CreateDeveloper_voteOnDeveloper_Success(t *testing.T) {
 	voteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
 		PK:              pk,
 		Client:          client,
-		CreateRouteFunc: createTokenVoteRouteFunc(),
+		CreateRouteFunc: createTokenDeveloperVoteRouteFunc(),
 	})
 
 	// save the vote, it should returns an error:
-	saveDuplicateVoteErr := voteService.Save(duplicateDeveloperRequestVote, developerRepresentation)
-	if saveDuplicateVoteErr == nil {
-		t.Errorf("the returned error was expected to be valid, nil returned")
-	}
-
-	// create the developer request for the same dev:
-	sameUserDeveloperRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  genIns.User(),
-		NewEntity: devWithSameUser,
-	})
-
-	// create our user vote:
-	sameUserDeveloperRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    sameUserDeveloperRequest,
-		Voter:      genIns.User(),
-		IsApproved: true,
-	})
-
-	// save the request:
-	sameUserRequestErr := requestService.Save(sameUserDeveloperRequest, developerRepresentation)
-	if sameUserRequestErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", sameUserRequestErr.Error())
-		return
-	}
-
-	// save the vote, it should returns an error:
-	sameUserVoteErr := voteService.Save(sameUserDeveloperRequestVote, developerRepresentation)
-	if sameUserVoteErr == nil {
+	saveProjectVoteErr := voteService.Save(newProjectRequestVote, projectRepresentation)
+	if saveProjectVoteErr == nil {
 		t.Errorf("the returned error was expected to be valid, nil returned")
 	}
 }

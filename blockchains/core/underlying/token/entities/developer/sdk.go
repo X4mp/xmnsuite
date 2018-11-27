@@ -1,11 +1,13 @@
 package developer
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
@@ -14,6 +16,7 @@ import (
 type Developer interface {
 	ID() *uuid.UUID
 	User() user.User
+	Pledge() pledge.Pledge
 	Name() string
 	Resume() string
 }
@@ -22,19 +25,27 @@ type Developer interface {
 type Normalized interface {
 }
 
+// Repository represents a developer repository
+type Repository interface {
+	RetrieveByUser(usr user.User) (Developer, error)
+	RetrieveByPledge(pldge pledge.Pledge) (Developer, error)
+}
+
 // CreateParams represents the create params
 type CreateParams struct {
 	ID     *uuid.UUID
+	Pledge pledge.Pledge
 	User   user.User
 	Name   string
 	Resume string
 }
 
-// SDKFunc represents the Transfer SDK func
+// SDKFunc represents the Developer SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Developer
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
+	CreateRepository     func(store datastore.DataStore) Repository
 }{
 	Create: func(params CreateParams) Developer {
 		if params.ID == nil {
@@ -42,7 +53,7 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out := createDeveloper(params.ID, params.User, params.Name, params.Resume)
+		out := createDeveloper(params.ID, params.User, params.Pledge, params.Name, params.Resume)
 		return out
 	},
 	CreateMetaData: func() entity.MetaData {
@@ -66,6 +77,7 @@ var SDKFunc = struct {
 					return []string{
 						retrieveAllDevelopersKeyname(),
 						retrieveDevelopersByUserIDKeyname(dev.User().ID()),
+						retrieveDevelopersByPledgeIDKeyname(dev.Pledge().ID()),
 					}, nil
 				}
 
@@ -73,12 +85,14 @@ var SDKFunc = struct {
 				return nil, errors.New(str)
 			},
 			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
-				// create the repository and service:
-				repository := entity.SDKFunc.CreateRepository(ds)
-
 				// create the metadata:
 				metaData := createMetaData()
+				pledgeMetaData := pledge.SDKFunc.CreateMetaData()
 				userMetaData := user.SDKFunc.CreateMetaData()
+
+				// create the repository and service:
+				repository := entity.SDKFunc.CreateRepository(ds)
+				devRepository := createRepository(repository, metaData)
 
 				if dev, ok := ins.(Developer); ok {
 					// if the developer already exists, return an error:
@@ -90,16 +104,37 @@ var SDKFunc = struct {
 
 					// if the user does not exists, return an error:
 					usr := dev.User()
-					_, retUserErr := repository.RetrieveByID(userMetaData, usr.ID())
-					if retUserErr != nil {
+					_, retUsrErr := repository.RetrieveByID(userMetaData, usr.ID())
+					if retUsrErr != nil {
 						str := fmt.Sprintf("the User (ID: %s) in the Developer instance (ID: %s) does not exists", usr.ID().String(), dev.ID().String())
 						return errors.New(str)
 					}
 
+					// if the pledge does not exists, return an error:
+					pldge := dev.Pledge()
+					_, retPledgeErr := repository.RetrieveByID(pledgeMetaData, pldge.ID())
+					if retPledgeErr != nil {
+						str := fmt.Sprintf("the Pledge (ID: %s) in the Developer instance (ID: %s) does not exists", pldge.ID().String(), dev.ID().String())
+						return errors.New(str)
+					}
+
+					// if the pledge is already attached to a developer, return an error:
+					retByPldgeID, retByPldgeIDErr := devRepository.RetrieveByPledge(pldge)
+					if retByPldgeIDErr == nil {
+						str := fmt.Sprintf("the Pledge (ID: %s) already exists in another Developer instance (ID: %s)", pldge.ID().String(), retByPldgeID.ID().String())
+						return errors.New(str)
+					}
+
 					// if the user is already attached to a developer, return an error:
-					retDevByUserID, retDevByUserIDErr := repository.RetrieveByIntersectKeynames(metaData, []string{retrieveDevelopersByUserIDKeyname(usr.ID())})
+					retDevByUserID, retDevByUserIDErr := devRepository.RetrieveByUser(usr)
 					if retDevByUserIDErr == nil {
 						str := fmt.Sprintf("the User (ID: %s) already exists in another Developer instance (ID: %s)", usr.ID().String(), retDevByUserID.ID().String())
+						return errors.New(str)
+					}
+
+					// if the wallet of the pledge is different from the one of the user, return an error:
+					if bytes.Compare(pldge.From().From().ID().Bytes(), usr.Wallet().ID().Bytes()) != 0 {
+						str := fmt.Sprintf("the Pledge (ID: %s) is from a Wallet (ID: %s) that is different from the User (ID: %s) Wallet (ID: %s), in the Developer instance (ID: %s)", pldge.ID().String(), pldge.From().From().ID().String(), usr.ID().String(), usr.Wallet().ID().String(), dev.ID().String())
 						return errors.New(str)
 					}
 
@@ -111,5 +146,11 @@ var SDKFunc = struct {
 				return errors.New(str)
 			},
 		})
+	},
+	CreateRepository: func(store datastore.DataStore) Repository {
+		met := createMetaData()
+		entityRepository := entity.SDKFunc.CreateRepository(store)
+		rep := createRepository(entityRepository, met)
+		return rep
 	},
 }

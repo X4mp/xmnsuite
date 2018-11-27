@@ -11,6 +11,9 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request/vote"
 	"github.com/xmnservices/xmnsuite/crypto"
@@ -25,6 +28,12 @@ func createEntityVoteRouteFunc() vote.CreateRouteFn {
 func createTokenVoteRouteFunc() vote.CreateRouteFn {
 	return func(ins vote.Vote, rep entity.Representation) (string, error) {
 		return fmt.Sprintf("/token/requests/%s/%s", ins.Request().ID().String(), rep.MetaData().Keyname()), nil
+	}
+}
+
+func createTokenDeveloperVoteRouteFunc() vote.CreateRouteFn {
+	return func(ins vote.Vote, rep entity.Representation) (string, error) {
+		return fmt.Sprintf("/token/developer/requests/%s/%s", ins.Request().ID().String(), rep.MetaData().Keyname()), nil
 	}
 }
 
@@ -246,5 +255,70 @@ func saveRequestThenSaveVotesForTests(
 		return nil
 	}
 
+	return requestService
+}
+
+func savePledge(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromUser user.User,
+	newUser user.User,
+	pldge pledge.Pledge,
+) request.Service {
+
+	// variables:
+	toWallet := pldge.To()
+
+	// create the repreentations:
+	walletRepresentation := wallet.SDKFunc.CreateRepresentation()
+	userRepresentation := user.SDKFunc.CreateRepresentation()
+	pldgeRepresentation := pledge.SDKFunc.CreateRepresentation()
+
+	// save the new wallet:
+	savedWallet := saveEntityThenRetrieveEntityByIDThenDeleteEntityByID(t, toWallet, walletRepresentation, service, repository)
+
+	// compare the wallets:
+	wallet.CompareWalletsForTests(t, toWallet.(wallet.Wallet), savedWallet.(wallet.Wallet))
+
+	// create the user in wallet request:
+	userInWalletRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:  fromUser,
+		NewEntity: newUser,
+	})
+
+	// create our user vote:
+	userInWalletRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    userInWalletRequest,
+		Voter:      fromUser,
+		IsApproved: true,
+	})
+
+	// save the new wallet request, then save vote:
+	saveRequestThenSaveVotesForTests(t, client, pk, repository, userRepresentation, userInWalletRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+		userInWalletRequestVote,
+	}, createEntityVoteRouteFunc())
+
+	// create the user in wallet request:
+	pldgeRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:  fromUser,
+		NewEntity: pldge,
+	})
+
+	// create our user vote:
+	pldgeRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    pldgeRequest,
+		Voter:      fromUser,
+		IsApproved: true,
+	})
+
+	// save the new wallet request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, pldgeRepresentation, pldgeRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+		pldgeRequestVote,
+	}, createEntityVoteRouteFunc())
+
+	// returns:
 	return requestService
 }

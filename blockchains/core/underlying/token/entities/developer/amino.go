@@ -2,6 +2,7 @@ package developer
 
 import (
 	amino "github.com/tendermint/go-amino"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/user"
 )
 
@@ -24,6 +25,7 @@ func init() {
 func Register(codec *amino.Codec) {
 	// dependencies:
 	user.Register(codec)
+	pledge.Register(codec)
 
 	// Developer
 	func() {

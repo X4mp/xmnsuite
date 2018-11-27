@@ -16,17 +16,19 @@ import (
 type genesis struct {
 	UUID                 *uuid.UUID      `json:"id"`
 	ConNeeded            int             `json:"concensus_needed"`
+	DevConNeeded         int             `json:"developer_concensus_needed"`
 	GzPricePerKb         int             `json:"gaz_price_per_kb"`
 	MxAmountOfValidators int             `json:"max_amount_of_validators"`
 	Usr                  user.User       `json:"user"`
 	Dep                  deposit.Deposit `json:"deposit"`
 }
 
-func createGenesis(id *uuid.UUID, concensusNeeded int, gazPricePerKb int, maxAmountOfValidators int, dep deposit.Deposit, usr user.User) (Genesis, error) {
+func createGenesis(id *uuid.UUID, concensusNeeded int, devConcensusNeeded int, gazPricePerKb int, maxAmountOfValidators int, dep deposit.Deposit, usr user.User) (Genesis, error) {
 
 	out := genesis{
 		UUID:                 id,
 		ConNeeded:            concensusNeeded,
+		DevConNeeded:         devConcensusNeeded,
 		GzPricePerKb:         gazPricePerKb,
 		MxAmountOfValidators: maxAmountOfValidators,
 		Usr:                  usr,
@@ -54,7 +56,7 @@ func createGenesisFromNormalized(ins *normalizedGenesis) (Genesis, error) {
 
 	if dep, ok := depIns.(deposit.Deposit); ok {
 		if usr, ok := usrIns.(user.User); ok {
-			return createGenesis(&id, ins.ConcensusNeeded, ins.GzPricePerKb, ins.MxAmountOfValidators, dep, usr)
+			return createGenesis(&id, ins.ConcensusNeeded, ins.DeveloperConcensusNeeded, ins.GzPricePerKb, ins.MxAmountOfValidators, dep, usr)
 		}
 
 		str := fmt.Sprintf("the entity (ID: %s) is not a valid User instance", usrIns.ID().String())
@@ -78,6 +80,11 @@ func (app *genesis) GazPricePerKb() int {
 // ConcensusNeeded returns the concensusNeeded
 func (app *genesis) ConcensusNeeded() int {
 	return app.ConNeeded
+}
+
+// DeveloperConcensusNeeded returns the developer concensusNeeded
+func (app *genesis) DeveloperConcensusNeeded() int {
+	return app.DevConNeeded
 }
 
 // MaxAmountOfValidators returns the maxAmountOfValidators

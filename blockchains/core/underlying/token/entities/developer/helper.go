@@ -6,6 +6,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/user"
 )
 
@@ -17,6 +18,10 @@ func retrieveDevelopersByUserIDKeyname(userID *uuid.UUID) string {
 	return fmt.Sprintf("developers:by_user_id:%s", userID.String())
 }
 
+func retrieveDevelopersByPledgeIDKeyname(pldgeID *uuid.UUID) string {
+	return fmt.Sprintf("developers:by_pledge_id:%s", pldgeID.String())
+}
+
 func createMetaData() entity.MetaData {
 	return entity.SDKFunc.CreateMetaData(entity.CreateMetaDataParams{
 		Name: "Developer",
@@ -24,6 +29,7 @@ func createMetaData() entity.MetaData {
 			fromStorableToEntity := func(storable *storableDeveloper) (entity.Entity, error) {
 				// create the metadata:
 				userMetaData := user.SDKFunc.CreateMetaData()
+				pldgeMetaData := pledge.SDKFunc.CreateMetaData()
 
 				id, idErr := uuid.FromString(storable.ID)
 				if idErr != nil {
@@ -35,14 +41,29 @@ func createMetaData() entity.MetaData {
 					return nil, userIDErr
 				}
 
-				ins, insErr := rep.RetrieveByID(userMetaData, &userID)
-				if insErr != nil {
-					return nil, insErr
+				userIns, userInsErr := rep.RetrieveByID(userMetaData, &userID)
+				if userInsErr != nil {
+					return nil, userInsErr
 				}
 
-				if usr, ok := ins.(user.User); ok {
-					out := createDeveloper(&id, usr, storable.Name, storable.Resume)
-					return out, nil
+				pldgeID, pldgeIDErr := uuid.FromString(storable.PledgeID)
+				if pldgeIDErr != nil {
+					return nil, pldgeIDErr
+				}
+
+				pldgeIns, pldgeInsErr := rep.RetrieveByID(pldgeMetaData, &pldgeID)
+				if pldgeInsErr != nil {
+					return nil, pldgeInsErr
+				}
+
+				if usr, ok := userIns.(user.User); ok {
+					if pldge, ok := pldgeIns.(pledge.Pledge); ok {
+						out := createDeveloper(&id, usr, pldge, storable.Name, storable.Resume)
+						return out, nil
+					}
+
+					str := fmt.Sprintf("the entity (ID: %s) is not a valid Pledge instance and thererfore the given data cannot be transformed to a Developer instance", pldgeIns.ID().String())
+					return nil, errors.New(str)
 				}
 
 				str := fmt.Sprintf("the entity (ID: %s) is not a valid User instance and thererfore the given data cannot be transformed to a Developer instance", userID.String())

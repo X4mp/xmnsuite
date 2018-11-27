@@ -5,22 +5,25 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/user"
 )
 
 type developer struct {
-	UUID *uuid.UUID `json:"id"`
-	Usr  user.User  `json:"user"`
-	Nme  string     `json:"name"`
-	Res  string     `json:"resume"`
+	UUID  *uuid.UUID    `json:"id"`
+	Pldge pledge.Pledge `json:"pledge"`
+	Usr   user.User     `json:"user"`
+	Nme   string        `json:"name"`
+	Res   string        `json:"resume"`
 }
 
-func createDeveloper(id *uuid.UUID, usr user.User, name string, resume string) Developer {
+func createDeveloper(id *uuid.UUID, usr user.User, pldge pledge.Pledge, name string, resume string) Developer {
 	out := developer{
-		UUID: id,
-		Usr:  usr,
-		Nme:  name,
-		Res:  resume,
+		UUID:  id,
+		Usr:   usr,
+		Pldge: pldge,
+		Nme:   name,
+		Res:   resume,
 	}
 
 	return &out
@@ -37,9 +40,19 @@ func createDeveloperFromNormalized(normalized *normalizedDeveloper) (Developer, 
 		return nil, usrInsErr
 	}
 
+	pldgeIns, pldgeInsErr := pledge.SDKFunc.CreateMetaData().Denormalize()(normalized.Pledge)
+	if pldgeInsErr != nil {
+		return nil, pldgeInsErr
+	}
+
 	if usr, ok := usrIns.(user.User); ok {
-		out := createDeveloper(&id, usr, normalized.Name, normalized.Resume)
-		return out, nil
+		if pldge, ok := pldgeIns.(pledge.Pledge); ok {
+			out := createDeveloper(&id, usr, pldge, normalized.Name, normalized.Resume)
+			return out, nil
+		}
+
+		str := fmt.Sprintf("the entity (ID: %s) is not a valid Pledge instance", pldgeIns.ID().String())
+		return nil, errors.New(str)
 	}
 
 	str := fmt.Sprintf("the entity (ID: %s) is not a valid User instance", usrIns.ID().String())
@@ -55,6 +68,11 @@ func (obj *developer) ID() *uuid.UUID {
 // User returns the user
 func (obj *developer) User() user.User {
 	return obj.Usr
+}
+
+// Pledge returns the pledge
+func (obj *developer) Pledge() pledge.Pledge {
+	return obj.Pldge
 }
 
 // Name returns the name
