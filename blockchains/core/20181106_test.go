@@ -18,6 +18,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/node"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/withdrawal"
@@ -635,38 +636,38 @@ func TestSaveGenesis_CreateLink_voteOnLink_Success(t *testing.T) {
 	defer node.Stop()
 
 	// create the link request:
-	newLinkRequest := request.SDKFunc.Create(request.CreateParams{
+	newDeveloperRequest := request.SDKFunc.Create(request.CreateParams{
 		FromUser:  genIns.User(),
 		NewEntity: lnk,
 	})
 
 	// create our user vote:
-	newLinkRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    newLinkRequest,
+	newDeveloperRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    newDeveloperRequest,
 		Voter:      genIns.User(),
 		IsApproved: true,
 	})
 
 	// save the new token request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, linkRepresentation, newLinkRequest, []crypto.PrivateKey{pk}, []vote.Vote{
-		newLinkRequestVote,
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, linkRepresentation, newDeveloperRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+		newDeveloperRequestVote,
 	}, createTokenVoteRouteFunc())
 
 	// create the link request for the same link:
-	duplicateLinkRequest := request.SDKFunc.Create(request.CreateParams{
+	duplicateDeveloperRequest := request.SDKFunc.Create(request.CreateParams{
 		FromUser:  genIns.User(),
 		NewEntity: lnk,
 	})
 
 	// create our user vote:
-	duplicateLinkRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    newLinkRequest,
+	duplicateDeveloperRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    duplicateDeveloperRequest,
 		Voter:      genIns.User(),
 		IsApproved: true,
 	})
 
 	// save the request:
-	saveDuplicateRequestErr := requestService.Save(duplicateLinkRequest, linkRepresentation)
+	saveDuplicateRequestErr := requestService.Save(duplicateDeveloperRequest, linkRepresentation)
 	if saveDuplicateRequestErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", saveDuplicateRequestErr.Error())
 		return
@@ -680,8 +681,116 @@ func TestSaveGenesis_CreateLink_voteOnLink_Success(t *testing.T) {
 	})
 
 	// save the vote, it should returns an error:
-	saveDuplicateVoteErr := voteService.Save(duplicateLinkRequestVote, linkRepresentation)
+	saveDuplicateVoteErr := voteService.Save(duplicateDeveloperRequestVote, linkRepresentation)
 	if saveDuplicateVoteErr == nil {
+		t.Errorf("the returned error was expected to be valid, nil returned")
+	}
+}
+
+func TestSaveGenesis_CreateDeveloper_voteOnDeveloper_Success(t *testing.T) {
+	// variables:
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
+
+	dev := developer.SDKFunc.Create(developer.CreateParams{
+		User:   genIns.User(),
+		Name:   "Steve",
+		Resume: "this is the content of my resume",
+	})
+
+	devWithSameUser := developer.SDKFunc.Create(developer.CreateParams{
+		User:   genIns.User(),
+		Name:   "John",
+		Resume: "this is the content of john's resume",
+	})
+
+	// create the representations:
+	developerRepresentation := developer.SDKFunc.CreateRepresentation()
+
+	rootPath := filepath.Join("./test_files")
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// spawn bockchain with genesis instance:
+	node, client, _, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
+	defer node.Stop()
+
+	// create the developer request:
+	newDeveloperRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:  genIns.User(),
+		NewEntity: dev,
+	})
+
+	// create our user vote:
+	newDeveloperRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    newDeveloperRequest,
+		Voter:      genIns.User(),
+		IsApproved: true,
+	})
+
+	// save the new token request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, developerRepresentation, newDeveloperRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+		newDeveloperRequestVote,
+	}, createTokenVoteRouteFunc())
+
+	// create the developer request for the same dev:
+	duplicateDeveloperRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:  genIns.User(),
+		NewEntity: dev,
+	})
+
+	// create our user vote:
+	duplicateDeveloperRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    duplicateDeveloperRequest,
+		Voter:      genIns.User(),
+		IsApproved: true,
+	})
+
+	// save the request:
+	saveDuplicateRequestErr := requestService.Save(duplicateDeveloperRequest, developerRepresentation)
+	if saveDuplicateRequestErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", saveDuplicateRequestErr.Error())
+		return
+	}
+
+	// create the vote service:
+	voteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
+		PK:              pk,
+		Client:          client,
+		CreateRouteFunc: createTokenVoteRouteFunc(),
+	})
+
+	// save the vote, it should returns an error:
+	saveDuplicateVoteErr := voteService.Save(duplicateDeveloperRequestVote, developerRepresentation)
+	if saveDuplicateVoteErr == nil {
+		t.Errorf("the returned error was expected to be valid, nil returned")
+	}
+
+	// create the developer request for the same dev:
+	sameUserDeveloperRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:  genIns.User(),
+		NewEntity: devWithSameUser,
+	})
+
+	// create our user vote:
+	sameUserDeveloperRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    sameUserDeveloperRequest,
+		Voter:      genIns.User(),
+		IsApproved: true,
+	})
+
+	// save the request:
+	sameUserRequestErr := requestService.Save(sameUserDeveloperRequest, developerRepresentation)
+	if sameUserRequestErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", sameUserRequestErr.Error())
+		return
+	}
+
+	// save the vote, it should returns an error:
+	sameUserVoteErr := voteService.Save(sameUserDeveloperRequestVote, developerRepresentation)
+	if sameUserVoteErr == nil {
 		t.Errorf("the returned error was expected to be valid, nil returned")
 	}
 }

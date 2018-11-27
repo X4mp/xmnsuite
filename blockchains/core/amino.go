@@ -4,14 +4,15 @@ import (
 	amino "github.com/tendermint/go-amino"
 	entity "github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	genesis "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
-	validator "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/validator"
 	wallet "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
-	request "github.com/xmnservices/xmnsuite/blockchains/core/request"
 	pledge "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/pledge"
 	transfer "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/transfer"
+	validator "github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/validator"
+	request "github.com/xmnservices/xmnsuite/blockchains/core/request"
 	vote "github.com/xmnservices/xmnsuite/blockchains/core/request/vote"
 	deposit "github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
 	token "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token"
+	developer "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer"
 	link "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
 )
 
@@ -29,6 +30,7 @@ func init() {
 	vote.Register(cdc)
 	validator.Register(cdc)
 	link.Register(cdc)
+	developer.Register(cdc)
 
 	// replace:
 	entity.Replace(cdc)
