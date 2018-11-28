@@ -58,8 +58,8 @@ var SDKFunc = struct {
 		return entity.SDKFunc.CreateRepresentation(entity.CreateRepresentationParams{
 			Met: createMetaData(),
 			ToStorable: func(ins entity.Entity) (interface{}, error) {
-				if milestone, ok := ins.(Milestone); ok {
-					out := createStorableMilestone(milestone)
+				if mils, ok := ins.(Milestone); ok {
+					out := createStorableMilestone(mils)
 					return out, nil
 				}
 
@@ -84,19 +84,19 @@ var SDKFunc = struct {
 				// create the repository and service:
 				repository := entity.SDKFunc.CreateRepository(ds)
 
-				if milestone, ok := ins.(Milestone); ok {
+				if mils, ok := ins.(Milestone); ok {
 					// if the milestone already exists, return an error:
-					_, retMilestoneErr := repository.RetrieveByID(metaData, milestone.ID())
+					_, retMilestoneErr := repository.RetrieveByID(metaData, mils.ID())
 					if retMilestoneErr == nil {
-						str := fmt.Sprintf("the Milestone (ID: %s) already exists", milestone.ID().String())
+						str := fmt.Sprintf("the Milestone (ID: %s) already exists", mils.ID().String())
 						return errors.New(str)
 					}
 
 					// if the project does not exists, return an error:
-					proj := milestone.Project()
+					proj := mils.Project()
 					_, retProjErr := repository.RetrieveByID(projectMetaData, proj.ID())
 					if retProjErr != nil {
-						str := fmt.Sprintf("the Project (ID: %s) in the Milestone instance (ID: %s) does not exists", proj.ID().String(), milestone.ID().String())
+						str := fmt.Sprintf("the Project (ID: %s) in the Milestone instance (ID: %s) does not exists", proj.ID().String(), mils.ID().String())
 						return errors.New(str)
 					}
 

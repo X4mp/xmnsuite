@@ -10,16 +10,18 @@ import (
 )
 
 type request struct {
-	UUID *uuid.UUID    `json:"id"`
-	Frm  user.User     `json:"from"`
-	Nw   entity.Entity `json:"new"`
+	UUID   *uuid.UUID    `json:"id"`
+	Frm    user.User     `json:"from"`
+	Nw     entity.Entity `json:"new_entity"`
+	NwName string        `json:"new_entity_name"`
 }
 
-func createRequest(id *uuid.UUID, frm user.User, nw entity.Entity) Request {
+func createRequest(id *uuid.UUID, frm user.User, nw entity.Entity, newName string) Request {
 	out := request{
-		UUID: id,
-		Frm:  frm,
-		Nw:   nw,
+		UUID:   id,
+		Frm:    frm,
+		Nw:     nw,
+		NwName: newName,
 	}
 
 	return &out
@@ -37,13 +39,13 @@ func createRequestFromNormalized(normalized *normalizedRequest) (Request, error)
 		return nil, fromInsErr
 	}
 
-	ins, insErr := reg.FromJSONToEntity(normalized.NewEntityJS)
+	ins, insErr := reg.fromJSONToEntity(normalized.NewEntityJS, normalized.NewEntityName)
 	if insErr != nil {
 		return nil, insErr
 	}
 
 	if from, ok := fromIns.(user.User); ok {
-		out := createRequest(&id, from, ins)
+		out := createRequest(&id, from, ins, normalized.NewEntityName)
 		return out, nil
 	}
 
@@ -64,4 +66,9 @@ func (req *request) From() user.User {
 // New returns the new entity to be created
 func (req *request) New() entity.Entity {
 	return req.Nw
+}
+
+// NewName returns the new entity name
+func (req *request) NewName() string {
+	return req.NwName
 }

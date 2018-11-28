@@ -20,6 +20,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/milestone"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/project"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/task"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
 	"github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
@@ -62,17 +63,7 @@ func createCore20181108() *core20181108 {
 	developerRepresentation := developer.SDKFunc.CreateRepresentation()
 	projectRepresentation := project.SDKFunc.CreateRepresentation()
 	milestoneRepresentation := milestone.SDKFunc.CreateRepresentation()
-
-	// register the possible requests:
-	request.SDKFunc.Register(pledgeRepresentation.MetaData())
-	request.SDKFunc.Register(transferRepresentation.MetaData())
-	request.SDKFunc.Register(userRepresentation.MetaData())
-	request.SDKFunc.Register(validatorRepresentation.MetaData())
-	request.SDKFunc.Register(linkRepresentation.MetaData())
-	request.SDKFunc.Register(developerRepresentation.MetaData())
-	request.SDKFunc.Register(projectRepresentation.MetaData())
-	request.SDKFunc.Register(milestoneRepresentation.MetaData())
-	request.SDKFunc.Register(walletRepresentation.MetaData()) // for updates
+	taskRepresentation := task.SDKFunc.CreateRepresentation()
 
 	out := core20181108{
 		genesisRepresentation: genesis.SDKFunc.CreateRepresentation(),
@@ -92,6 +83,7 @@ func createCore20181108() *core20181108 {
 			"developer": developerRepresentation.MetaData(),
 			"project":   projectRepresentation.MetaData(),
 			"milestone": milestoneRepresentation.MetaData(),
+			"task":      taskRepresentation.MetaData(),
 		},
 		entityRepresentations: map[string]entity.Representation{
 			"wallet": walletRepresentation,
@@ -111,6 +103,7 @@ func createCore20181108() *core20181108 {
 		developerRequestRepresentations: map[string]entity.Representation{
 			"project":   projectRepresentation,
 			"milestone": milestoneRepresentation,
+			"task":      taskRepresentation,
 		},
 	}
 
@@ -537,9 +530,10 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 
 						// create the request:
 						req := request.SDKFunc.Create(request.CreateParams{
-							ID:        &reqID,
-							FromUser:  usr,
-							NewEntity: ins,
+							ID:             &reqID,
+							FromUser:       usr,
+							NewEntity:      ins,
+							EntityMetaData: representation.MetaData(),
 						})
 
 						// save the request:

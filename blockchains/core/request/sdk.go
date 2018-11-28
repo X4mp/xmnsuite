@@ -16,17 +16,11 @@ type Request interface {
 	ID() *uuid.UUID
 	From() user.User
 	New() entity.Entity
+	NewName() string
 }
 
 // Normalized represents a normalized request
 type Normalized interface {
-}
-
-// Registry represents an entity registry
-type Registry interface {
-	Register(metadata entity.MetaData) error
-	FromJSONToEntity(js []byte) (entity.Entity, error)
-	FromEntityToJSON(ins entity.Entity) ([]byte, error)
 }
 
 // Service represents an entity service
@@ -43,9 +37,10 @@ type Repository interface {
 
 // CreateParams represents the create params
 type CreateParams struct {
-	ID        *uuid.UUID
-	FromUser  user.User
-	NewEntity entity.Entity
+	ID             *uuid.UUID
+	FromUser       user.User
+	NewEntity      entity.Entity
+	EntityMetaData entity.MetaData
 }
 
 // CreateSDKServiceParams represents the CreateSDKService params
@@ -62,7 +57,6 @@ var SDKFunc = struct {
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 	CreateSDKService     func(params CreateSDKServiceParams) Service
-	Register             func(met entity.MetaData) error
 }{
 	Create: func(params CreateParams) Request {
 		if params.ID == nil {
@@ -70,7 +64,17 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out := createRequest(params.ID, params.FromUser, params.NewEntity)
+		// get the keyname:
+		name := params.EntityMetaData.Keyname()
+
+		// register:
+		regErr := reg.register(params.EntityMetaData)
+		if regErr != nil {
+			str := fmt.Sprintf("there was an error while registering an entity for a request: %s", regErr.Error())
+			panic(str)
+		}
+
+		out := createRequest(params.ID, params.FromUser, params.NewEntity, name)
 		return out
 	},
 	CreateMetaData: func() entity.MetaData {
@@ -108,8 +112,5 @@ var SDKFunc = struct {
 	CreateSDKService: func(params CreateSDKServiceParams) Service {
 		out := createSDKService(params.PK, params.Client)
 		return out
-	},
-	Register: func(met entity.MetaData) error {
-		return reg.Register(met)
 	},
 }

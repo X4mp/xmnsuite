@@ -58,11 +58,7 @@ func createMetaData() entity.MetaData {
 		Normalize: func(ins entity.Entity) (interface{}, error) {
 			if milestone, ok := ins.(Milestone); ok {
 				out, outErr := createNormalizedMilestone(milestone)
-				if outErr != nil {
-					panic(outErr)
-				}
-
-				return out, nil
+				return out, outErr
 			}
 
 			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Milestone instance", ins.ID().String())

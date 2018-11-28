@@ -19,6 +19,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/milestone"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/project"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/task"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 
@@ -288,8 +289,9 @@ func savePledge(
 
 	// create the user in wallet request:
 	userInWalletRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  fromUser,
-		NewEntity: newUser,
+		FromUser:       fromUser,
+		NewEntity:      newUser,
+		EntityMetaData: user.SDKFunc.CreateMetaData(),
 	})
 
 	// create our user vote:
@@ -306,8 +308,9 @@ func savePledge(
 
 	// create the user in wallet request:
 	pldgeRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  fromUser,
-		NewEntity: pldge,
+		FromUser:       fromUser,
+		NewEntity:      pldge,
+		EntityMetaData: pledge.SDKFunc.CreateMetaData(),
 	})
 
 	// create our user vote:
@@ -346,8 +349,9 @@ func saveDeveloper(
 
 	// create the developer request:
 	newDeveloperRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  fromUser,
-		NewEntity: dev,
+		FromUser:       fromUser,
+		NewEntity:      dev,
+		EntityMetaData: developer.SDKFunc.CreateMetaData(),
 	})
 
 	// create our user vote:
@@ -387,8 +391,9 @@ func saveProject(
 
 	// create the project request:
 	newProjectRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  fromUser,
-		NewEntity: proj,
+		FromUser:       fromUser,
+		NewEntity:      proj,
+		EntityMetaData: project.SDKFunc.CreateMetaData(),
 	})
 
 	// create our user vote:
@@ -429,8 +434,9 @@ func saveMilestone(
 
 	// create the milestone request:
 	newMilestoneRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  fromUser,
-		NewEntity: mil,
+		FromUser:       fromUser,
+		NewEntity:      mil,
+		EntityMetaData: milestone.SDKFunc.CreateMetaData(),
 	})
 
 	// create our user vote:
@@ -443,6 +449,50 @@ func saveMilestone(
 	// save the new token request, then save vote:
 	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, milestoneRepresentation, newMilestoneRequest, []crypto.PrivateKey{pk}, []vote.Vote{
 		newMilestoneRequestVote,
+	}, createTokenDeveloperVoteRouteFunc())
+
+	// returns:
+	return requestService
+}
+
+func saveTask(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromUser user.User,
+	newUser user.User,
+	pldge pledge.Pledge,
+	dev developer.Developer,
+	proj project.Project,
+	mil milestone.Milestone,
+	tsk task.Task,
+) request.Service {
+
+	// create the representations:
+	taskRepresenation := task.SDKFunc.CreateRepresentation()
+
+	// save the milestone:
+	saveMilestone(t, client, pk, service, repository, fromUser, newUser, pldge, dev, proj, mil)
+
+	// create the task request:
+	newTaskRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:       fromUser,
+		NewEntity:      tsk,
+		EntityMetaData: task.SDKFunc.CreateMetaData(),
+	})
+
+	// create our user vote:
+	newTaskRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    newTaskRequest,
+		Voter:      fromUser,
+		IsApproved: true,
+	})
+
+	// save the new token request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, taskRepresenation, newTaskRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+		newTaskRequestVote,
 	}, createTokenDeveloperVoteRouteFunc())
 
 	// returns:

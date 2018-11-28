@@ -5,13 +5,14 @@ import (
 )
 
 type normalizedRequest struct {
-	ID          string          `json:"id"`
-	From        user.Normalized `json:"from"`
-	NewEntityJS []byte          `json:"new_entity_js"`
+	ID            string          `json:"id"`
+	From          user.Normalized `json:"from"`
+	NewEntityJS   []byte          `json:"new_entity_js"`
+	NewEntityName string          `json:"new_entity_name"`
 }
 
 func createNormalizedRequest(req Request) (*normalizedRequest, error) {
-	js, jsErr := reg.FromEntityToJSON(req.New())
+	js, jsErr := reg.fromEntityToJSON(req.New(), req.NewName())
 	if jsErr != nil {
 		return nil, jsErr
 	}
@@ -22,9 +23,10 @@ func createNormalizedRequest(req Request) (*normalizedRequest, error) {
 	}
 
 	out := normalizedRequest{
-		ID:          req.ID().String(),
-		From:        from,
-		NewEntityJS: js,
+		ID:            req.ID().String(),
+		From:          from,
+		NewEntityJS:   js,
+		NewEntityName: req.NewName(),
 	}
 
 	return &out, nil

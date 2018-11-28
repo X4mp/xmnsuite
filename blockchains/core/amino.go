@@ -15,6 +15,7 @@ import (
 	developer "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer"
 	milestone "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/milestone"
 	project "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/project"
+	task "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/task"
 	link "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
 )
 
@@ -35,6 +36,7 @@ func init() {
 	developer.Register(cdc)
 	project.Register(cdc)
 	milestone.Register(cdc)
+	task.Register(cdc)
 
 	// replace:
 	entity.Replace(cdc)

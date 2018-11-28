@@ -13,7 +13,7 @@ func retrieveAllRequestsKeyname() string {
 	return "requests"
 }
 
-func createMetaData(reg Registry) entity.MetaData {
+func createMetaData(reg *registry) entity.MetaData {
 	return entity.SDKFunc.CreateMetaData(entity.CreateMetaDataParams{
 		Name: "Request",
 		ToEntity: func(rep entity.Repository, data interface{}) (entity.Entity, error) {
@@ -30,7 +30,7 @@ func createMetaData(reg Registry) entity.MetaData {
 					return nil, errors.New(str)
 				}
 
-				newIns, newInsErr := reg.FromJSONToEntity(storable.NewEntityJS)
+				newIns, newInsErr := reg.fromJSONToEntity(storable.NewEntityJS, storable.NewEntityName)
 				if newInsErr != nil {
 					return nil, newInsErr
 				}
@@ -42,7 +42,7 @@ func createMetaData(reg Registry) entity.MetaData {
 				}
 
 				if fromUser, ok := from.(user.User); ok {
-					out := createRequest(&id, fromUser, newIns)
+					out := createRequest(&id, fromUser, newIns, storable.NewEntityName)
 					return out, nil
 				}
 

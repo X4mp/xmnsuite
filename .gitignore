@@ -1,5 +1,5 @@
 vendor
-test_files/
+test_files*/
 TODO.md
 TODO2.md
 ARTIQOX.md
