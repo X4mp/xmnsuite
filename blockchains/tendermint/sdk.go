@@ -1,6 +1,8 @@
 package tendermint
 
 import (
+	"fmt"
+	"net"
 	"time"
 
 	uuid "github.com/satori/go.uuid"
@@ -73,6 +75,12 @@ type ApplicationService interface {
  * Params
  */
 
+// CreateClientParams represents the params of the CreateClient SDK func
+type CreateClientParams struct {
+	IP   net.IP
+	Port int
+}
+
 // CreatePathParams represents the params of the CreatePath SDK func
 type CreatePathParams struct {
 	Namespace string
@@ -96,12 +104,22 @@ type CreateBlockchainServiceParams struct {
 // SDKFunc represents the tendermint interval blockchains SDK functions
 var SDKFunc = struct {
 	CreatePath               func(params CreatePathParams) Path
+	CreateClient             func(params CreateClientParams) applications.Client
 	CreateBlockchain         func(params CreateBlockchainParams) Blockchain
 	CreateBlockchainService  func(params CreateBlockchainServiceParams) BlockchainService
 	CreateApplicationService func() ApplicationService
 }{
 	CreatePath: func(params CreatePathParams) Path {
 		return createPath(params.Namespace, params.Name, params.ID)
+	},
+	CreateClient: func(params CreateClientParams) applications.Client {
+		ipAddress := fmt.Sprintf("tcp://%s:%d", params.IP.String(), params.Port)
+		out, outErr := createRPCClient(ipAddress)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
 	},
 	CreateBlockchain: func(params CreateBlockchainParams) Blockchain {
 		if params.PrivKey != nil {

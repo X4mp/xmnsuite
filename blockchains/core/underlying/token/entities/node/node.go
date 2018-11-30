@@ -1,21 +1,26 @@
 package node
 
 import (
+	"errors"
+	"fmt"
 	"net"
 
 	uuid "github.com/satori/go.uuid"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
 )
 
 type node struct {
 	UUID      *uuid.UUID `json:"id"`
+	Lnk       link.Link  `json:"link"`
 	Pow       int        `json:"power"`
 	IPAddress net.IP     `json:"ip"`
 	Prt       int        `json:"port"`
 }
 
-func createNode(id *uuid.UUID, power int, ip net.IP, port int) Node {
+func createNode(id *uuid.UUID, lnk link.Link, power int, ip net.IP, port int) Node {
 	out := node{
 		UUID:      id,
+		Lnk:       lnk,
 		Pow:       power,
 		IPAddress: ip,
 		Prt:       port,
@@ -24,16 +29,26 @@ func createNode(id *uuid.UUID, power int, ip net.IP, port int) Node {
 	return &out
 }
 
-func createNodeFromStorable(storable *storableNode) (Node, error) {
-
-	nodeID, nodeIDErr := uuid.FromString(storable.ID)
+func createNodeFromNormalized(normalized *normalizedNode) (Node, error) {
+	nodeID, nodeIDErr := uuid.FromString(normalized.ID)
 	if nodeIDErr != nil {
 		return nil, nodeIDErr
 	}
 
-	ip := net.ParseIP(storable.IP)
-	out := createNode(&nodeID, storable.Pow, ip, storable.Port)
-	return out, nil
+	lnkIns, lnkInsErr := link.SDKFunc.CreateMetaData().Denormalize()(normalized.Link)
+	if lnkInsErr != nil {
+		return nil, lnkInsErr
+	}
+
+	if lnk, ok := lnkIns.(link.Link); ok {
+		ip := net.ParseIP(normalized.IP)
+		out := createNode(&nodeID, lnk, normalized.Pow, ip, normalized.Port)
+		return out, nil
+	}
+
+	str := fmt.Sprintf("the entity (ID: %s) is not a valid Node instance", lnkIns.ID().String())
+	return nil, errors.New(str)
+
 }
 
 // ID returns the ID
@@ -54,4 +69,9 @@ func (obj *node) IP() net.IP {
 // Port returns the node's port
 func (obj *node) Port() int {
 	return obj.Prt
+}
+
+// Link returns the link instance
+func (obj *node) Link() link.Link {
+	return obj.Lnk
 }

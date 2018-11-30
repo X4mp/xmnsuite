@@ -8,6 +8,8 @@ import (
 
 type normalizedValidator struct {
 	ID     string            `json:"id"`
+	IP     string            `json:"ip"`
+	Port   int               `json:"port"`
 	PubKey string            `json:"pubkey"`
 	Pledge pledge.Normalized `json:"pledge"`
 }
@@ -20,6 +22,7 @@ func createNormalizedValidator(ins Validator) (*normalizedValidator, error) {
 
 	out := normalizedValidator{
 		ID:     ins.ID().String(),
+		IP:     ins.IP().String(),
 		PubKey: hex.EncodeToString(ins.PubKey().Bytes()),
 		Pledge: pldge,
 	}

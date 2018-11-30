@@ -1,6 +1,8 @@
 package applications
 
 import (
+	"net"
+
 	uuid "github.com/satori/go.uuid"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
@@ -30,6 +32,7 @@ type CommitResponse interface {
 
 // Validator represents a validator
 type Validator interface {
+	IP() net.IP
 	PubKey() crypto.PubKey
 	Power() int64
 }
@@ -129,6 +132,7 @@ type CreateClientTransactionResponseParams struct {
 
 // CreateValidatorParams represents the CreateValidator params
 type CreateValidatorParams struct {
+	IP     net.IP
 	PubKey crypto.PubKey
 	Power  int64
 }
@@ -142,7 +146,7 @@ var SDKFunc = struct {
 	CreateClientTransactionResponse func(params CreateClientTransactionResponseParams) ClientTransactionResponse
 }{
 	CreateValidator: func(params CreateValidatorParams) Validator {
-		out := createValidator(params.PubKey, params.Power)
+		out := createValidator(params.IP, params.PubKey, params.Power)
 		return out
 	},
 	CreateInfoRequest: func(params CreateInfoRequestParams) InfoRequest {

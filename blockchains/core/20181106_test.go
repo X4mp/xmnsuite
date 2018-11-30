@@ -588,43 +588,50 @@ func TestSaveGenesis_CreateLink_voteOnLink_Success(t *testing.T) {
 	lnk := link.SDKFunc.Create(link.CreateParams{
 		Title:       "Projects",
 		Description: "The XMN projects belongs on that blockchain",
-		Node: node.SDKFunc.Create(node.CreateParams{
-			Power: rand.Int() % 10,
-			IP:    net.ParseIP("127.0.0.1"),
-			Port:  123124,
-		}),
 	})
 
-	// create the representations:
-	linkRepresentation := link.SDKFunc.CreateRepresentation()
-
-	rootPath := filepath.Join("./test_files_TestSaveGenesis_CreateLink_voteOnLink_Success")
+	rootPath := filepath.Join("./test_TestSaveGenesis_CreateLink_voteOnLink_Success")
 	defer func() {
 		os.RemoveAll(rootPath)
 	}()
 
 	// spawn bockchain with genesis instance:
-	node, client, _, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
+	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
 	defer node.Stop()
 
-	// create the link request:
-	newLinkRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       genIns.User(),
-		NewEntity:      lnk,
-		EntityMetaData: link.SDKFunc.CreateMetaData(),
+	// save the link:
+	saveLink(t, client, pk, service, repository, genIns.User(), lnk)
+}
+
+func TestSaveGenesis_CreateLink_voteOnLink_CreateNode_voteOnNode_Success(t *testing.T) {
+	// variables:
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
+
+	lnk := link.SDKFunc.Create(link.CreateParams{
+		Title:       "Projects",
+		Description: "The XMN projects belongs on that blockchain",
 	})
 
-	// create our user vote:
-	newLinkRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    newLinkRequest,
-		Voter:      genIns.User(),
-		IsApproved: true,
+	nod := node.SDKFunc.Create(node.CreateParams{
+		Power: rand.Int() % 10,
+		IP:    net.ParseIP("127.0.0.1"),
+		Port:  123124,
+		Link:  lnk,
 	})
 
-	// save the new token request, then save vote:
-	saveRequestThenSaveVotesForTests(t, client, pk, repository, linkRepresentation, newLinkRequest, []crypto.PrivateKey{pk}, []vote.Vote{
-		newLinkRequestVote,
-	}, createTokenVoteRouteFunc())
+	rootPath := filepath.Join("./test_TestSaveGenesis_CreateLink_voteOnLink_CreateNode_voteOnNode_Success")
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// spawn bockchain with genesis instance:
+	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
+	defer node.Stop()
+
+	// save the link:
+	saveNode(t, client, pk, service, repository, genIns.User(), lnk, nod)
 }
 
 func TestSaveGenesis_createPledge_voteOnPledge_createDeveloper_voteOnDeveloper_Success(t *testing.T) {

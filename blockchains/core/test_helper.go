@@ -20,6 +20,8 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/milestone"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/project"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/task"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/node"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 
@@ -259,6 +261,82 @@ func saveRequestThenSaveVotesForTests(
 		return nil
 	}
 
+	return requestService
+}
+
+func saveLink(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromUser user.User,
+	lnk link.Link,
+) request.Service {
+
+	// create the representations:
+	linkRepresentation := link.SDKFunc.CreateRepresentation()
+
+	// create the link request:
+	newLinkRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:       fromUser,
+		NewEntity:      lnk,
+		EntityMetaData: link.SDKFunc.CreateMetaData(),
+	})
+
+	// create our user vote:
+	newLinkRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    newLinkRequest,
+		Voter:      fromUser,
+		IsApproved: true,
+	})
+
+	// save the new token request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, linkRepresentation, newLinkRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+		newLinkRequestVote,
+	}, createTokenVoteRouteFunc())
+
+	// returns:
+	return requestService
+}
+
+func saveNode(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromUser user.User,
+	lnk link.Link,
+	nod node.Node,
+) request.Service {
+
+	// create the representations:
+	nodeRepresentation := node.SDKFunc.CreateRepresentation()
+
+	// save the link:
+	saveLink(t, client, pk, service, repository, fromUser, lnk)
+
+	// create the node request:
+	newNodeRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:       fromUser,
+		NewEntity:      nod,
+		EntityMetaData: node.SDKFunc.CreateMetaData(),
+	})
+
+	// create our user vote:
+	newNodeRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    newNodeRequest,
+		Voter:      fromUser,
+		IsApproved: true,
+	})
+
+	// save the new token request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, nodeRepresentation, newNodeRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+		newNodeRequestVote,
+	}, createTokenVoteRouteFunc())
+
+	// returns:
 	return requestService
 }
 

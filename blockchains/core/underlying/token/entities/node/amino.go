@@ -2,7 +2,7 @@ package node
 
 import (
 	amino "github.com/tendermint/go-amino"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
 )
 
 const (
@@ -23,7 +23,7 @@ func init() {
 // Register registers all the interface -> struct to amino
 func Register(codec *amino.Codec) {
 	// Dependencies
-	user.Register(codec)
+	link.Register(codec)
 
 	// Node
 	func() {

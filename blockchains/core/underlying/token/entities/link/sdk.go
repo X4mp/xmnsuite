@@ -6,7 +6,6 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/node"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
 
@@ -15,11 +14,15 @@ type Link interface {
 	ID() *uuid.UUID
 	Title() string
 	Description() string
-	Nodes() []node.Node
 }
 
 // Normalized represents the normalized link
 type Normalized interface {
+}
+
+// Repository represents a repository
+type Repository interface {
+	RetrieveSet(index int, amount int) (entity.PartialSet, error)
 }
 
 // CreateParams represents a Create params
@@ -27,7 +30,6 @@ type CreateParams struct {
 	ID          *uuid.UUID
 	Title       string
 	Description string
-	Node        node.Node
 }
 
 // SDKFunc represents the Link SDK func
@@ -42,9 +44,7 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out, outErr := createLink(params.ID, params.Title, params.Description, []node.Node{
-			params.Node,
-		})
+		out, outErr := createLink(params.ID, params.Title, params.Description)
 
 		if outErr != nil {
 			panic(outErr)
@@ -75,12 +75,9 @@ var SDKFunc = struct {
 			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
 				// create the repository and service:
 				repository := entity.SDKFunc.CreateRepository(ds)
-				service := entity.SDKFunc.CreateService(ds)
 
 				// create the metadata and representations:
 				metaData := createMetaData()
-				nodeRepresentation := node.SDKFunc.CreateRepresentation()
-				nodeMetaData := nodeRepresentation.MetaData()
 
 				if lnk, ok := ins.(Link); ok {
 					// if the link already exists:
@@ -88,18 +85,6 @@ var SDKFunc = struct {
 					if retLinkInsErr == nil {
 						str := fmt.Sprintf("the Link (ID: %s) already exists", lnk.ID().String())
 						return errors.New(str)
-					}
-
-					// if the nodes does not exists, save them:
-					nodes := lnk.Nodes()
-					for _, oneNode := range nodes {
-						_, retNodeErr := repository.RetrieveByID(nodeMetaData, oneNode.ID())
-						if retNodeErr != nil {
-							saveNodeErr := service.Save(oneNode, nodeRepresentation)
-							if saveNodeErr != nil {
-								return saveNodeErr
-							}
-						}
 					}
 
 					// the link doesnt exists, so everything is fine:

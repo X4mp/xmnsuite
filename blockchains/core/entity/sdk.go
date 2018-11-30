@@ -58,6 +58,7 @@ type PartialSet interface {
 	Index() int
 	Amount() int
 	TotalAmount() int
+	IsLast() bool
 }
 
 // Service represents an entity service

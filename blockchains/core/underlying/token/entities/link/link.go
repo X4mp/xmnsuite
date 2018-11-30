@@ -1,31 +1,20 @@
 package link
 
 import (
-	"errors"
-	"fmt"
-
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/node"
 )
 
 type link struct {
-	UUID *uuid.UUID  `json:"id"`
-	Titl string      `json:"title"`
-	Desc string      `json:"description"`
-	Nods []node.Node `json:"nodes"`
+	UUID *uuid.UUID `json:"id"`
+	Titl string     `json:"title"`
+	Desc string     `json:"description"`
 }
 
-func createLink(id *uuid.UUID, title string, description string, nodes []node.Node) (Link, error) {
-
-	if len(nodes) <= 0 {
-		return nil, errors.New("the link must contain at least 1 Node")
-	}
-
+func createLink(id *uuid.UUID, title string, description string) (Link, error) {
 	out := link{
 		UUID: id,
 		Titl: title,
 		Desc: description,
-		Nods: nodes,
 	}
 
 	return &out, nil
@@ -37,25 +26,7 @@ func createLinkFromNormalized(normalized *normalizedLink) (Link, error) {
 		return nil, idErr
 	}
 
-	nodes := []node.Node{}
-	nodeMetaData := node.SDKFunc.CreateMetaData()
-	for _, oneNormalizedNode := range normalized.Nodes {
-		oneNode, oneNodeErr := nodeMetaData.Denormalize()(oneNormalizedNode)
-		if oneNodeErr != nil {
-			return nil, oneNodeErr
-		}
-
-		if nod, ok := oneNode.(node.Node); ok {
-			nodes = append(nodes, nod)
-			continue
-		}
-
-		str := fmt.Sprintf("there is at least one entity (ID: %s) that was expected to be a node in the link (ID: %s), but is not", oneNode.ID().String(), id.String())
-		return nil, errors.New(str)
-
-	}
-
-	return createLink(&id, normalized.Title, normalized.Description, nodes)
+	return createLink(&id, normalized.Title, normalized.Description)
 }
 
 // ID returns the ID
@@ -71,9 +42,4 @@ func (obj *link) Title() string {
 // Description returns the description
 func (obj *link) Description() string {
 	return obj.Desc
-}
-
-// Nodes returns the nodes
-func (obj *link) Nodes() []node.Node {
-	return obj.Nods
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/project"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/task"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/node"
 	"github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
 	"github.com/xmnservices/xmnsuite/routers"
@@ -60,6 +61,7 @@ func createCore20181108() *core20181108 {
 	transferRepresentation := transfer.SDKFunc.CreateRepresentation()
 	userRepresentation := user.SDKFunc.CreateRepresentation()
 	linkRepresentation := link.SDKFunc.CreateRepresentation()
+	nodeRepresentation := node.SDKFunc.CreateRepresentation()
 	developerRepresentation := developer.SDKFunc.CreateRepresentation()
 	projectRepresentation := project.SDKFunc.CreateRepresentation()
 	milestoneRepresentation := milestone.SDKFunc.CreateRepresentation()
@@ -80,6 +82,7 @@ func createCore20181108() *core20181108 {
 			"pledge":    pledge.SDKFunc.CreateMetaData(),
 			"transfer":  transfer.SDKFunc.CreateMetaData(),
 			"link":      linkRepresentation.MetaData(),
+			"node":      nodeRepresentation.MetaData(),
 			"developer": developerRepresentation.MetaData(),
 			"project":   projectRepresentation.MetaData(),
 			"milestone": milestoneRepresentation.MetaData(),
@@ -98,6 +101,7 @@ func createCore20181108() *core20181108 {
 		},
 		tokenRequestRepresentations: map[string]entity.Representation{
 			"link":      linkRepresentation,
+			"node":      nodeRepresentation,
 			"developer": developerRepresentation,
 		},
 		developerRequestRepresentations: map[string]entity.Representation{
@@ -170,7 +174,7 @@ func create20181106(
 
 			// retrieve the validators:
 			validatorRepository := validator.SDKFunc.CreateRepository(ds)
-			valPS, valPSErr := validatorRepository.RetrieveSet(gen.MaxAmountOfValidators())
+			valPS, valPSErr := validatorRepository.RetrieveSet(0, gen.MaxAmountOfValidators())
 			if valPSErr != nil {
 				return nil, valPSErr
 			}
@@ -181,6 +185,7 @@ func create20181106(
 			for _, oneValIns := range valsIns {
 				oneVal := oneValIns.(validator.Validator)
 				appVals = append(appVals, applications.SDKFunc.CreateValidator(applications.CreateValidatorParams{
+					IP:     oneVal.IP(),
 					PubKey: oneVal.PubKey(),
 					Power:  int64(oneVal.Pledge().From().Amount()),
 				}))

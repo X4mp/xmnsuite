@@ -3,6 +3,8 @@ package validator
 import (
 	"bytes"
 	"encoding/hex"
+	"math/rand"
+	"net"
 	"reflect"
 	"testing"
 
@@ -16,7 +18,9 @@ func CreateValidatorForTests() Validator {
 	id := uuid.NewV4()
 	pkey := ed25519.GenPrivKey().PubKey()
 	pldge := pledge.CreatePledgeForTests()
-	out := createValidator(&id, pkey, pldge)
+	ip := net.ParseIP("127.0.0.1")
+	port := rand.Int()%9000 + 1000
+	out := createValidator(&id, ip, port, pkey, pldge)
 	return out
 }
 

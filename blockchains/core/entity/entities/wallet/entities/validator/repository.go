@@ -19,7 +19,7 @@ func createRepository(entityRepository entity.Repository, validatorMetaData enti
 }
 
 // RetrieveSet retrieves the validator ordered by their pledge amount
-func (app *repository) RetrieveSet(amount int) (entity.PartialSet, error) {
+func (app *repository) RetrieveSet(index int, amount int) (entity.PartialSet, error) {
 	keyname := retrieveAllValidatorsKeyname()
-	return app.entityRepository.RetrieveSetByKeyname(app.validatorMetaData, keyname, 0, amount)
+	return app.entityRepository.RetrieveSetByKeyname(app.validatorMetaData, keyname, index, amount)
 }

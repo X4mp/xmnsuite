@@ -17,6 +17,7 @@ import (
 	project "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/project"
 	task "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/task"
 	link "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
+	node "github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/node"
 )
 
 var cdc = amino.NewCodec()
@@ -33,6 +34,7 @@ func init() {
 	vote.Register(cdc)
 	validator.Register(cdc)
 	link.Register(cdc)
+	node.Register(cdc)
 	developer.Register(cdc)
 	project.Register(cdc)
 	milestone.Register(cdc)

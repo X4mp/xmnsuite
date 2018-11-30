@@ -3,6 +3,7 @@ package validator
 import (
 	"errors"
 	"fmt"
+	"net"
 
 	uuid "github.com/satori/go.uuid"
 	tcrypto "github.com/tendermint/tendermint/crypto"
@@ -14,6 +15,8 @@ import (
 // Validator represents a validator
 type Validator interface {
 	ID() *uuid.UUID
+	IP() net.IP
+	Port() int
 	PubKey() tcrypto.PubKey
 	Pledge() pledge.Pledge
 }
@@ -24,12 +27,14 @@ type Normalized interface {
 
 // Repository represents the validator repository
 type Repository interface {
-	RetrieveSet(amount int) (entity.PartialSet, error)
+	RetrieveSet(index int, amount int) (entity.PartialSet, error)
 }
 
 // CreateParams represents the Create params
 type CreateParams struct {
 	ID     *uuid.UUID
+	IP     net.IP
+	Port   int
 	PubKey tcrypto.PubKey
 	Pledge pledge.Pledge
 }
@@ -38,6 +43,7 @@ type CreateParams struct {
 var SDKFunc = struct {
 	Create               func(params CreateParams) Validator
 	CreateRepository     func(ds datastore.DataStore) Repository
+	CreateSDKRepository  func(entityRepository entity.Repository) Repository
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 }{
@@ -47,12 +53,17 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out := createValidator(params.ID, params.PubKey, params.Pledge)
+		out := createValidator(params.ID, params.IP, params.Port, params.PubKey, params.Pledge)
 		return out
 	},
 	CreateRepository: func(ds datastore.DataStore) Repository {
 		met := createMetaData()
 		entityRepository := entity.SDKFunc.CreateRepository(ds)
+		out := createRepository(entityRepository, met)
+		return out
+	},
+	CreateSDKRepository: func(entityRepository entity.Repository) Repository {
+		met := createMetaData()
 		out := createRepository(entityRepository, met)
 		return out
 	},

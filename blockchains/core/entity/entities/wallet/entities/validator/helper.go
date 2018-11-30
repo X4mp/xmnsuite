@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"net"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/tendermint/tendermint/crypto"
@@ -45,7 +46,8 @@ func createMetaData() entity.MetaData {
 				}
 
 				if pldge, ok := pledgeIns.(pledge.Pledge); ok {
-					out := createValidator(&id, pubkey, pldge)
+					ip := net.ParseIP(storable.IP)
+					out := createValidator(&id, ip, storable.Port, pubkey, pldge)
 					return out, nil
 				}
 

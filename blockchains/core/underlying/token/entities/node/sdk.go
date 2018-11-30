@@ -7,11 +7,13 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
 )
 
 // Node represents a node on a blockchain link
 type Node interface {
 	ID() *uuid.UUID
+	Link() link.Link
 	Power() int
 	IP() net.IP
 	Port() int
@@ -21,9 +23,15 @@ type Node interface {
 type Normalized interface {
 }
 
+// Repository represents the node repository
+type Repository interface {
+	RetrieveByLink(lnk link.Link) ([]Node, error)
+}
+
 // CreateParams represents the Create params
 type CreateParams struct {
 	ID    *uuid.UUID
+	Link  link.Link
 	Power int
 	IP    net.IP
 	Port  int
@@ -41,7 +49,7 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out := createNode(params.ID, params.Power, params.IP, params.Port)
+		out := createNode(params.ID, params.Link, params.Power, params.IP, params.Port)
 		return out
 	},
 	CreateMetaData: func() entity.MetaData {

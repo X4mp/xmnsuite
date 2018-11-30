@@ -6,7 +6,6 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/node"
 )
 
 func retrieveAllLinksKeyname() string {
@@ -23,30 +22,7 @@ func createMetaData() entity.MetaData {
 					return nil, idErr
 				}
 
-				nodes := []node.Node{}
-				nodeMetaData := node.SDKFunc.CreateMetaData()
-				for _, oneNodeID := range storable.NodeIDs {
-
-					nodeID, nodeIDErr := uuid.FromString(oneNodeID)
-					if nodeIDErr != nil {
-						return nil, nodeIDErr
-					}
-
-					oneNode, oneNodeErr := rep.RetrieveByID(nodeMetaData, &nodeID)
-					if oneNodeErr != nil {
-						return nil, oneNodeErr
-					}
-
-					if nod, ok := oneNode.(node.Node); ok {
-						nodes = append(nodes, nod)
-						continue
-					}
-
-					str := fmt.Sprintf("there is at least one entity (ID: %s) that was expected to be a node in the link (ID: %s), but is not", nodeID.String(), id.String())
-					return nil, errors.New(str)
-				}
-
-				return createLink(&id, storable.Title, storable.Description, nodes)
+				return createLink(&id, storable.Title, storable.Description)
 			}
 
 			if storable, ok := data.(*storableLink); ok {

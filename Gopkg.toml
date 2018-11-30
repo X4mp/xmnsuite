@@ -26,6 +26,10 @@
   name = "github.com/go-resty/resty"
   version = "1.9.1"
 
+[[override]]
+  name = "github.com/montanaflynn/stats"
+  version = "0.3.0"
+
 [prune]
   go-tests = true
   unused-packages = true

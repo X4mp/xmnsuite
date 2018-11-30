@@ -189,6 +189,14 @@
   version = "v1.0.1"
 
 [[projects]]
+  digest = "1:246ab598a22ea9d50f46e65f655f78161a19822f6597268b02f04af998684807"
+  name = "github.com/montanaflynn/stats"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "1bf9dbcd8cbe1fdb75add3785b1d4a9a646269ab"
+  version = "0.3.0"
+
+[[projects]]
   branch = "master"
   digest = "1:f335d800550786b6f51ddaedb9d1107a7a72f4a2195e5b039dd7c0e103e119bc"
   name = "github.com/nsf/termbox-go"
@@ -514,6 +522,7 @@
     "github.com/dedis/kyber/group/edwards25519",
     "github.com/go-resty/resty",
     "github.com/gorilla/mux",
+    "github.com/montanaflynn/stats",
     "github.com/nsf/termbox-go",
     "github.com/satori/go.uuid",
     "github.com/tendermint/go-amino",
@@ -524,6 +533,7 @@
     "github.com/tendermint/tendermint/libs/common",
     "github.com/tendermint/tendermint/libs/log",
     "github.com/tendermint/tendermint/node",
+    "github.com/tendermint/tendermint/p2p",
     "github.com/tendermint/tendermint/privval",
     "github.com/tendermint/tendermint/proxy",
     "github.com/tendermint/tendermint/rpc/core/types",

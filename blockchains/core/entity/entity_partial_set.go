@@ -51,3 +51,8 @@ func (obj *entityPartialSet) Amount() int {
 func (obj *entityPartialSet) TotalAmount() int {
 	return obj.TotAm
 }
+
+// IsLast returns true if this is the last element sof the partial set, false otherwise
+func (obj *entityPartialSet) IsLast() bool {
+	return (obj.Index() + obj.Amount()) >= obj.TotalAmount()
+}

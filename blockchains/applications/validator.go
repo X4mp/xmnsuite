@@ -1,21 +1,30 @@
 package applications
 
 import (
+	"net"
+
 	"github.com/tendermint/tendermint/crypto"
 )
 
 type validator struct {
-	pubKey crypto.PubKey
-	pow    int64
+	ipAddress net.IP
+	pubKey    crypto.PubKey
+	pow       int64
 }
 
-func createValidator(pubKey crypto.PubKey, pow int64) Validator {
+func createValidator(ipAddress net.IP, pubKey crypto.PubKey, pow int64) Validator {
 	out := validator{
-		pubKey: pubKey,
-		pow:    pow,
+		ipAddress: ipAddress,
+		pubKey:    pubKey,
+		pow:       pow,
 	}
 
 	return &out
+}
+
+// IP returns the ip address
+func (obj *validator) IP() net.IP {
+	return obj.ipAddress
 }
 
 // PubKey returns the pubKey
