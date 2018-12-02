@@ -6,8 +6,8 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/external"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/external"
 )
 
 // Wish is an external wanted proposition
@@ -24,17 +24,31 @@ type Sell interface {
 	DepositToWallet() external.External
 }
 
-// Daemon represents the daemon exchange
-type Daemon interface {
-	Start() error
-	Stop() error
+// Repository represents the sell repository
+type Repository interface {
+	RetrieveMatch(with Wish) (Sell, error)
+	RetrieveMatches(wish Wish) (entity.PartialSet, error)
+	RetrieveSet(index int, amount int) (entity.PartialSet, error)
 }
 
-// SDKFunc represents the Exchange SDK func
+// CreateParams represents the create params
+type CreateParams struct {
+	ID              *uuid.UUID
+	From            pledge.Pledge
+	Wish            Wish
+	DepositToWallet external.External
+}
+
+// SDKFunc represents the Sell SDK func
 var SDKFunc = struct {
+	Create               func(params CreateParams) Sell
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 }{
+	Create: func(params CreateParams) Sell {
+		out := createSell(params.ID, params.From, params.Wish, params.DepositToWallet)
+		return out
+	},
 	CreateMetaData: func() entity.MetaData {
 		out := createMetaData()
 		return out

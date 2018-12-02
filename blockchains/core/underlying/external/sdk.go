@@ -16,11 +16,24 @@ type External interface {
 	ResourceID() *uuid.UUID
 }
 
+// CreateParams represents the create params
+type CreateParams struct {
+	ID           *uuid.UUID
+	Link         link.Link
+	ResourceName string
+	ResourceID   *uuid.UUID
+}
+
 // SDKFunc represents the External SDK func
 var SDKFunc = struct {
+	Create               func(params CreateParams) External
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 }{
+	Create: func(params CreateParams) External {
+		out := createExternal(params.ID, params.Link, params.ResourceID)
+		return out
+	},
 	CreateMetaData: func() entity.MetaData {
 		out := createMetaData()
 		return out

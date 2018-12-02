@@ -23,6 +23,11 @@ type Transfer interface {
 type Normalized interface {
 }
 
+// Repository represents the transfer reposiotry
+type Repository interface {
+	RetrieveByID(id *uuid.UUID) (Transfer, error)
+}
+
 // CreateParams represents the Create params
 type CreateParams struct {
 	ID         *uuid.UUID

@@ -22,6 +22,7 @@ type application struct {
 	linkRepository                    link.Repository
 	nodeRepository                    node.Repository
 	nodeRepresentation                entity.Representation
+	stop                              bool
 }
 
 func createApplication(
@@ -51,7 +52,19 @@ func createApplication(
 // Start starts the link daemon
 func (app *application) Start() error {
 
+	app.stop = false
+
 	for {
+
+		// sleep some time:
+		log.Printf("Waiting %f seconds...", app.sleepAfterUpdateDuration.Seconds())
+		time.Sleep(app.sleepAfterUpdateDuration)
+
+		// if we must stop:
+		if app.stop {
+			return nil
+		}
+
 		// retrieve the current links from the database:
 		index := 0
 		retPartialSet, retPartialSetErr := app.linkRepository.RetrieveSet(index, app.linkAmountToRetrievePerBatch)
@@ -96,20 +109,15 @@ func (app *application) Start() error {
 			}
 
 			// log
-			log.Printf("the eneity (ID: %s) was expected to be a Link instance", oneLinkIns.ID().String())
+			log.Printf("the entity (ID: %s) was expected to be a Link instance", oneLinkIns.ID().String())
 		}
-
-		// log:
-		log.Printf("Updated completed.  Waiting %f seconds...", app.sleepAfterUpdateDuration.Seconds())
-
-		// sleep some time:
-		time.Sleep(app.sleepAfterUpdateDuration)
 
 	}
 }
 
 // Stop stops the link daemon
 func (app *application) Stop() error {
+	app.stop = true
 	return nil
 }
 
