@@ -34,6 +34,7 @@ type Meta interface {
 	Write() map[string]entity.Representation
 	WriteOnAllEntityRequest() map[string]entity.Representation
 	WriteOnEntityRequest() map[string]EntityRequest
+	AddToWriteOnEntityRequest(requestedBy entity.MetaData, rep entity.Representation) error
 }
 
 // EntityRequest represents a save on entity request meta data

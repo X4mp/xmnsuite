@@ -1,6 +1,11 @@
 package meta
 
-import "github.com/xmnservices/xmnsuite/blockchains/core/entity"
+import (
+	"errors"
+	"fmt"
+
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+)
 
 type meta struct {
 	gen                            entity.Representation
@@ -84,4 +89,16 @@ func (obj *meta) WriteOnAllEntityRequest() map[string]entity.Representation {
 // WriteOnEntityRequest returns the write on entity request representation
 func (obj *meta) WriteOnEntityRequest() map[string]EntityRequest {
 	return obj.wrOnEntReq
+}
+
+// AddToWriteOnEntityRequest adds a new entity that can be voted by the requestedBy entity
+func (obj *meta) AddToWriteOnEntityRequest(requestedBy entity.MetaData, rep entity.Representation) error {
+	keyname := requestedBy.Keyname()
+	if _, ok := obj.wrOnEntReq[keyname]; !ok {
+		str := fmt.Sprintf("the requestedBy entity (Keyname: %s) is not a valid entity requester", keyname)
+		return errors.New(str)
+	}
+
+	obj.wrOnEntReq[keyname].Add(rep)
+	return nil
 }
