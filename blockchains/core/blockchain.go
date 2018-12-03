@@ -34,6 +34,7 @@ func spawnBlockchain(
 	name string,
 	id *uuid.UUID,
 	rootDirPath string,
+	routePrefix string,
 	port int,
 	pk tcrypto.PrivKey,
 	rootPubKey crypto.PublicKey,
@@ -61,7 +62,7 @@ func spawnBlockchain(
 
 	// create the applications:
 	routerRoleKey := "router-role"
-	apps := createApplications(namespace, name, id, rootDirPath, routerRoleKey, rootPubKey, store)
+	apps := createApplications(namespace, name, id, rootDirPath, routePrefix, routerRoleKey, rootPubKey, store)
 
 	// create the application service:
 	appService := tendermint.SDKFunc.CreateApplicationService()

@@ -12,6 +12,7 @@ func createApplications(
 	name string,
 	id *uuid.UUID,
 	rootDir string,
+	routePrefix string,
 	routerRoleKey string,
 	rootPubKey crypto.PublicKey,
 	ds datastore.StoredDataStore,
@@ -20,7 +21,7 @@ func createApplications(
 	// create the applications:
 	apps := applications.SDKFunc.CreateApplications(applications.CreateApplicationsParams{
 		Apps: []applications.Application{
-			create20181106(namespace, name, id, 0, -1, rootDir, routerRoleKey, rootPubKey, ds),
+			create20181106(namespace, name, id, 0, -1, rootDir, routePrefix, routerRoleKey, rootPubKey, ds),
 		},
 	})
 

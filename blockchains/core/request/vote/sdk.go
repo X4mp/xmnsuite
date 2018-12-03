@@ -5,8 +5,8 @@ import (
 
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/request"
 	"github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
 )

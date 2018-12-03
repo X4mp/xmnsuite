@@ -16,16 +16,28 @@ type CreateParams struct {
 	Port          int
 	NodePK        tcrypto.PrivKey
 	RootDir       string
+	RoutePrefix   string
 	RouterRoleKey string
 	RootPubKey    crypto.PublicKey
 	Store         datastore.StoredDataStore
 }
 
+// SDKFunc represents the core SDK func
 var SDKFunc = struct {
 	Create func(params CreateParams) applications.Applications
 }{
 	Create: func(params CreateParams) applications.Applications {
-		apps := createApplications(params.Namespace, params.Name, params.ID, params.RootDir, params.RouterRoleKey, params.RootPubKey, params.Store)
+		apps := createApplications(
+			params.Namespace,
+			params.Name,
+			params.ID,
+			params.RootDir,
+			params.RoutePrefix,
+			params.RouterRoleKey,
+			params.RootPubKey,
+			params.Store,
+		)
+
 		return apps
 	},
 }

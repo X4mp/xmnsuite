@@ -16,34 +16,24 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request/vote"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/milestone"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/project"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer/entities/task"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/node"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 
-func createEntityVoteRouteFunc() vote.CreateRouteFn {
+func createWalletVoteRouteFunc(routePrefix string) vote.CreateRouteFn {
 	return func(ins vote.Vote, rep entity.Representation) (string, error) {
-		return fmt.Sprintf("/%s/requests/%s", rep.MetaData().Keyname(), ins.Request().ID().String()), nil
+		return fmt.Sprintf("%s/%s/requests/%s/wallet", routePrefix, rep.MetaData().Keyname(), ins.Request().ID().String()), nil
 	}
 }
 
-func createTokenVoteRouteFunc() vote.CreateRouteFn {
+func createTokenVoteRouteFunc(routePrefix string) vote.CreateRouteFn {
 	return func(ins vote.Vote, rep entity.Representation) (string, error) {
-		return fmt.Sprintf("/token/requests/%s/%s", ins.Request().ID().String(), rep.MetaData().Keyname()), nil
+		return fmt.Sprintf("%s/%s/requests/%s/token", routePrefix, rep.MetaData().Keyname(), ins.Request().ID().String()), nil
 	}
 }
 
-func createTokenDeveloperVoteRouteFunc() vote.CreateRouteFn {
-	return func(ins vote.Vote, rep entity.Representation) (string, error) {
-		return fmt.Sprintf("/token/developer/requests/%s/%s", ins.Request().ID().String(), rep.MetaData().Keyname()), nil
-	}
-}
-
-func spawnBlockchainForTests(t *testing.T, pk crypto.PrivateKey, rootPath string) (applications.Node, applications.Client, entity.Service, entity.Repository) {
+func spawnBlockchainForTests(t *testing.T, pk crypto.PrivateKey, rootPath string, routePrefix string) (applications.Node, applications.Client, entity.Service, entity.Repository) {
 	// variables:
 	namespace := "xmn"
 	name := "core"
@@ -53,7 +43,7 @@ func spawnBlockchainForTests(t *testing.T, pk crypto.PrivateKey, rootPath string
 	ip := net.ParseIP("127.0.0.1")
 
 	// spawn the blockchain:
-	node, nodeErr := spawnBlockchain(namespace, name, &id, rootPath, port, nodePK, pk.PublicKey())
+	node, nodeErr := spawnBlockchain(namespace, name, &id, rootPath, routePrefix, port, nodePK, pk.PublicKey())
 	if nodeErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", nodeErr.Error())
 		return nil, nil, nil, nil
@@ -71,24 +61,25 @@ func spawnBlockchainForTests(t *testing.T, pk crypto.PrivateKey, rootPath string
 
 	// create the entity service:
 	entityService := entity.SDKFunc.CreateSDKService(entity.CreateSDKServiceParams{
-		PK:     pk,
-		Client: client,
+		PK:          pk,
+		Client:      client,
+		RoutePrefix: routePrefix,
 	})
 
 	// create the entity repository:
 	entityRepository := entity.SDKFunc.CreateSDKRepository(entity.CreateSDKRepositoryParams{
-		PK:     pk,
-		Client: client,
+		PK:          pk,
+		Client:      client,
+		RoutePrefix: routePrefix,
 	})
 
 	// returns:
 	return node, client, entityService, entityRepository
 }
 
-func spawnBlockchainWithGenesisForTests(t *testing.T, pk crypto.PrivateKey, rootPath string, genIns genesis.Genesis) (applications.Node, applications.Client, entity.Service, entity.Repository) {
-
+func spawnBlockchainWithGenesisForTests(t *testing.T, pk crypto.PrivateKey, rootPath string, routePrefix string, genIns genesis.Genesis) (applications.Node, applications.Client, entity.Service, entity.Repository) {
 	// sopawn the blockchain:
-	node, client, service, repository := spawnBlockchainForTests(t, pk, rootPath)
+	node, client, service, repository := spawnBlockchainForTests(t, pk, rootPath, routePrefix)
 
 	// create the representation:
 	representation := genesis.SDKFunc.CreateRepresentation()
@@ -155,6 +146,7 @@ func spawnBlockchainWithGenesisThenSaveRequestThenSaveVotesForTests(
 	t *testing.T,
 	pk crypto.PrivateKey,
 	rootPath string,
+	routePrefix string,
 	gen genesis.Genesis,
 	representation entity.Representation,
 	req request.Request,
@@ -163,10 +155,10 @@ func spawnBlockchainWithGenesisThenSaveRequestThenSaveVotesForTests(
 	createRouteFunc vote.CreateRouteFn,
 ) (applications.Node, applications.Client, entity.Service, entity.Repository, request.Service) {
 	// spawn bockchain with genesis instance:
-	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, gen)
+	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, gen)
 
 	// save the request then save votes:
-	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, representation, req, votesPK, reqVotes, createRouteFunc)
+	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, representation, req, votesPK, reqVotes, createRouteFunc)
 
 	// return:
 	return node, client, service, repository, requestService
@@ -174,6 +166,7 @@ func spawnBlockchainWithGenesisThenSaveRequestThenSaveVotesForTests(
 
 func saveRequestThenSaveVotesForTests(
 	t *testing.T,
+	routePrefix string,
 	client applications.Client,
 	pk crypto.PrivateKey,
 	repository entity.Repository,
@@ -189,8 +182,9 @@ func saveRequestThenSaveVotesForTests(
 
 	// create the request service:
 	requestService := request.SDKFunc.CreateSDKService(request.CreateSDKServiceParams{
-		PK:     pk,
-		Client: client,
+		PK:          pk,
+		Client:      client,
+		RoutePrefix: routePrefix,
 	})
 
 	// save the request:
@@ -266,6 +260,7 @@ func saveRequestThenSaveVotesForTests(
 
 func saveLink(
 	t *testing.T,
+	routePrefix string,
 	client applications.Client,
 	pk crypto.PrivateKey,
 	service entity.Service,
@@ -292,9 +287,9 @@ func saveLink(
 	})
 
 	// save the new token request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, linkRepresentation, newLinkRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, linkRepresentation, newLinkRequest, []crypto.PrivateKey{pk}, []vote.Vote{
 		newLinkRequestVote,
-	}, createTokenVoteRouteFunc())
+	}, createTokenVoteRouteFunc(routePrefix))
 
 	// returns:
 	return requestService
@@ -302,6 +297,7 @@ func saveLink(
 
 func saveNode(
 	t *testing.T,
+	routePrefix string,
 	client applications.Client,
 	pk crypto.PrivateKey,
 	service entity.Service,
@@ -315,7 +311,7 @@ func saveNode(
 	nodeRepresentation := node.SDKFunc.CreateRepresentation()
 
 	// save the link:
-	saveLink(t, client, pk, service, repository, fromUser, lnk)
+	saveLink(t, routePrefix, client, pk, service, repository, fromUser, lnk)
 
 	// create the node request:
 	newNodeRequest := request.SDKFunc.Create(request.CreateParams{
@@ -332,9 +328,9 @@ func saveNode(
 	})
 
 	// save the new token request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, nodeRepresentation, newNodeRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, nodeRepresentation, newNodeRequest, []crypto.PrivateKey{pk}, []vote.Vote{
 		newNodeRequestVote,
-	}, createTokenVoteRouteFunc())
+	}, createTokenVoteRouteFunc(routePrefix))
 
 	// returns:
 	return requestService
@@ -342,6 +338,7 @@ func saveNode(
 
 func savePledge(
 	t *testing.T,
+	routePrefix string,
 	client applications.Client,
 	pk crypto.PrivateKey,
 	service entity.Service,
@@ -380,9 +377,9 @@ func savePledge(
 	})
 
 	// save the new wallet request, then save vote:
-	saveRequestThenSaveVotesForTests(t, client, pk, repository, userRepresentation, userInWalletRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, userRepresentation, userInWalletRequest, []crypto.PrivateKey{pk}, []vote.Vote{
 		userInWalletRequestVote,
-	}, createEntityVoteRouteFunc())
+	}, createWalletVoteRouteFunc(routePrefix))
 
 	// create the user in wallet request:
 	pldgeRequest := request.SDKFunc.Create(request.CreateParams{
@@ -399,179 +396,9 @@ func savePledge(
 	})
 
 	// save the new wallet request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, pldgeRepresentation, pldgeRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, pldgeRepresentation, pldgeRequest, []crypto.PrivateKey{pk}, []vote.Vote{
 		pldgeRequestVote,
-	}, createEntityVoteRouteFunc())
-
-	// returns:
-	return requestService
-}
-
-func saveDeveloper(
-	t *testing.T,
-	client applications.Client,
-	pk crypto.PrivateKey,
-	service entity.Service,
-	repository entity.Repository,
-	fromUser user.User,
-	newUser user.User,
-	pldge pledge.Pledge,
-	dev developer.Developer,
-) request.Service {
-
-	// create the representations:
-	developerRepresentation := developer.SDKFunc.CreateRepresentation()
-
-	// save the pledge:
-	savePledge(t, client, pk, service, repository, fromUser, newUser, pldge)
-
-	// create the developer request:
-	newDeveloperRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       fromUser,
-		NewEntity:      dev,
-		EntityMetaData: developer.SDKFunc.CreateMetaData(),
-	})
-
-	// create our user vote:
-	newDeveloperRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    newDeveloperRequest,
-		Voter:      fromUser,
-		IsApproved: true,
-	})
-
-	// save the new token request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, developerRepresentation, newDeveloperRequest, []crypto.PrivateKey{pk}, []vote.Vote{
-		newDeveloperRequestVote,
-	}, createTokenVoteRouteFunc())
-
-	// return:
-	return requestService
-}
-
-func saveProject(
-	t *testing.T,
-	client applications.Client,
-	pk crypto.PrivateKey,
-	service entity.Service,
-	repository entity.Repository,
-	fromUser user.User,
-	newUser user.User,
-	pldge pledge.Pledge,
-	dev developer.Developer,
-	proj project.Project,
-) request.Service {
-
-	// create the representations:
-	projectRepresentation := project.SDKFunc.CreateRepresentation()
-
-	// save the developer:
-	saveDeveloper(t, client, pk, service, repository, fromUser, newUser, pldge, dev)
-
-	// create the project request:
-	newProjectRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       fromUser,
-		NewEntity:      proj,
-		EntityMetaData: project.SDKFunc.CreateMetaData(),
-	})
-
-	// create our user vote:
-	newProjectRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    newProjectRequest,
-		Voter:      fromUser,
-		IsApproved: true,
-	})
-
-	// save the new token request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, projectRepresentation, newProjectRequest, []crypto.PrivateKey{pk}, []vote.Vote{
-		newProjectRequestVote,
-	}, createTokenDeveloperVoteRouteFunc())
-
-	// returns:
-	return requestService
-}
-
-func saveMilestone(
-	t *testing.T,
-	client applications.Client,
-	pk crypto.PrivateKey,
-	service entity.Service,
-	repository entity.Repository,
-	fromUser user.User,
-	newUser user.User,
-	pldge pledge.Pledge,
-	dev developer.Developer,
-	proj project.Project,
-	mil milestone.Milestone,
-) request.Service {
-
-	// create the representations:
-	milestoneRepresentation := milestone.SDKFunc.CreateRepresentation()
-
-	// save the project:
-	saveProject(t, client, pk, service, repository, fromUser, newUser, pldge, dev, proj)
-
-	// create the milestone request:
-	newMilestoneRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       fromUser,
-		NewEntity:      mil,
-		EntityMetaData: milestone.SDKFunc.CreateMetaData(),
-	})
-
-	// create our user vote:
-	newMilestoneRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    newMilestoneRequest,
-		Voter:      fromUser,
-		IsApproved: true,
-	})
-
-	// save the new token request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, milestoneRepresentation, newMilestoneRequest, []crypto.PrivateKey{pk}, []vote.Vote{
-		newMilestoneRequestVote,
-	}, createTokenDeveloperVoteRouteFunc())
-
-	// returns:
-	return requestService
-}
-
-func saveTask(
-	t *testing.T,
-	client applications.Client,
-	pk crypto.PrivateKey,
-	service entity.Service,
-	repository entity.Repository,
-	fromUser user.User,
-	newUser user.User,
-	pldge pledge.Pledge,
-	dev developer.Developer,
-	proj project.Project,
-	mil milestone.Milestone,
-	tsk task.Task,
-) request.Service {
-
-	// create the representations:
-	taskRepresenation := task.SDKFunc.CreateRepresentation()
-
-	// save the milestone:
-	saveMilestone(t, client, pk, service, repository, fromUser, newUser, pldge, dev, proj, mil)
-
-	// create the task request:
-	newTaskRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       fromUser,
-		NewEntity:      tsk,
-		EntityMetaData: task.SDKFunc.CreateMetaData(),
-	})
-
-	// create our user vote:
-	newTaskRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    newTaskRequest,
-		Voter:      fromUser,
-		IsApproved: true,
-	})
-
-	// save the new token request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, taskRepresenation, newTaskRequest, []crypto.PrivateKey{pk}, []vote.Vote{
-		newTaskRequestVote,
-	}, createTokenDeveloperVoteRouteFunc())
+	}, createWalletVoteRouteFunc(routePrefix))
 
 	// returns:
 	return requestService

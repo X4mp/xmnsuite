@@ -17,14 +17,16 @@ type outgoingRequest struct {
 }
 
 type sdkService struct {
-	pk     crypto.PrivateKey
-	client applications.Client
+	pk          crypto.PrivateKey
+	client      applications.Client
+	routePrefix string
 }
 
-func createSDKService(pk crypto.PrivateKey, client applications.Client) Service {
+func createSDKService(pk crypto.PrivateKey, client applications.Client, routePrefix string) Service {
 	out := sdkService{
-		pk:     pk,
-		client: client,
+		pk:          pk,
+		client:      client,
+		routePrefix: routePrefix,
 	}
 	return &out
 }
@@ -53,7 +55,7 @@ func (app *sdkService) Save(req Request, rep entity.Representation) error {
 	}
 
 	// create the resource:
-	route := fmt.Sprintf("/%s/requests", rep.MetaData().Keyname())
+	route := fmt.Sprintf("%s/%s/requests", app.routePrefix, rep.MetaData().Keyname())
 	firstRes := routers.SDKFunc.CreateResource(routers.CreateResourceParams{
 		ResPtr: routers.SDKFunc.CreateResourcePointer(routers.CreateResourcePointerParams{
 			From: app.pk.PublicKey(),

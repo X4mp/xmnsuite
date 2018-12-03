@@ -11,14 +11,16 @@ import (
 )
 
 type sdkRepository struct {
-	pk     crypto.PrivateKey
-	client applications.Client
+	pk          crypto.PrivateKey
+	client      applications.Client
+	routePrefix string
 }
 
-func createSDKRepository(pk crypto.PrivateKey, client applications.Client) Repository {
+func createSDKRepository(pk crypto.PrivateKey, client applications.Client, routePrefix string) Repository {
 	out := sdkRepository{
-		pk:     pk,
-		client: client,
+		pk:          pk,
+		client:      client,
+		routePrefix: routePrefix,
 	}
 	return &out
 }
@@ -26,7 +28,7 @@ func createSDKRepository(pk crypto.PrivateKey, client applications.Client) Repos
 // RetrieveByID retrieves an entity by its ID
 func (app *sdkRepository) RetrieveByID(met MetaData, id *uuid.UUID) (Entity, error) {
 	// create the resource pointer:
-	queryPath := fmt.Sprintf("/%s/%s", met.Keyname(), id.String())
+	queryPath := fmt.Sprintf("%s/%s/%s", app.routePrefix, met.Keyname(), id.String())
 	queryResPtr := routers.SDKFunc.CreateResourcePointer(routers.CreateResourcePointerParams{
 		From: app.pk.PublicKey(),
 		Path: queryPath,

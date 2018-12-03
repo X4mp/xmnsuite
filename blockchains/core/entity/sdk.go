@@ -105,14 +105,16 @@ type CreateRepresentationParams struct {
 
 // CreateSDKRepositoryParams represents the CreateSDKRepository params
 type CreateSDKRepositoryParams struct {
-	PK     crypto.PrivateKey
-	Client applications.Client
+	PK          crypto.PrivateKey
+	Client      applications.Client
+	RoutePrefix string
 }
 
 // CreateSDKServiceParams represents the CreateSDKService params
 type CreateSDKServiceParams struct {
-	PK     crypto.PrivateKey
-	Client applications.Client
+	PK          crypto.PrivateKey
+	Client      applications.Client
+	RoutePrefix string
 }
 
 // CreateControllersParams represents the Controllers params
@@ -131,7 +133,6 @@ var SDKFunc = struct {
 	CreateRepresentation func(params CreateRepresentationParams) Representation
 	CreateRepository     func(ds datastore.DataStore) Repository
 	CreateService        func(ds datastore.DataStore) Service
-	CreateControllers    func(params CreateControllersParams) Controllers
 	CreateSDKRepository  func(params CreateSDKRepositoryParams) Repository
 	CreateSDKService     func(params CreateSDKServiceParams) Service
 }{
@@ -168,24 +169,12 @@ var SDKFunc = struct {
 		out := createService(ds, rep)
 		return out
 	},
-	CreateControllers: func(params CreateControllersParams) Controllers {
-		out := createControllers(
-			params.Met,
-			params.Rep,
-			params.DefaultAmountOfElements,
-			params.GazPricePerKb,
-			params.OverwriteIfAlreadyExists,
-			params.RouterRoleKey,
-		)
-
-		return out
-	},
 	CreateSDKRepository: func(params CreateSDKRepositoryParams) Repository {
-		out := createSDKRepository(params.PK, params.Client)
+		out := createSDKRepository(params.PK, params.Client, params.RoutePrefix)
 		return out
 	},
 	CreateSDKService: func(params CreateSDKServiceParams) Service {
-		out := createSDKService(params.PK, params.Client)
+		out := createSDKService(params.PK, params.Client, params.RoutePrefix)
 		return out
 	},
 }
