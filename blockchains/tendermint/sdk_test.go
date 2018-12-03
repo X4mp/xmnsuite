@@ -170,7 +170,7 @@ func TestCreateBlockchainWithApplication_thenSpawn_Success(t *testing.T) {
 	appService := SDKFunc.CreateApplicationService()
 
 	// spawn the node:
-	node, nodeErr := appService.Spawn(port, rootDir, blkChain, apps)
+	node, nodeErr := appService.Spawn(port, nil, rootDir, blkChain, apps)
 	if nodeErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", nodeErr.Error())
 		return

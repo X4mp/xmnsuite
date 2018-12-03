@@ -67,7 +67,7 @@ type BlockchainService interface {
 
 // ApplicationService represents an application service
 type ApplicationService interface {
-	Spawn(port int, rootDir string, blkChain Blockchain, apps applications.Applications) (applications.Node, error)
+	Spawn(port int, seeds []string, rootDir string, blkChain Blockchain, apps applications.Applications) (applications.Node, error)
 	Connect(ipAddress string) (applications.Client, error)
 }
 

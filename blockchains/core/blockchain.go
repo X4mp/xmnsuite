@@ -34,6 +34,7 @@ func spawnBlockchain(
 	namespace string,
 	name string,
 	id *uuid.UUID,
+	seeds []string,
 	rootDirPath string,
 	routePrefix string,
 	port int,
@@ -70,7 +71,7 @@ func spawnBlockchain(
 	appService := tendermint.SDKFunc.CreateApplicationService()
 
 	// spawn the node:
-	node, nodeErr := appService.Spawn(port, rootDirPath, blkchain, apps)
+	node, nodeErr := appService.Spawn(port, seeds, rootDirPath, blkchain, apps)
 	if nodeErr != nil {
 		return nil, nodeErr
 	}

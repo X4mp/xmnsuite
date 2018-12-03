@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	config "github.com/tendermint/tendermint/config"
 	log "github.com/tendermint/tendermint/libs/log"
@@ -25,6 +26,7 @@ func createApplicationService() ApplicationService {
 // Spawn spawns a new blockchain application
 func (obj *applicationService) Spawn(
 	port int,
+	seeds []string,
 	rootDir string,
 	blkChain Blockchain,
 	apps applications.Applications,
@@ -45,6 +47,11 @@ func (obj *applicationService) Spawn(
 
 	//set the custom port in the RPC ListenAddress:
 	conf.RPC.ListenAddress = fmt.Sprintf("tcp://127.0.0.1:%d", port)
+
+	// set the seeds, if any:
+	if seeds != nil && len(seeds) > 0 {
+		conf.P2P.Seeds = strings.Join(seeds, ",")
+	}
 
 	// Generate the private key:
 	nodeKey, nodeKeyErr := p2p.LoadOrGenNodeKey(conf.NodeKeyFile())
