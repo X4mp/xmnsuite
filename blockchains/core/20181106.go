@@ -35,12 +35,12 @@ type core20181108 struct {
 	meta          meta.Meta
 }
 
-func createCore20181108(routePrefix string, routerRoleKey string) *core20181108 {
+func createCore20181108(met meta.Meta, routePrefix string, routerRoleKey string) *core20181108 {
 
 	out := core20181108{
 		routePrefix:   routePrefix,
 		routerRoleKey: routerRoleKey,
-		meta:          meta.SDKFunc.Create(meta.CreateParams{}),
+		meta:          met,
 	}
 
 	return &out
@@ -57,6 +57,7 @@ func create20181106(
 	routerRoleKey string,
 	rootPubKey crypto.PublicKey,
 	ds datastore.StoredDataStore,
+	met meta.Meta,
 ) applications.Application {
 
 	// enable the root user to have write access to the genesis route:
@@ -66,7 +67,7 @@ func create20181106(
 	store.Roles().EnableWriteAccess(routerRoleKey, fmt.Sprintf("%s/genesis", routePrefix))
 
 	// create core:
-	core := createCore20181108(routePrefix, routerRoleKey)
+	core := createCore20181108(met, routePrefix, routerRoleKey)
 
 	// create application:
 	version := "2018.11.06"

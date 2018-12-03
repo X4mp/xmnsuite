@@ -14,6 +14,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/meta"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
@@ -43,7 +44,8 @@ func spawnBlockchainForTests(t *testing.T, pk crypto.PrivateKey, rootPath string
 	ip := net.ParseIP("127.0.0.1")
 
 	// spawn the blockchain:
-	node, nodeErr := spawnBlockchain(namespace, name, &id, rootPath, routePrefix, port, nodePK, pk.PublicKey())
+	met := meta.SDKFunc.Create(meta.CreateParams{})
+	node, nodeErr := spawnBlockchain(namespace, name, &id, rootPath, routePrefix, port, nodePK, pk.PublicKey(), met)
 	if nodeErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", nodeErr.Error())
 		return nil, nil, nil, nil

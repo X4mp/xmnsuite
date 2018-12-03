@@ -4,6 +4,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	tcrypto "github.com/tendermint/tendermint/crypto"
 	applications "github.com/xmnservices/xmnsuite/blockchains/applications"
+	"github.com/xmnservices/xmnsuite/blockchains/core/meta"
 	"github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
@@ -20,6 +21,7 @@ type CreateParams struct {
 	RouterRoleKey string
 	RootPubKey    crypto.PublicKey
 	Store         datastore.StoredDataStore
+	Meta          meta.Meta
 }
 
 // SDKFunc represents the core SDK func
@@ -36,6 +38,7 @@ var SDKFunc = struct {
 			params.RouterRoleKey,
 			params.RootPubKey,
 			params.Store,
+			params.Meta,
 		)
 
 		return apps

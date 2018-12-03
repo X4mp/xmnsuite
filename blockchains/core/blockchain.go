@@ -8,6 +8,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	tcrypto "github.com/tendermint/tendermint/crypto"
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
+	"github.com/xmnservices/xmnsuite/blockchains/core/meta"
 	"github.com/xmnservices/xmnsuite/blockchains/tendermint"
 	"github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
@@ -38,6 +39,7 @@ func spawnBlockchain(
 	port int,
 	pk tcrypto.PrivKey,
 	rootPubKey crypto.PublicKey,
+	met meta.Meta,
 ) (applications.Node, error) {
 	blkchain := tendermint.SDKFunc.CreateBlockchain(tendermint.CreateBlockchainParams{
 		Namespace: namespace,
@@ -62,7 +64,7 @@ func spawnBlockchain(
 
 	// create the applications:
 	routerRoleKey := "router-role"
-	apps := createApplications(namespace, name, id, rootDirPath, routePrefix, routerRoleKey, rootPubKey, store)
+	apps := createApplications(namespace, name, id, rootDirPath, routePrefix, routerRoleKey, rootPubKey, store, met)
 
 	// create the application service:
 	appService := tendermint.SDKFunc.CreateApplicationService()
