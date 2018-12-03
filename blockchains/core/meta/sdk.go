@@ -40,6 +40,7 @@ type Meta interface {
 type EntityRequest interface {
 	RequestedBy() entity.Representation
 	Map() map[string]entity.Representation
+	Add(rep entity.Representation) EntityRequest
 	VoteService(store datastore.DataStore) vote.Service
 }
 

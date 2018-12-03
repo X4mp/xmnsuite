@@ -32,6 +32,12 @@ func (obj *entityRequest) Map() map[string]entity.Representation {
 	return obj.mp
 }
 
+// Add adds an entity representation
+func (obj *entityRequest) Add(rep entity.Representation) EntityRequest {
+	obj.mp[rep.MetaData().Keyname()] = rep
+	return obj
+}
+
 // VoteService returns the vote service
 func (obj *entityRequest) VoteService(store datastore.DataStore) vote.Service {
 	return obj.createVoteServiceFn(store)
