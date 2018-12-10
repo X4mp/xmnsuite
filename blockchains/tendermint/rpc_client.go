@@ -31,6 +31,11 @@ func createRPCClient(ipAddress string) (applications.Client, error) {
 	return &out, nil
 }
 
+// IP returns the client IP
+func (app *rpcClient) IP() string {
+	return app.ipAddress
+}
+
 // Query executes a query and returns its response:
 func (app *rpcClient) Query(req routers.QueryRequest) (routers.QueryResponse, error) {
 	js, jsErr := cdc.MarshalJSON(req)

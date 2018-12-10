@@ -66,6 +66,7 @@ type ClientTransactionResponse interface {
 
 // Client represents an application client
 type Client interface {
+	IP() string
 	Query(req routers.QueryRequest) (routers.QueryResponse, error)
 	Transact(req routers.TransactionRequest) (ClientTransactionResponse, error)
 }
