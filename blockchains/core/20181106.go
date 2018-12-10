@@ -46,6 +46,28 @@ func createCore20181108(met meta.Meta, routePrefix string, routerRoleKey string)
 	return &out
 }
 
+func create20181106WithRootPubKey(
+	namespace string,
+	name string,
+	id *uuid.UUID,
+	fromBlockIndex int64,
+	toBlockIndex int64,
+	rootDir string,
+	routePrefix string,
+	routerRoleKey string,
+	ds datastore.StoredDataStore,
+	met meta.Meta,
+	rootPubKey crypto.PublicKey,
+) applications.Application {
+	// enable the root user to have write access to the genesis route:
+	store := ds.DataStore()
+	store.Users().Insert(rootPubKey)
+	store.Roles().Add(routerRoleKey, rootPubKey)
+	store.Roles().EnableWriteAccess(routerRoleKey, fmt.Sprintf("%s/genesis", routePrefix))
+
+	return create20181106(namespace, name, id, fromBlockIndex, toBlockIndex, rootDir, routePrefix, routerRoleKey, ds, met)
+}
+
 func create20181106(
 	namespace string,
 	name string,
@@ -55,17 +77,9 @@ func create20181106(
 	rootDir string,
 	routePrefix string,
 	routerRoleKey string,
-	rootPubKey crypto.PublicKey,
 	ds datastore.StoredDataStore,
 	met meta.Meta,
 ) applications.Application {
-
-	// enable the root user to have write access to the genesis route:
-	store := ds.DataStore()
-	store.Users().Insert(rootPubKey)
-	store.Roles().Add(routerRoleKey, rootPubKey)
-	store.Roles().EnableWriteAccess(routerRoleKey, fmt.Sprintf("%s/genesis", routePrefix))
-
 	// create core:
 	core := createCore20181108(met, routePrefix, routerRoleKey)
 

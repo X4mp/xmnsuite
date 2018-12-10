@@ -19,9 +19,9 @@ type CreateParams struct {
 	RootDir       string
 	RoutePrefix   string
 	RouterRoleKey string
-	RootPubKey    crypto.PublicKey
 	Store         datastore.StoredDataStore
 	Meta          meta.Meta
+	RootPubKey    crypto.PublicKey
 }
 
 // SDKFunc represents the core SDK func
@@ -29,18 +29,30 @@ var SDKFunc = struct {
 	Create func(params CreateParams) applications.Applications
 }{
 	Create: func(params CreateParams) applications.Applications {
-		apps := createApplications(
+
+		if params.RootPubKey == nil {
+			return createApplications(
+				params.Namespace,
+				params.Name,
+				params.ID,
+				params.RootDir,
+				params.RoutePrefix,
+				params.RouterRoleKey,
+				params.Store,
+				params.Meta,
+			)
+		}
+
+		return createApplicationsWithRootPubKey(
 			params.Namespace,
 			params.Name,
 			params.ID,
 			params.RootDir,
 			params.RoutePrefix,
 			params.RouterRoleKey,
-			params.RootPubKey,
 			params.Store,
 			params.Meta,
+			params.RootPubKey,
 		)
-
-		return apps
 	},
 }
