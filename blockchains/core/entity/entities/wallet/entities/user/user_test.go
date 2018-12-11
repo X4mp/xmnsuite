@@ -14,46 +14,47 @@ func TestUser_Success(t *testing.T) {
 	usr := CreateUserForTests()
 	anotherUsr := CreateUserWithWalletForTests(usr.Wallet())
 
-	// create repository and services:
-	store := datastore.SDKFunc.Create()
-	repository := entity.SDKFunc.CreateRepository(store)
-	service := entity.SDKFunc.CreateService(store)
-
 	// create the metadata and representation:
 	metadata := SDKFunc.CreateMetaData()
 	represenation := SDKFunc.CreateRepresentation()
 
+	// create repository and services:
+	store := datastore.SDKFunc.Create()
+	entityRepository := entity.SDKFunc.CreateRepository(store)
+	entityService := entity.SDKFunc.CreateService(store)
+	repository := createRepository(metadata, entityRepository)
+
 	// save the wallet:
 	walletRepresentation := wallet.SDKFunc.CreateRepresentation()
-	saveWalletErr := service.Save(usr.Wallet(), walletRepresentation)
+	saveWalletErr := entityService.Save(usr.Wallet(), walletRepresentation)
 	if saveWalletErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", saveWalletErr.Error())
 		return
 	}
 
 	// save the user:
-	savedErr := service.Save(usr, represenation)
+	savedErr := entityService.Save(usr, represenation)
 	if savedErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", savedErr.Error())
 		return
 	}
 
 	// save again, returns error:
-	saveAgainErr := service.Save(usr, represenation)
+	saveAgainErr := entityService.Save(usr, represenation)
 	if saveAgainErr == nil {
 		t.Errorf("the returned error was expected to be valid, nil returned.")
 		return
 	}
 
 	// save another instance:
-	saveAnotherErr := service.Save(anotherUsr, represenation)
+	saveAnotherErr := entityService.Save(anotherUsr, represenation)
 	if saveAnotherErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", saveAnotherErr.Error())
 		return
 	}
 
 	// retrieve by id:
-	retUsr, retUsrErr := repository.RetrieveByID(metadata, usr.ID())
+	retUsr, retUsrErr := entityRepository.RetrieveByID(metadata, usr.ID())
 	if retUsrErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", retUsrErr.Error())
 		return
@@ -62,8 +63,8 @@ func TestUser_Success(t *testing.T) {
 	// compare:
 	CompareUserForTests(t, usr.(User), retUsr.(User))
 
-	// retrieve, should have 2 usrlets:
-	retUsrs, retUsrsErr := repository.RetrieveSetByKeyname(metadata, retrieveAllUserKeyname(), 0, 20)
+	// retrieve, should have 2 users:
+	retUsrs, retUsrsErr := entityRepository.RetrieveSetByKeyname(metadata, retrieveAllUserKeyname(), 0, 20)
 	if retUsrsErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", retUsrsErr.Error())
 		return
@@ -71,6 +72,18 @@ func TestUser_Success(t *testing.T) {
 
 	if retUsrs.Amount() != 2 {
 		t.Errorf("the was supposed to be %d usrlets, %d returned", 2, retUsrs.Amount())
+		return
+	}
+
+	// retrieve, should have 1 user with that public key:
+	retPS, retPSErr := repository.RetrieveSetByPubKey(usr.PubKey(), 0, 20)
+	if retPSErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", retPSErr.Error())
+		return
+	}
+
+	if retPS.Amount() != 1 {
+		t.Errorf("the was supposed to be %d usrlets, %d returned", 1, retPS.Amount())
 		return
 	}
 

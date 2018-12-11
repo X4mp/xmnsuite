@@ -26,6 +26,7 @@ type Normalized interface {
 // Repository represents the user repository
 type Repository interface {
 	RetrieveByPubKeyAndWallet(pubKey crypto.PublicKey, wal wallet.Wallet) (User, error)
+	RetrieveSetByPubKey(pubKey crypto.PublicKey, index int, amount int) (entity.PartialSet, error)
 }
 
 // CreateParams represents the Create params

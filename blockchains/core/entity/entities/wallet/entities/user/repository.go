@@ -41,3 +41,16 @@ func (app *repository) RetrieveByPubKeyAndWallet(pubKey crypto.PublicKey, wal wa
 	str := fmt.Sprintf("the entity (ID: %s) retrieved (using pubKey: %s, walletID: %s) is not a valid User instance", ins.ID().String(), pubKey.String(), wal.ID().String())
 	return nil, errors.New(str)
 }
+
+// RetrieveSetByPubKey retrieves a list of users connected to this pubkey
+func (app *repository) RetrieveSetByPubKey(pubKey crypto.PublicKey, index int, amount int) (entity.PartialSet, error) {
+	insPS, insPSErr := app.entityRepository.RetrieveSetByIntersectKeynames(app.userMetaData, []string{
+		retrieveUserByPubKeyKeyname(pubKey),
+	}, index, amount)
+
+	if insPSErr != nil {
+		return nil, insPSErr
+	}
+
+	return insPS, nil
+}
