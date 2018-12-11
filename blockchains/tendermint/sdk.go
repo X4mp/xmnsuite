@@ -77,8 +77,9 @@ type ApplicationService interface {
 
 // CreateClientParams represents the params of the CreateClient SDK func
 type CreateClientParams struct {
-	IP   net.IP
-	Port int
+	IPAsString string
+	IP         net.IP
+	Port       int
 }
 
 // CreatePathParams represents the params of the CreatePath SDK func
@@ -113,8 +114,11 @@ var SDKFunc = struct {
 		return createPath(params.Namespace, params.Name, params.ID)
 	},
 	CreateClient: func(params CreateClientParams) applications.Client {
-		ipAddress := fmt.Sprintf("tcp://%s:%d", params.IP.String(), params.Port)
-		out, outErr := createRPCClient(ipAddress)
+		if params.IPAsString == "" {
+			params.IPAsString = fmt.Sprintf("tcp://%s:%d", params.IP.String(), params.Port)
+		}
+
+		out, outErr := createRPCClient(params.IPAsString)
 		if outErr != nil {
 			panic(outErr)
 		}
