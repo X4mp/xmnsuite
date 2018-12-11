@@ -13,7 +13,6 @@ type Genesis interface {
 	ID() *uuid.UUID
 	GazPricePerKb() int
 	ConcensusNeeded() int
-	DeveloperConcensusNeeded() int
 	MaxAmountOfValidators() int
 	User() user.User
 	Deposit() deposit.Deposit
@@ -35,13 +34,12 @@ type Repository interface {
 
 // CreateParams represents the Create params
 type CreateParams struct {
-	ID                       *uuid.UUID
-	ConcensusNeeded          int
-	DeveloperConcensusNeeded int
-	GazPricePerKb            int
-	MaxAmountOfValidators    int
-	User                     user.User
-	Deposit                  deposit.Deposit
+	ID                    *uuid.UUID
+	GazPricePerKb         int
+	ConcensusNeeded       int
+	MaxAmountOfValidators int
+	User                  user.User
+	Deposit               deposit.Deposit
 }
 
 // SDKFunc represents the Genesis SDK func
@@ -58,7 +56,7 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out, outErr := createGenesis(params.ID, params.ConcensusNeeded, params.DeveloperConcensusNeeded, params.GazPricePerKb, params.MaxAmountOfValidators, params.Deposit, params.User)
+		out, outErr := createGenesis(params.ID, params.ConcensusNeeded, params.GazPricePerKb, params.MaxAmountOfValidators, params.Deposit, params.User)
 		if outErr != nil {
 			panic(outErr)
 		}

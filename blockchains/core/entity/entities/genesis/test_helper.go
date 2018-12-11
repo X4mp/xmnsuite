@@ -18,8 +18,7 @@ func CreateGenesisWithPubKeyForTests(pubKey crypto.PublicKey) Genesis {
 	dep := deposit.CreateDepositWithPubKeyForTests(pubKey)
 	concensusNeeded := int(dep.Amount()/2) - 1
 	usr := user.CreateUserWithWalletAndPublicKeyAndSharesForTests(dep.To(), pubKey, dep.To().ConcensusNeeded())
-	devConcensusNeeded := int(dep.Amount()/3) - 1
-	out, outErr := createGenesis(&id, concensusNeeded, devConcensusNeeded, gazPricePerKb, maxAmountOfValidators, dep, usr)
+	out, outErr := createGenesis(&id, concensusNeeded, gazPricePerKb, maxAmountOfValidators, dep, usr)
 	if outErr != nil {
 		panic(outErr)
 	}

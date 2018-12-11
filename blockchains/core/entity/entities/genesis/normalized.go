@@ -27,13 +27,12 @@ func createNormalizedGenesis(ins Genesis) (*normalizedGenesis, error) {
 	}
 
 	out := normalizedGenesis{
-		ID:                       ins.ID().String(),
-		ConcensusNeeded:          ins.ConcensusNeeded(),
-		DeveloperConcensusNeeded: ins.DeveloperConcensusNeeded(),
-		GzPricePerKb:             ins.GazPricePerKb(),
-		MxAmountOfValidators:     ins.MaxAmountOfValidators(),
-		User:                     normalizedUser,
-		Deposit:                  normalizedDeposit,
+		ID:                   ins.ID().String(),
+		ConcensusNeeded:      ins.ConcensusNeeded(),
+		GzPricePerKb:         ins.GazPricePerKb(),
+		MxAmountOfValidators: ins.MaxAmountOfValidators(),
+		User:                 normalizedUser,
+		Deposit:              normalizedDeposit,
 	}
 
 	return &out, nil
