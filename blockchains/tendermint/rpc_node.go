@@ -2,6 +2,9 @@ package tendermint
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"time"
 
 	nm "github.com/tendermint/tendermint/node"
@@ -13,12 +16,14 @@ import (
 type rpcNode struct {
 	rpcAddress string
 	node       *nm.Node
+	dbPath     string
 }
 
-func createRPCNode(rpcAddress string, node *nm.Node) applications.Node {
+func createRPCNode(rpcAddress string, node *nm.Node, dbPath string) applications.Node {
 	out := rpcNode{
 		rpcAddress: rpcAddress,
 		node:       node,
+		dbPath:     dbPath,
 	}
 
 	return &out
@@ -48,14 +53,15 @@ func (app *rpcNode) Start() error {
 
 // Stop stops the node
 func (app *rpcNode) Stop() error {
-	err := app.node.Stop()
-	if err != nil {
-		return err
+	stopErr := app.node.Stop()
+	if stopErr != nil {
+		return stopErr
 	}
 
 	for {
 		if !app.node.IsRunning() {
-			return nil
+			// remove all the LOCK files:
+			return app.removeLockFiles(app.dbPath)
 		}
 
 		fmt.Println("node still running, waiting...")
@@ -76,4 +82,33 @@ func (app *rpcNode) waitForRPC() {
 		fmt.Println("error", err)
 		time.Sleep(time.Millisecond)
 	}
+}
+
+func (app *rpcNode) removeLockFiles(path string) error {
+	files, filesErr := ioutil.ReadDir(path)
+	if filesErr != nil {
+		return filesErr
+	}
+
+	for _, oneFile := range files {
+		name := oneFile.Name()
+		subPath := filepath.Join(path, name)
+		if oneFile.IsDir() {
+			subDirErr := app.removeLockFiles(subPath)
+			if subDirErr != nil {
+				return subDirErr
+			}
+
+			continue
+		}
+
+		if name == "LOCK" {
+			remErr := os.Remove(subPath)
+			if remErr != nil {
+				return remErr
+			}
+		}
+	}
+
+	return nil
 }

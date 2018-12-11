@@ -45,7 +45,7 @@ func spawnBlockchainForTests(t *testing.T, pk crypto.PrivateKey, rootPath string
 
 	// spawn the blockchain:
 	met := meta.SDKFunc.Create(meta.CreateParams{})
-	node, nodeErr := spawnBlockchain(namespace, name, &id, nil, rootPath, routePrefix, port, nodePK, pk.PublicKey(), met)
+	node, nodeErr := saveThenSpawnBlockchain(namespace, name, &id, nil, rootPath, routePrefix, port, nodePK, pk.PublicKey(), met)
 	if nodeErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", nodeErr.Error())
 		return nil, nil, nil, nil

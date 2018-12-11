@@ -81,7 +81,7 @@ func (obj *applicationService) Spawn(
 	}
 
 	// create the node:
-	out := createRPCNode(conf.RPC.ListenAddress, node)
+	out := createRPCNode(conf.RPC.ListenAddress, node, dirPath)
 	return out, nil
 }
 

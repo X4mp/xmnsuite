@@ -8,13 +8,16 @@ import (
 	"path/filepath"
 	"testing"
 
+	uuid "github.com/satori/go.uuid"
 	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/transfer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/validator"
+	"github.com/xmnservices/xmnsuite/blockchains/core/meta"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
@@ -38,6 +41,108 @@ func TestSaveGenesis_Success(t *testing.T) {
 	// spawn bockchain with genesis instance:
 	node, _, _, _ := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, genIns)
 	defer node.Stop()
+}
+
+func TestSaveGenesis_thenRespawnBlockchain_Success(t *testing.T) {
+	// variables:
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
+	rootPath := filepath.Join("./test_files_TestSaveGenesis_Success")
+	routePrefix := "/some-route-prefix"
+	namespace := "xmn"
+	name := "core"
+	id := uuid.NewV4()
+	port := rand.Int()%9000 + 1000
+	nodePK := ed25519.GenPrivKey()
+	met := meta.SDKFunc.Create(meta.CreateParams{})
+
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// spawn bockchain with genesis instance:
+	node, nodeErr := saveThenSpawnBlockchain(namespace, name, &id, nil, rootPath, routePrefix, port, nodePK, pk.PublicKey(), met)
+	if nodeErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", nodeErr.Error())
+		return
+	}
+
+	// start the node:
+	startErr := node.Start()
+	if startErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", startErr.Error())
+		return
+	}
+
+	// get the client:
+	client, clientErr := node.GetClient()
+	if clientErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", clientErr.Error())
+		return
+	}
+
+	// create the entity service:
+	entityService := entity.SDKFunc.CreateSDKService(entity.CreateSDKServiceParams{
+		PK:          pk,
+		Client:      client,
+		RoutePrefix: routePrefix,
+	})
+
+	// create the entity repository:
+	entityRepository := entity.SDKFunc.CreateSDKRepository(entity.CreateSDKRepositoryParams{
+		PK:          pk,
+		Client:      client,
+		RoutePrefix: routePrefix,
+	})
+
+	// create the representation:
+	representation := genesis.SDKFunc.CreateRepresentation()
+
+	// save the genesis:
+	saveErr := entityService.Save(genIns, representation)
+	if saveErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", saveErr.Error())
+		return
+	}
+
+	// retrieve the genesis:
+	retGen, retGenErr := entityRepository.RetrieveByID(representation.MetaData(), genIns.ID())
+	if retGenErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", retGenErr.Error())
+		return
+	}
+
+	// compare the wallet instances:
+	genesis.CompareGenesisForTests(t, genIns, retGen.(genesis.Genesis))
+
+	// stop de node:
+	stopErr := node.Stop()
+	if stopErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", stopErr.Error())
+		return
+	}
+
+	// spawn the blockchain again:
+	secondNode, secondNodeErr := spawnBlockchain(namespace, name, &id, nil, rootPath, routePrefix, port, met)
+	if secondNodeErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", secondNodeErr.Error())
+		return
+	}
+
+	// start the node:
+	secondStartErr := secondNode.Start()
+	if secondStartErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", secondStartErr.Error())
+		return
+	}
+
+	// stop the node:
+	secondStopErr := secondNode.Stop()
+	if secondStopErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", secondStopErr.Error())
+		return
+	}
 }
 
 func TestSaveGenesis_createSameGenesisInstance_returnsError(t *testing.T) {

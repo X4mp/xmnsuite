@@ -38,6 +38,51 @@ func spawnBlockchain(
 	rootDirPath string,
 	routePrefix string,
 	port int,
+	met meta.Meta,
+) (applications.Node, error) {
+	service := tendermint.SDKFunc.CreateBlockchainService(tendermint.CreateBlockchainServiceParams{
+		RootDirPath: rootDirPath,
+	})
+
+	blkchain, blkchainErr := service.Retrieve(tendermint.SDKFunc.CreatePath(tendermint.CreatePathParams{
+		Namespace: namespace,
+		Name:      name,
+		ID:        id,
+	}))
+
+	if blkchainErr != nil {
+		return nil, blkchainErr
+	}
+
+	// create the datastore:
+	store := datastore.SDKFunc.CreateStoredDataStore(datastore.StoredDataStoreParams{
+		FilePath: filepath.Join(rootDirPath, "db.xmn"),
+	})
+
+	// create the applications:
+	routerRoleKey := "router-role"
+	apps := createApplications(namespace, name, id, rootDirPath, routePrefix, routerRoleKey, store, met)
+
+	// create the application service:
+	appService := tendermint.SDKFunc.CreateApplicationService()
+
+	// spawn the node:
+	node, nodeErr := appService.Spawn(port, seeds, rootDirPath, blkchain, apps)
+	if nodeErr != nil {
+		return nil, nodeErr
+	}
+
+	return node, nil
+}
+
+func saveThenSpawnBlockchain(
+	namespace string,
+	name string,
+	id *uuid.UUID,
+	seeds []string,
+	rootDirPath string,
+	routePrefix string,
+	port int,
 	pk tcrypto.PrivKey,
 	rootPubKey crypto.PublicKey,
 	met meta.Meta,
