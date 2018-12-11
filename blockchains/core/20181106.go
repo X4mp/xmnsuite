@@ -96,7 +96,10 @@ func create20181106(
 		Store:          ds,
 		RetrieveValidators: func(ds datastore.DataStore) ([]applications.Validator, error) {
 			// retrieve the genesis:
-			genRepository := genesis.SDKFunc.CreateRepository(ds)
+			genRepository := genesis.SDKFunc.CreateRepository(genesis.CreateRepositoryParams{
+				Datastore: ds,
+			})
+
 			gen, genErr := genRepository.Retrieve()
 			if genErr != nil {
 				return nil, genErr

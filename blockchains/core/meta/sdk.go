@@ -198,7 +198,10 @@ var SDKFunc = struct {
 			return vote.SDKFunc.CreateService(vote.CreateServiceParams{
 				CalculateVoteFn: func(votes entity.PartialSet) (bool, bool, error) {
 					// retrieve the genesis:
-					genesisRepository := genesis.SDKFunc.CreateRepository(store)
+					genesisRepository := genesis.SDKFunc.CreateRepository(genesis.CreateRepositoryParams{
+						Datastore: store,
+					})
+
 					balanceRepository := balance.SDKFunc.CreateRepository(store)
 
 					// retrieve genesis:

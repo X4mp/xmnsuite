@@ -23,8 +23,15 @@ func createDependencies(ds datastore.DataStore) *dependencies {
 	entityRepository := entity.SDKFunc.CreateRepository(ds)
 	entityService := entity.SDKFunc.CreateService(ds)
 	userRepository := user.SDKFunc.CreateRepository(ds)
-	genesisRepository := genesis.SDKFunc.CreateRepository(ds)
-	genesisService := genesis.SDKFunc.CreateService(ds)
+	genesisRepository := genesis.SDKFunc.CreateRepository(genesis.CreateRepositoryParams{
+		EntityRepository: entityRepository,
+	})
+
+	genesisService := genesis.SDKFunc.CreateService(genesis.CreateServiceParams{
+		EntityRepository: entityRepository,
+		EntityService:    entityService,
+	})
+
 	balanceRepository := balance.SDKFunc.CreateRepository(ds)
 	developerRepository := developer.SDKFunc.CreateRepository(ds)
 

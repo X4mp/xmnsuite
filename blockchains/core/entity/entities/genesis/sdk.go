@@ -42,11 +42,24 @@ type CreateParams struct {
 	Deposit               deposit.Deposit
 }
 
+// CreateRepositoryParams represents the CreateRepository params
+type CreateRepositoryParams struct {
+	Datastore        datastore.DataStore
+	EntityRepository entity.Repository
+}
+
+// CreateServiceParams represents the CreateService params
+type CreateServiceParams struct {
+	Datastore        datastore.DataStore
+	EntityRepository entity.Repository
+	EntityService    entity.Service
+}
+
 // SDKFunc represents the Genesis SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Genesis
-	CreateRepository     func(ds datastore.DataStore) Repository
-	CreateService        func(ds datastore.DataStore) Service
+	CreateRepository     func(params CreateRepositoryParams) Repository
+	CreateService        func(params CreateServiceParams) Service
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 }{
@@ -63,19 +76,25 @@ var SDKFunc = struct {
 
 		return out
 	},
-	CreateRepository: func(ds datastore.DataStore) Repository {
+	CreateRepository: func(params CreateRepositoryParams) Repository {
+		if params.Datastore != nil {
+			params.EntityRepository = entity.SDKFunc.CreateRepository(params.Datastore)
+		}
+
 		met := createMetaData()
-		entityRepository := entity.SDKFunc.CreateRepository(ds)
-		out := createRepository(entityRepository, met)
+		out := createRepository(params.EntityRepository, met)
 		return out
 	},
-	CreateService: func(ds datastore.DataStore) Service {
+	CreateService: func(params CreateServiceParams) Service {
+		if params.Datastore != nil {
+			params.EntityRepository = entity.SDKFunc.CreateRepository(params.Datastore)
+			params.EntityService = entity.SDKFunc.CreateService(params.Datastore)
+		}
+
 		met := createMetaData()
 		rep := representation()
-		entityRepository := entity.SDKFunc.CreateRepository(ds)
-		repository := createRepository(entityRepository, met)
-		entityService := entity.SDKFunc.CreateService(ds)
-		out := createService(entityService, entityRepository, repository, rep)
+		repository := createRepository(params.EntityRepository, met)
+		out := createService(params.EntityService, params.EntityRepository, repository, rep)
 		return out
 	},
 	CreateMetaData: func() entity.MetaData {
