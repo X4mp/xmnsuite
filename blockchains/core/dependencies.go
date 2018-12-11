@@ -22,7 +22,10 @@ type dependencies struct {
 func createDependencies(ds datastore.DataStore) *dependencies {
 	entityRepository := entity.SDKFunc.CreateRepository(ds)
 	entityService := entity.SDKFunc.CreateService(ds)
-	userRepository := user.SDKFunc.CreateRepository(ds)
+	userRepository := user.SDKFunc.CreateRepository(user.CreateRepositoryParams{
+		EntityRepository: entityRepository,
+	})
+
 	genesisRepository := genesis.SDKFunc.CreateRepository(genesis.CreateRepositoryParams{
 		EntityRepository: entityRepository,
 	})

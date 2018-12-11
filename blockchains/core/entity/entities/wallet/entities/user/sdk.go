@@ -37,10 +37,16 @@ type CreateParams struct {
 	Wallet wallet.Wallet
 }
 
+// CreateRepositoryParams represents the CreateRepository params
+type CreateRepositoryParams struct {
+	Store            datastore.DataStore
+	EntityRepository entity.Repository
+}
+
 // SDKFunc represents the User SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) User
-	CreateRepository     func(ds datastore.DataStore) Repository
+	CreateRepository     func(params CreateRepositoryParams) Repository
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 }{
@@ -53,10 +59,13 @@ var SDKFunc = struct {
 		out := createUser(params.ID, params.PubKey, params.Shares, params.Wallet)
 		return out
 	},
-	CreateRepository: func(ds datastore.DataStore) Repository {
-		entityRepository := entity.SDKFunc.CreateRepository(ds)
+	CreateRepository: func(params CreateRepositoryParams) Repository {
+		if params.Store != nil {
+			params.EntityRepository = entity.SDKFunc.CreateRepository(params.Store)
+		}
+
 		userMetaData := createMetaData()
-		out := createRepository(userMetaData, entityRepository)
+		out := createRepository(userMetaData, params.EntityRepository)
 		return out
 	},
 	CreateMetaData: func() entity.MetaData {
