@@ -1,16 +1,20 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
+	"net"
 
 	cliapp "github.com/urfave/cli"
 	"github.com/xmnservices/xmnsuite/applications/forex/commands"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
 )
 
 // SDKFunc represents the CLI sdk func
 var SDKFunc = struct {
 	GenerateConfigs func() *cliapp.Command
 	SpawnMain       func() *cliapp.Command
+	RetrieveGenesis func() *cliapp.Command
 }{
 	GenerateConfigs: func() *cliapp.Command {
 		return &cliapp.Command{
@@ -93,6 +97,62 @@ var SDKFunc = struct {
 				}
 
 				str := fmt.Sprintf("XMN main blockchain spawned, IP: %s", client.IP())
+				print(str)
+
+				// returns:
+				return nil
+			},
+		}
+	},
+	RetrieveGenesis: func() *cliapp.Command {
+		return &cliapp.Command{
+			Name:    "genesis",
+			Aliases: []string{"rg"},
+			Usage:   "Retrieves the genesis transaction of the blockchain",
+			Flags: []cliapp.Flag{
+				cliapp.IntFlag{
+					Name:  "port",
+					Value: 26657,
+					Usage: "this is the blockchain port",
+				},
+				cliapp.StringFlag{
+					Name:  "ip",
+					Value: "127.0.0.1",
+					Usage: "this is the blockchain ip address",
+				},
+				cliapp.StringFlag{
+					Name:  "pass",
+					Value: "",
+					Usage: "this is the password used to decrypt your configuration file",
+				},
+				cliapp.StringFlag{
+					Name:  "file",
+					Value: "",
+					Usage: "this is the path of your encrypted configuration file",
+				},
+			},
+			Action: func(c *cliapp.Context) error {
+				// retrieve:
+				gen := commands.SDKFunc.RetrieveGenesis(commands.RetrieveGenesisParams{
+					Pass:     c.String("pass"),
+					Filename: c.String("file"),
+					IP:       net.ParseIP(c.String("ip")),
+					Port:     c.Int("port"),
+				})
+
+				// normalize:
+				normalized, normalizedErr := genesis.SDKFunc.CreateMetaData().Normalize()(gen)
+				if normalizedErr != nil {
+					panic(normalizedErr)
+				}
+
+				// beauty-print:
+				data, dataErr := json.MarshalIndent(normalized, "", "    ")
+				if dataErr != nil {
+					panic(dataErr)
+				}
+
+				str := fmt.Sprintf(string(data))
 				print(str)
 
 				// returns:

@@ -2,8 +2,10 @@ package commands
 
 import (
 	"math"
+	"net"
 
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/configs"
 )
 
@@ -42,10 +44,19 @@ type SpawnMainParams struct {
 	Port     int
 }
 
+// RetrieveGenesisParams retrieve the genesis transaction params
+type RetrieveGenesisParams struct {
+	Pass     string
+	Filename string
+	IP       net.IP
+	Port     int
+}
+
 // SDKFunc represents the commands SDK func
 var SDKFunc = struct {
 	GenerateConfigs func(params GenerateConfigsParams) configs.Configs
 	SpawnMain       func(params SpawnMainParams) applications.Node
+	RetrieveGenesis func(params RetrieveGenesisParams) genesis.Genesis
 }{
 	GenerateConfigs: func(params GenerateConfigsParams) configs.Configs {
 		out, outErr := generateConfigs(params.Pass, params.RetypedPass, params.Filename)
@@ -57,6 +68,14 @@ var SDKFunc = struct {
 	},
 	SpawnMain: func(params SpawnMainParams) applications.Node {
 		out, outErr := spawnMain(params.Pass, params.Filename, params.Dir, params.Port)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
+	},
+	RetrieveGenesis: func(params RetrieveGenesisParams) genesis.Genesis {
+		out, outErr := retrieveGenesis(params.Pass, params.Filename, params.IP, params.Port)
 		if outErr != nil {
 			panic(outErr)
 		}
