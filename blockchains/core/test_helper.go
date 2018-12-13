@@ -100,8 +100,44 @@ func spawnBlockchainWithGenesisForTests(t *testing.T, pk crypto.PrivateKey, root
 		return nil, nil, nil, nil
 	}
 
-	// compare the wallet instances:
+	// compare the genesis instances:
 	genesis.CompareGenesisForTests(t, genIns, retGen.(genesis.Genesis))
+
+	// retrieve the genesis by intersect keynames:
+	retGenByIntersectKeynames, retGenByIntersectKeynamesErr := repository.RetrieveByIntersectKeynames(representation.MetaData(), []string{"genesis"})
+	if retGenByIntersectKeynamesErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", retGenByIntersectKeynamesErr.Error())
+		return nil, nil, nil, nil
+	}
+
+	// compare the genesis instances:
+	genesis.CompareGenesisForTests(t, genIns, retGenByIntersectKeynames.(genesis.Genesis))
+
+	// retrieve the genesis partial set by keyname:
+	retGenSetByIntersectKeynames, retGenSetByIntersectKeynamesErr := repository.RetrieveSetByKeyname(representation.MetaData(), "genesis", 0, 5)
+	if retGenSetByIntersectKeynamesErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", retGenSetByIntersectKeynamesErr.Error())
+		return nil, nil, nil, nil
+	}
+
+	if retGenSetByIntersectKeynames.Index() != 0 {
+		t.Errorf("the index was invalid.  Expected: %d, Received: %d", 0, retGenSetByIntersectKeynames.Index())
+		return nil, nil, nil, nil
+	}
+
+	if retGenSetByIntersectKeynames.Amount() != 1 {
+		t.Errorf("the amount was invalid.  Expected: %d, Received: %d", 1, retGenSetByIntersectKeynames.Amount())
+		return nil, nil, nil, nil
+	}
+
+	if retGenSetByIntersectKeynames.TotalAmount() != 1 {
+		t.Errorf("the total amount was invalid.  Expected: %d, Received: %d", 1, retGenSetByIntersectKeynames.TotalAmount())
+		return nil, nil, nil, nil
+	}
+
+	// compare the genesis instances:
+	genInstances := retGenSetByIntersectKeynames.Instances()
+	genesis.CompareGenesisForTests(t, genIns, genInstances[0].(genesis.Genesis))
 
 	// returns:
 	return node, client, service, repository

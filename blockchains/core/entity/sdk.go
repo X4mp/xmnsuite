@@ -1,6 +1,8 @@
 package entity
 
 import (
+	"errors"
+
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
 	"github.com/xmnservices/xmnsuite/crypto"
@@ -29,6 +31,14 @@ type Denormalize func(ins interface{}) (Entity, error)
 // Entity represents an entity instance
 type Entity interface {
 	ID() *uuid.UUID
+}
+
+// Normalized represents a normalized entity
+type Normalized interface {
+}
+
+// NormalizedPartialSet represents a normalized entity partial set
+type NormalizedPartialSet interface {
 }
 
 // MetaData represents the metadata
@@ -117,24 +127,28 @@ type CreateSDKServiceParams struct {
 	RoutePrefix string
 }
 
-// CreateControllersParams represents the Controllers params
-type CreateControllersParams struct {
-	Met                      MetaData
-	Rep                      Representation
-	DefaultAmountOfElements  int
-	GazPricePerKb            int
-	OverwriteIfAlreadyExists bool
-	RouterRoleKey            string
+// NormalizePartialSetParams represents the normalize partial set params
+type NormalizePartialSetParams struct {
+	PartialSet PartialSet
+	MetaData   MetaData
+}
+
+// DenormalizePartialSetParams represents the denormalize partial set params
+type DenormalizePartialSetParams struct {
+	PartialSet NormalizedPartialSet
+	MetaData   MetaData
 }
 
 // SDKFunc represents the Entity SDK func
 var SDKFunc = struct {
-	CreateMetaData       func(params CreateMetaDataParams) MetaData
-	CreateRepresentation func(params CreateRepresentationParams) Representation
-	CreateRepository     func(ds datastore.DataStore) Repository
-	CreateService        func(ds datastore.DataStore) Service
-	CreateSDKRepository  func(params CreateSDKRepositoryParams) Repository
-	CreateSDKService     func(params CreateSDKServiceParams) Service
+	CreateMetaData        func(params CreateMetaDataParams) MetaData
+	CreateRepresentation  func(params CreateRepresentationParams) Representation
+	CreateRepository      func(ds datastore.DataStore) Repository
+	CreateService         func(ds datastore.DataStore) Service
+	CreateSDKRepository   func(params CreateSDKRepositoryParams) Repository
+	CreateSDKService      func(params CreateSDKServiceParams) Service
+	NormalizePartialSet   func(params NormalizePartialSetParams) NormalizedPartialSet
+	DenormalizePartialSet func(params DenormalizePartialSetParams) PartialSet
 }{
 	CreateMetaData: func(params CreateMetaDataParams) MetaData {
 		met, metErr := createMetaData(
@@ -176,5 +190,25 @@ var SDKFunc = struct {
 	CreateSDKService: func(params CreateSDKServiceParams) Service {
 		out := createSDKService(params.PK, params.Client, params.RoutePrefix)
 		return out
+	},
+	NormalizePartialSet: func(params NormalizePartialSetParams) NormalizedPartialSet {
+		out, outErr := createNormalizedPartialSet(params.PartialSet, params.MetaData)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
+	},
+	DenormalizePartialSet: func(params DenormalizePartialSetParams) PartialSet {
+		if casted, ok := params.PartialSet.(*normalizedPartialSet); ok {
+			out, outErr := createEntityPartialSetFromNormalized(casted, params.MetaData)
+			if outErr != nil {
+				panic(outErr)
+			}
+
+			return out
+		}
+
+		panic(errors.New("the given normalized partial set is invalid"))
 	},
 }

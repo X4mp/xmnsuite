@@ -3,6 +3,7 @@ package entity
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
@@ -29,9 +30,72 @@ func createSDKRepository(pk crypto.PrivateKey, client applications.Client, route
 func (app *sdkRepository) RetrieveByID(met MetaData, id *uuid.UUID) (Entity, error) {
 	// create the resource pointer:
 	queryPath := fmt.Sprintf("%s/%s/%s", app.routePrefix, met.Keyname(), id.String())
+	queryResp, queryRespErr := app.execute(queryPath)
+	if queryRespErr != nil {
+		return nil, queryRespErr
+	}
+
+	// convert to an entity:
+	ins, insErr := met.ToEntity()(app, queryResp.Value())
+	if insErr != nil {
+		return nil, insErr
+	}
+
+	return ins, nil
+}
+
+// RetrieveByIntersectKeynames retrieves an entity by intersecting keynames
+func (app *sdkRepository) RetrieveByIntersectKeynames(met MetaData, keynames []string) (Entity, error) {
+	// create the resource pointer:
+	queryPath := fmt.Sprintf("%s/%s/%s/intersect", app.routePrefix, met.Keyname(), strings.Join(keynames, "|"))
+	queryResp, queryRespErr := app.execute(queryPath)
+	if queryRespErr != nil {
+		return nil, queryRespErr
+	}
+
+	// convert to an entity:
+	ins, insErr := met.ToEntity()(app, queryResp.Value())
+	if insErr != nil {
+		return nil, insErr
+	}
+
+	return ins, nil
+}
+
+// RetrieveSetByKeyname retrieves an entity set by using a keyname
+func (app *sdkRepository) RetrieveSetByKeyname(met MetaData, keyname string, index int, amount int) (PartialSet, error) {
+	return app.RetrieveSetByIntersectKeynames(met, []string{keyname}, index, amount)
+}
+
+// RetrieveSetByIntersectKeynames retrieves an entity set by intersecting keynames
+func (app *sdkRepository) RetrieveSetByIntersectKeynames(met MetaData, keynames []string, index int, amount int) (PartialSet, error) {
+	// create the resource pointer:
+	queryPath := fmt.Sprintf("%s/%s/%s/set/intersect", app.routePrefix, met.Keyname(), strings.Join(keynames, "|"))
+	queryResp, queryRespErr := app.execute(queryPath)
+	if queryRespErr != nil {
+		return nil, queryRespErr
+	}
+
+	// unmarshal the normalized partial set:
+	ptr := new(normalizedPartialSet)
+	jsErr := cdc.UnmarshalJSON(queryResp.Value(), ptr)
+	if jsErr != nil {
+		return nil, jsErr
+	}
+
+	// denormalize:
+	ps, psErr := createEntityPartialSetFromNormalized(ptr, met)
+	if psErr != nil {
+		return nil, psErr
+	}
+
+	return ps, nil
+}
+
+func (app *sdkRepository) execute(path string) (routers.QueryResponse, error) {
 	queryResPtr := routers.SDKFunc.CreateResourcePointer(routers.CreateResourcePointerParams{
 		From: app.pk.PublicKey(),
-		Path: queryPath,
+		Path: path,
 	})
 
 	// create the signature:
@@ -52,26 +116,5 @@ func (app *sdkRepository) RetrieveByID(met MetaData, id *uuid.UUID) (Entity, err
 		return nil, errors.New(str)
 	}
 
-	// convert to an entity:
-	ins, insErr := met.ToEntity()(app, queryResp.Value())
-	if insErr != nil {
-		return nil, insErr
-	}
-
-	return ins, nil
-}
-
-// RetrieveByIntersectKeynames retrieves an entity by intersecting keynames
-func (app *sdkRepository) RetrieveByIntersectKeynames(met MetaData, keynames []string) (Entity, error) {
-	return nil, nil
-}
-
-// RetrieveSetByKeyname retrieves an entity set by using a keyname
-func (app *sdkRepository) RetrieveSetByKeyname(met MetaData, keyname string, index int, amount int) (PartialSet, error) {
-	return nil, nil
-}
-
-// RetrieveSetByIntersectKeynames retrieves an entity set by intersecting keynames
-func (app *sdkRepository) RetrieveSetByIntersectKeynames(met MetaData, keynames []string, index int, amount int) (PartialSet, error) {
-	return nil, nil
+	return queryResp, nil
 }

@@ -3,10 +3,13 @@ package core
 import (
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
 	"unsafe"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
+	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/validator"
@@ -30,17 +33,19 @@ type incomingRequest struct {
 }
 
 type core20181108 struct {
-	routePrefix   string
-	routerRoleKey string
-	meta          meta.Meta
+	routePrefix                   string
+	routerRoleKey                 string
+	meta                          meta.Meta
+	maxAmountOfEntitiesToRetrieve int
 }
 
-func createCore20181108(met meta.Meta, routePrefix string, routerRoleKey string) *core20181108 {
+func createCore20181108(met meta.Meta, routePrefix string, routerRoleKey string, maxAmountOfEntitiesToRetrieve int) *core20181108 {
 
 	out := core20181108{
 		routePrefix:   routePrefix,
 		routerRoleKey: routerRoleKey,
 		meta:          met,
+		maxAmountOfEntitiesToRetrieve: maxAmountOfEntitiesToRetrieve,
 	}
 
 	return &out
@@ -58,6 +63,7 @@ func create20181106WithRootPubKey(
 	ds datastore.StoredDataStore,
 	met meta.Meta,
 	rootPubKey crypto.PublicKey,
+	maxAmountOfEntitiesToRetrieve int,
 ) applications.Application {
 	// enable the root user to have write access to the genesis route:
 	store := ds.DataStore()
@@ -65,7 +71,7 @@ func create20181106WithRootPubKey(
 	store.Roles().Add(routerRoleKey, rootPubKey)
 	store.Roles().EnableWriteAccess(routerRoleKey, fmt.Sprintf("%s/genesis", routePrefix))
 
-	return create20181106(namespace, name, id, fromBlockIndex, toBlockIndex, rootDir, routePrefix, routerRoleKey, ds, met)
+	return create20181106(namespace, name, id, fromBlockIndex, toBlockIndex, rootDir, routePrefix, routerRoleKey, ds, met, maxAmountOfEntitiesToRetrieve)
 }
 
 func create20181106(
@@ -79,9 +85,10 @@ func create20181106(
 	routerRoleKey string,
 	ds datastore.StoredDataStore,
 	met meta.Meta,
+	maxAmountOfEntitiesToRetrieve int,
 ) applications.Application {
 	// create core:
-	core := createCore20181108(met, routePrefix, routerRoleKey)
+	core := createCore20181108(met, routePrefix, routerRoleKey, maxAmountOfEntitiesToRetrieve)
 
 	// create application:
 	version := "2018.11.06"
@@ -133,6 +140,8 @@ func create20181106(
 				core.saveGenesis(),
 				core.saveEntity(),
 				core.retrieveEntityByID(),
+				core.retrieveByIntersectKeynames(),
+				core.retrieveSetByIntersectKeynames(),
 				core.deleteEntityByID(),
 				core.saveRequest(),
 				core.saveEntityRequestVote(),
@@ -311,6 +320,139 @@ func (app *core20181108) retrieveEntityByID() routers.CreateRouteParams {
 					if normalizedErr != nil {
 						return nil, normalizedErr
 					}
+
+					// convert the normalized entity to json:
+					js, jsErr := cdc.MarshalJSON(normalized)
+					if jsErr != nil {
+						return nil, jsErr
+					}
+
+					// return the response:
+					resp := routers.SDKFunc.CreateQueryResponse(routers.CreateQueryResponseParams{
+						Code:  routers.IsSuccessful,
+						Log:   "success",
+						Key:   path,
+						Value: js,
+					})
+
+					return resp, nil
+				}
+
+				str := fmt.Sprintf("the given entity name (%s) is not supported", name)
+				return nil, errors.New(str)
+			}
+
+			return nil, errors.New("an entity name must be provided")
+		},
+	}
+}
+
+func (app *core20181108) retrieveByIntersectKeynames() routers.CreateRouteParams {
+	return routers.CreateRouteParams{
+		Pattern: fmt.Sprintf("%s/<name|[a-z-]+>/<keynames|[a-z0-9-+]+>/intersect", app.routePrefix),
+		QueryTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (routers.QueryResponse, error) {
+
+			// create the dependencies:
+			dep := createDependencies(store)
+
+			// retrieve the name:
+			entityMetaDatas := app.meta.Retrieval()
+			if name, ok := params["name"]; ok {
+				// retrieve the entity metadata:
+				if metaData, ok := entityMetaDatas[name]; ok {
+					// parse the keynames:
+					keynames := strings.Split(params["keynames"], "|")
+
+					// retrieve the entity instance:
+					retIns, retInsErr := dep.entityRepository.RetrieveByIntersectKeynames(metaData, keynames)
+					if retInsErr != nil {
+						return nil, retInsErr
+					}
+
+					// normalize:
+					normalized, normalizedErr := metaData.Normalize()(retIns)
+					if normalizedErr != nil {
+						return nil, normalizedErr
+					}
+
+					// convert the normalized entity to json:
+					js, jsErr := cdc.MarshalJSON(normalized)
+					if jsErr != nil {
+						return nil, jsErr
+					}
+
+					// return the response:
+					resp := routers.SDKFunc.CreateQueryResponse(routers.CreateQueryResponseParams{
+						Code:  routers.IsSuccessful,
+						Log:   "success",
+						Key:   path,
+						Value: js,
+					})
+
+					return resp, nil
+				}
+
+				str := fmt.Sprintf("the given entity name (%s) is not supported", name)
+				return nil, errors.New(str)
+			}
+
+			return nil, errors.New("an entity name must be provided")
+		},
+	}
+}
+
+func (app *core20181108) retrieveSetByIntersectKeynames() routers.CreateRouteParams {
+	return routers.CreateRouteParams{
+		Pattern: fmt.Sprintf("%s/<name|[a-z-]+>/<keynames|[a-z0-9-+]+>/set/intersect", app.routePrefix),
+		QueryTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (routers.QueryResponse, error) {
+			index := 0
+			if indexAsString, ok := params["index"]; ok {
+				idx, idxErr := strconv.Atoi(indexAsString)
+				if idxErr != nil {
+					str := fmt.Sprintf("the given index (%s) is invalid: %s", indexAsString, idxErr.Error())
+					return nil, errors.New(str)
+				}
+
+				index = idx
+			}
+
+			amount := app.maxAmountOfEntitiesToRetrieve
+			if amountAsString, ok := params["amount"]; ok {
+				am, amErr := strconv.Atoi(amountAsString)
+				if amErr != nil {
+					str := fmt.Sprintf("the given amount (%s) is invalid: %s", amountAsString, amErr.Error())
+					return nil, errors.New(str)
+				}
+
+				amount = am
+			}
+
+			if amount > app.maxAmountOfEntitiesToRetrieve {
+				amount = app.maxAmountOfEntitiesToRetrieve
+			}
+
+			// create the dependencies:
+			dep := createDependencies(store)
+
+			// retrieve the name:
+			entityMetaDatas := app.meta.Retrieval()
+			if name, ok := params["name"]; ok {
+				// retrieve the entity metadata:
+				if metaData, ok := entityMetaDatas[name]; ok {
+					// parse the keynames:
+					keynames := strings.Split(params["keynames"], "|")
+
+					// retrieve the entity partial set:
+					retPS, retPSErr := dep.entityRepository.RetrieveSetByIntersectKeynames(metaData, keynames, index, amount)
+					if retPSErr != nil {
+						return nil, retPSErr
+					}
+
+					// normalize:
+					normalized := entity.SDKFunc.NormalizePartialSet(entity.NormalizePartialSetParams{
+						PartialSet: retPS,
+						MetaData:   metaData,
+					})
 
 					// convert the normalized entity to json:
 					js, jsErr := cdc.MarshalJSON(normalized)

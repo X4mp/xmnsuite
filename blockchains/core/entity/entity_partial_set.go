@@ -32,6 +32,20 @@ func createEntityPartialSet(ins []Entity, index int, totalAmount int) (PartialSe
 	return &out, nil
 }
 
+func createEntityPartialSetFromNormalized(normalizedPS *normalizedPartialSet, metaData MetaData) (PartialSet, error) {
+	denormalizedEntities := []Entity{}
+	for _, oneNormalized := range normalizedPS.Ins {
+		denormalized, denormalizedErr := metaData.Denormalize()(oneNormalized)
+		if denormalizedErr != nil {
+			return nil, denormalizedErr
+		}
+
+		denormalizedEntities = append(denormalizedEntities, denormalized)
+	}
+
+	return createEntityPartialSet(denormalizedEntities, normalizedPS.Idx, normalizedPS.TotAm)
+}
+
 // Instances returns the instances
 func (obj *entityPartialSet) Instances() []Entity {
 	return obj.Ins
