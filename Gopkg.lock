@@ -11,11 +11,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:2c00f064ba355903866cbfbf3f7f4c0fe64af6638cc7d1b8bdcf3181bc67f1d8"
+  digest = "1:093bf93a65962e8191e3e8cd8fc6c363f83d43caca9739c906531ba7210a9904"
   name = "github.com/btcsuite/btcd"
   packages = ["btcec"]
   pruneopts = "UT"
-  revision = "cff30e1d23fc9e800b2b5b4b41ef1817dda07e9f"
+  revision = "7d2daa5bfef28c5e282571bc06416516936115ee"
 
 [[projects]]
   digest = "1:ffe9824d294da03b391f44e1ae8281281b4afc1bdaa9588c9097785e3af10cec"
@@ -35,7 +35,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:e3207e22a1e6f3437795ae79c646e170d2aebcb152b0a633314994499a441217"
+  digest = "1:d95c61f90ca3c2c69f5af76cbd53d55f0c393101140d4d1faea6d032ff5f526f"
   name = "github.com/dedis/kyber"
   packages = [
     ".",
@@ -46,7 +46,7 @@
     "xof/blake2xb",
   ]
   pruneopts = "UT"
-  revision = "b723602b9b0f02a52729cabf89a7774ce5be0503"
+  revision = "59837fd0c24b7e3307d8edaf9080ec96544d26ff"
 
 [[projects]]
   digest = "1:c7644c73a3d23741fdba8a99b1464e021a224b7e205be497271a8003a15ca41b"
@@ -72,20 +72,20 @@
   version = "v0.6.0"
 
 [[projects]]
-  digest = "1:31a18dae27a29aa074515e43a443abfd2ba6deb6d69309d8d7ce789c45f34659"
+  digest = "1:4062bc6de62d73e2be342243cf138cf499b34d558876db8d9430e2149388a4d8"
   name = "github.com/go-logfmt/logfmt"
   packages = ["."]
   pruneopts = "UT"
-  revision = "390ab7935ee28ec6b286364bba9b4dd6410cb3d5"
-  version = "v0.3.0"
+  revision = "07c9b44f60d7ffdfb7d8efe1ad539965737836dc"
+  version = "v0.4.0"
 
 [[projects]]
-  digest = "1:b7fc4c3fd91df516486f53cc86f4b55a0c815782dbe852c5a19cce8e6c577aac"
+  digest = "1:6921c024df19499cfcdaf33e0df635da67b959a4541b8b68d00d159791b70d07"
   name = "github.com/go-resty/resty"
   packages = ["."]
   pruneopts = "UT"
-  revision = "d4920dcf5b7689548a6db640278a9b35a5b48ec6"
-  version = "v1.9.1"
+  revision = "a59932b061db030cf7edc11d970c8b6013d04a32"
+  version = "v1.10.3"
 
 [[projects]]
   digest = "1:586ea76dbd0374d6fb649a91d70d652b7fe0ccffb8910a77468e7702e7901f3d"
@@ -198,11 +198,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f335d800550786b6f51ddaedb9d1107a7a72f4a2195e5b039dd7c0e103e119bc"
+  digest = "1:01d9e47830ef6077fb6f91033b0e83f324ad5966d11ed3daa4a5822ace876dab"
   name = "github.com/nsf/termbox-go"
   packages = ["."]
   pruneopts = "UT"
-  revision = "b66b20ab708e289ff1eb3e218478302e6aec28ce"
+  revision = "60ab7e3d12ed91bc1b2486559c4b3a6b62297577"
 
 [[projects]]
   digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"
@@ -232,7 +232,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:63b68062b8968092eb86bedc4e68894bd096ea6b24920faca8b9dcf451f54bb5"
+  digest = "1:db712fde5d12d6cdbdf14b777f0c230f4ff5ab0be8e35b239fc319953ed577a4"
   name = "github.com/prometheus/common"
   packages = [
     "expfmt",
@@ -240,11 +240,11 @@
     "model",
   ]
   pruneopts = "UT"
-  revision = "c7de2306084e37d54b8be01f3541a8464345e9a5"
+  revision = "4724e9255275ce38f7179b2478abeae4e28c904f"
 
 [[projects]]
   branch = "master"
-  digest = "1:8c49953a1414305f2ff5465147ee576dd705487c35b15918fcd4efdc0cb7a290"
+  digest = "1:d39e7c7677b161c2dd4c635a2ac196460608c7d8ba5337cc8cae5825a2681f8f"
   name = "github.com/prometheus/procfs"
   packages = [
     ".",
@@ -253,7 +253,7 @@
     "xfs",
   ]
   pruneopts = "UT"
-  revision = "05ee40e3a273f7245e8777337fc7b46e533a9a92"
+  revision = "1dc9a6cbc91aacc3e8b2d63db4d2e957a5394ac4"
 
 [[projects]]
   digest = "1:c4556a44e350b50a490544d9b06e9fba9c286c21d6c0e47f54f3a9214597298c"
@@ -272,7 +272,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:f2ffd421680b0a3f7887501b3c6974bcf19217ecd301d0e2c9b681940ec363d5"
+  digest = "1:685fdfea42d825ebd39ee0994354b46c374cf2c2b2d97a41a8dee1807c6a9b62"
   name = "github.com/syndtr/goleveldb"
   packages = [
     "leveldb",
@@ -289,7 +289,7 @@
     "leveldb/util",
   ]
   pruneopts = "UT"
-  revision = "ae2bd5eed72d46b28834ec3f60db3a3ebedd8dbd"
+  revision = "b001fa50d6b27f3f0bb175a87d0cb55426d0a0ae"
 
 [[projects]]
   digest = "1:605b6546f3f43745695298ec2d342d3e952b6d91cdf9f349bea9315f677d759f"
@@ -385,7 +385,18 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:01c635b58a702e90a93e75b9aa736c4375ce4a58c999b0073ff801c795033072"
+  digest = "1:300eaeff99f2fc2e6897a35d4d324dd39cf0b390731dbe8b132394ca0daf8ec6"
+  name = "github.com/xmnservices/bitcoin"
+  packages = [
+    "commands",
+    "configs",
+  ]
+  pruneopts = "UT"
+  revision = "393ae07b8f00bd8a511aa119b03f4299a7d34454"
+
+[[projects]]
+  branch = "master"
+  digest = "1:cac20410a6166ce7dd6adec29b3779d7751446cf0b002948a68b163fa2b47c10"
   name = "github.com/yuin/gopher-lua"
   packages = [
     ".",
@@ -394,11 +405,11 @@
     "pm",
   ]
   pruneopts = "UT"
-  revision = "799fa34954fbf844a6c25ea3b061bfd56f73bd10"
+  revision = "d1ab6d058001094c8439baf8949205801b1404b6"
 
 [[projects]]
   branch = "master"
-  digest = "1:dc5528a8e608bda0fc8ab3f02bb093dbe4f68ddee95ee93d7f01941957211a5c"
+  digest = "1:75d655774c0585b727387b2f4e9d3d3e3d0043cd12c8705ae9c378e364250dd4"
   name = "golang.org/x/crypto"
   packages = [
     "blake2b",
@@ -414,7 +425,7 @@
     "salsa20/salsa",
   ]
   pruneopts = "UT"
-  revision = "0e37d006457bf46f9e6692014ba72ef82c33022c"
+  revision = "505ab145d0a99da450461ae2c1a9f6cd10d1f447"
 
 [[projects]]
   digest = "1:7cc72287b751b14a2f5d48ff9e450a4e76038dfc0bac57dc23394c2193192b6b"
@@ -435,11 +446,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8392490b249a3602a13813be12324d3b16eca044ae185ff32cdd9e267706e208"
+  digest = "1:c19ae27d30b61c60cd23366dd6fd0ae953026ac5e71976ff4870af6b6f58b832"
   name = "golang.org/x/sys"
   packages = ["cpu"]
   pruneopts = "UT"
-  revision = "ee1b12c67af419cf5a9be3bdbeea7fc1c5f32f11"
+  revision = "73d4af5aa059c8c2dfcf25aad4efd6ce7bc9adc1"
 
 [[projects]]
   digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"
@@ -466,11 +477,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:4b89f7cb4fa89ee4b8ec3fff8e91105e7f1fee84761edcb063a738e376c53357"
+  digest = "1:077c1c599507b3b3e9156d17d36e1e61928ee9b53a5b420f10f28ebd4a0b275c"
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
   pruneopts = "UT"
-  revision = "4b56f30a1fd96a133a036b62cdd2a249883dd89b"
+  revision = "bd91e49a0898e27abb88c339b432fa53d7497ac0"
 
 [[projects]]
   digest = "1:2dab32a43451e320e49608ff4542fdfc653c95dcc35d0065ec9c6c3dd540ed74"
@@ -508,11 +519,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:8d3242044f959b6a5d566ff39f7834cd557c300cebbc20211c417fb20fa38fd1"
+  digest = "1:5986d13caa5fb1716cca6aa94a0e1c6ce662c8d8f6b9c38cc90aab8d31fe2d38"
   name = "layeh.com/gopher-json"
   packages = ["."]
   pruneopts = "UT"
-  revision = "d0a7d8b4c69aea3341d0131a64b59a6df9759be2"
+  revision = "d3d498bb4913871f4cd0c9193940d1113fa01dd6"
 
 [solve-meta]
   analyzer-name = "dep"
@@ -539,6 +550,8 @@
     "github.com/tendermint/tendermint/rpc/core/types",
     "github.com/tendermint/tendermint/rpc/lib/client",
     "github.com/urfave/cli",
+    "github.com/xmnservices/bitcoin/commands",
+    "github.com/xmnservices/bitcoin/configs",
     "github.com/yuin/gopher-lua",
     "layeh.com/gopher-json",
   ]
