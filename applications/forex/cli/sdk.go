@@ -2,13 +2,20 @@ package cli
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
+	"time"
 
+	term "github.com/nsf/termbox-go"
 	cliapp "github.com/urfave/cli"
 	"github.com/xmnservices/xmnsuite/applications/forex/commands"
 	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
 )
+
+func reset() {
+	term.Sync()
+}
 
 // SDKFunc represents the CLI sdk func
 var SDKFunc = struct {
@@ -96,8 +103,30 @@ var SDKFunc = struct {
 					panic(clientErr)
 				}
 
-				str := fmt.Sprintf("XMN main blockchain spawned, IP: %s", client.IP())
+				// sleep 1 second before listening to keyboard:
+				time.Sleep(time.Second * 1)
+				termErr := term.Init()
+				if termErr != nil {
+					str := fmt.Sprintf("there was an error while enabling the keyboard listening: %s", termErr.Error())
+					return errors.New(str)
+				}
+				defer term.Close()
+
+				// blockchain started, loop until we stop:
+				str := fmt.Sprintf("XMN main blockchain spawned, IP: %s\nPress Esc to stop...", client.IP())
 				print(str)
+
+			keyPressListenerLoop:
+				for {
+					switch ev := term.PollEvent(); ev.Type {
+					case term.EventKey:
+						switch ev.Key {
+						case term.KeyEsc:
+							break keyPressListenerLoop
+						}
+						break
+					}
+				}
 
 				// returns:
 				return nil
@@ -132,6 +161,12 @@ var SDKFunc = struct {
 				},
 			},
 			Action: func(c *cliapp.Context) error {
+
+				fmt.Printf("\n\n Pass: %s \n\n", c.String("pass"))
+				fmt.Printf("\n\n File: %s \n\n", c.String("file"))
+				fmt.Printf("\n\n IP: %s \n\n", c.String("ip"))
+				fmt.Printf("\n\n Port: %d \n\n", c.Int("port"))
+
 				// retrieve:
 				gen := commands.SDKFunc.RetrieveGenesis(commands.RetrieveGenesisParams{
 					Pass:     c.String("pass"),
