@@ -7,6 +7,7 @@ import (
 	term "github.com/nsf/termbox-go"
 	cliapp "github.com/urfave/cli"
 	forex "github.com/xmnservices/xmnsuite/applications/forex"
+	core "github.com/xmnservices/xmnsuite/blockchains/core"
 )
 
 func reset() {
@@ -14,6 +15,16 @@ func reset() {
 }
 
 func main() {
+
+	// get the core commands:
+	coreCmds := core.SDKFunc.CreateCommands()
+
+	// merge the core to the forex cmds:
+	forexCmds := forex.SDKFunc.Create()
+	for _, oneCoreCmd := range coreCmds {
+		forexCmds = append(forexCmds, oneCoreCmd)
+	}
+
 	app := cliapp.NewApp()
 	app.Version = "2018.12.13"
 	app.Name = "xmn"
@@ -23,7 +34,7 @@ func main() {
 			Name:        "forex",
 			Aliases:     []string{"f"},
 			Usage:       "This is the forex blockchain application",
-			Subcommands: forex.SDKFunc.Create(),
+			Subcommands: forexCmds,
 		},
 	}
 

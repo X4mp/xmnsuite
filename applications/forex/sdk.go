@@ -12,11 +12,9 @@ var SDKFunc = struct {
 	Create: func() []cliapp.Command {
 		genConf := forexcli.SDKFunc.GenerateConfigs()
 		spawnMain := forexcli.SDKFunc.SpawnMain()
-		retrieveGen := forexcli.SDKFunc.RetrieveGenesis()
 		return []cliapp.Command{
 			*genConf,
 			*spawnMain,
-			*retrieveGen,
 		}
 	},
 }

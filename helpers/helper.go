@@ -100,3 +100,15 @@ func Marshal(data []byte, ptr interface{}) error {
 
 	return nil
 }
+
+// Print prints a value on screen
+func Print(value string) {
+	fmt.Printf("%s", write(value))
+}
+
+func write(str string) string {
+	out := fmt.Sprintf("\n************ XMN ************\n")
+	out = fmt.Sprintf("%s%s", out, str)
+	out = fmt.Sprintf("%s\n********** END XMN **********\n", out)
+	return out
+}

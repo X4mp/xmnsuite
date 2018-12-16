@@ -30,7 +30,7 @@ func retrieveGenesis(pass string, filename string, ip net.IP, port int) (genesis
 		EntityRepository: entity.SDKFunc.CreateSDKRepository(entity.CreateSDKRepositoryParams{
 			PK:          retConf.WalletPK(),
 			Client:      client,
-			RoutePrefix: routePrefix,
+			RoutePrefix: "",
 		}),
 	})
 

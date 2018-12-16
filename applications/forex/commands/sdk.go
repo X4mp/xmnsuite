@@ -36,8 +36,8 @@ type GenerateConfigsParams struct {
 	Filename    string
 }
 
-// SpawnMainParams represents the spawn main params
-type SpawnMainParams struct {
+// SpawnParams represents the spawn params
+type SpawnParams struct {
 	Pass     string
 	Filename string
 	Dir      string
@@ -55,7 +55,7 @@ type RetrieveGenesisParams struct {
 // SDKFunc represents the commands SDK func
 var SDKFunc = struct {
 	GenerateConfigs func(params GenerateConfigsParams) configs.Configs
-	SpawnMain       func(params SpawnMainParams) applications.Node
+	Spawn           func(params SpawnParams) applications.Node
 	RetrieveGenesis func(params RetrieveGenesisParams) genesis.Genesis
 }{
 	GenerateConfigs: func(params GenerateConfigsParams) configs.Configs {
@@ -66,16 +66,8 @@ var SDKFunc = struct {
 
 		return out
 	},
-	SpawnMain: func(params SpawnMainParams) applications.Node {
+	Spawn: func(params SpawnParams) applications.Node {
 		out, outErr := spawnMain(params.Pass, params.Filename, params.Dir, params.Port)
-		if outErr != nil {
-			panic(outErr)
-		}
-
-		return out
-	},
-	RetrieveGenesis: func(params RetrieveGenesisParams) genesis.Genesis {
-		out, outErr := retrieveGenesis(params.Pass, params.Filename, params.IP, params.Port)
 		if outErr != nil {
 			panic(outErr)
 		}

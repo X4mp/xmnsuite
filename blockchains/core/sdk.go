@@ -3,7 +3,9 @@ package core
 import (
 	uuid "github.com/satori/go.uuid"
 	tcrypto "github.com/tendermint/tendermint/crypto"
+	cliapp "github.com/urfave/cli"
 	applications "github.com/xmnservices/xmnsuite/blockchains/applications"
+	cli "github.com/xmnservices/xmnsuite/blockchains/core/cli"
 	"github.com/xmnservices/xmnsuite/blockchains/core/meta"
 	"github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
@@ -27,7 +29,8 @@ type CreateParams struct {
 
 // SDKFunc represents the core SDK func
 var SDKFunc = struct {
-	Create func(params CreateParams) applications.Applications
+	Create         func(params CreateParams) applications.Applications
+	CreateCommands func() []cliapp.Command
 }{
 	Create: func(params CreateParams) applications.Applications {
 
@@ -57,5 +60,11 @@ var SDKFunc = struct {
 			params.RootPubKey,
 			params.MaxAmountOfEntitiesToRetrieve,
 		)
+	},
+	CreateCommands: func() []cliapp.Command {
+		retGen := cli.SDKFunc.RetrieveGenesis()
+		return []cliapp.Command{
+			*retGen,
+		}
 	},
 }
