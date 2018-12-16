@@ -6,7 +6,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/category"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 )
 
 type currency struct {

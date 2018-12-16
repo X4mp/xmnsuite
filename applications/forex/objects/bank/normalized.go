@@ -2,7 +2,7 @@ package bank
 
 import (
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/currency"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/pledge"
 )
 
 type normalizedBank struct {

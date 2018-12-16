@@ -1,8 +1,8 @@
 package meta
 
 import (
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/request/vote"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/vote"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
 

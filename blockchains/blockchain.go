@@ -8,7 +8,7 @@ import (
 	"github.com/xmnservices/bitcoin/commands"
 	"github.com/xmnservices/bitcoin/configs"
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/meta"
 )
 

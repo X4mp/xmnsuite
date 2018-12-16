@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/montanaflynn/stats"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/validator"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/node"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/validator"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/link"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/node"
 	"github.com/xmnservices/xmnsuite/blockchains/tendermint"
 	"github.com/xmnservices/xmnsuite/crypto"
 )

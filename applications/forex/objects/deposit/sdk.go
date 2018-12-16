@@ -6,7 +6,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/bank"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 )
 
 // Deposit represents a cash deposit to a bank

@@ -5,7 +5,7 @@ import (
 	"net"
 
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/configs"
 )
 

@@ -1,11 +1,11 @@
 package core
 
 import (
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/user"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/balance"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/developer"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/balance"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/developer"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
 

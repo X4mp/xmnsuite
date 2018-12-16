@@ -8,14 +8,14 @@ import (
 	"time"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/buy"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/sell"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/wallet/entities/transfer"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/deposit"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/external"
-	"github.com/xmnservices/xmnsuite/blockchains/core/underlying/token/entities/link"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/buy"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/sell"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/transfer"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/external"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/link"
 )
 
 type application struct {

@@ -10,7 +10,7 @@ import (
 	term "github.com/nsf/termbox-go"
 	cliapp "github.com/urfave/cli"
 	"github.com/xmnservices/xmnsuite/applications/forex/commands"
-	"github.com/xmnservices/xmnsuite/blockchains/core/entity/entities/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 )
 
 func reset() {
