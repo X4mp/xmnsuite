@@ -9,7 +9,7 @@ import (
 )
 
 func retrieveAllDepositsKeyname() string {
-	return "deposits"
+	return "customdeposits"
 }
 
 func retrieveDepositsByBankIDKeyname(bankID *uuid.UUID) string {
@@ -19,7 +19,7 @@ func retrieveDepositsByBankIDKeyname(bankID *uuid.UUID) string {
 
 func createMetaData() entity.MetaData {
 	return entity.SDKFunc.CreateMetaData(entity.CreateMetaDataParams{
-		Name: "Deposit",
+		Name: "CustomDeposit",
 		ToEntity: func(rep entity.Repository, data interface{}) (entity.Entity, error) {
 			if storable, ok := data.(*storableDeposit); ok {
 				return fromStorableToDeposit(storable, rep)

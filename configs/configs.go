@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"encoding/base64"
 	"errors"
 
 	tcrypto "github.com/tendermint/tendermint/crypto"
@@ -50,4 +51,15 @@ func (obj *configs) NodePK() tcrypto.PrivKey {
 // WalletPK returns the walletPK
 func (obj *configs) WalletPK() crypto.PrivateKey {
 	return obj.walletPK
+}
+
+// String returns the configs as string
+func (obj *configs) String() string {
+	storable := createStorableConfigs(obj)
+	js, jsErr := cdc.MarshalJSON(storable)
+	if jsErr != nil {
+		panic(jsErr)
+	}
+
+	return base64.StdEncoding.EncodeToString(js)
 }

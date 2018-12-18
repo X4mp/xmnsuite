@@ -22,6 +22,12 @@ type Category interface {
 	Description() string
 }
 
+// Repository represents the category repository
+type Repository interface {
+	RetrieveByID(id *uuid.UUID) (Category, error)
+	RetrieveSet(index int, amount int) (entity.PartialSet, error)
+}
+
 // Normalized represents a normalized category
 type Normalized interface {
 }
@@ -34,11 +40,17 @@ type CreateParams struct {
 	Description string
 }
 
+// CreateRepositoryParams represents the CreateRepository params
+type CreateRepositoryParams struct {
+	EntityRepository entity.Repository
+}
+
 // SDKFunc represents the Category SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Category
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
+	CreateRepository     func(params CreateRepositoryParams) Repository
 }{
 	Create: func(params CreateParams) Category {
 		if params.ID == nil {
@@ -71,11 +83,15 @@ var SDKFunc = struct {
 			Keynames: func(ins entity.Entity) ([]string, error) {
 				if cat, ok := ins.(Category); ok {
 					keynames := []string{
-						retrieveAllCurrenciesKeyname(),
+						retrieveAllCategoriesKeyname(),
 					}
 
 					if cat.HasParent() {
 						keynames = append(keynames, retrieveCurrenciesByParentCategoryIDKeyname(cat.Parent().ID()))
+					}
+
+					if !cat.HasParent() {
+						keynames = append(keynames, retrieveCurrenciesWithoutParentKeyname())
 					}
 
 					return keynames, nil
@@ -85,5 +101,10 @@ var SDKFunc = struct {
 				return nil, errors.New(str)
 			},
 		})
+	},
+	CreateRepository: func(params CreateRepositoryParams) Repository {
+		metaData := createMetaData()
+		out := createRepository(metaData, params.EntityRepository)
+		return out
 	},
 }

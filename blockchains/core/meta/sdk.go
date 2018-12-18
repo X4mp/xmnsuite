@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/xmnservices/xmnsuite/applications/forex/objects/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
@@ -18,6 +19,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/balance"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/link"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/node"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/withdrawal"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
 
@@ -96,19 +98,23 @@ var SDKFunc = struct {
 		nodeRepresentation := node.SDKFunc.CreateRepresentation()
 		requestRepresentation := request.SDKFunc.CreateRepresentation()
 		voteRepresentation := vote.SDKFunc.CreateRepresentation()
+		withdrawalRepresentation := withdrawal.SDKFunc.CreateRepresentation()
+		depositRepresentation := deposit.SDKFunc.CreateRepresentation()
 
 		// create the read:
 		additionalReads := map[string]entity.MetaData{
-			"genesis":   genesisRepresentation.MetaData(),
-			"wallet":    walletRepresentation.MetaData(),
-			"validator": validatorRepresentation.MetaData(),
-			"user":      userRepresentation.MetaData(),
-			"request":   requestRepresentation.MetaData(),
-			"vote":      voteRepresentation.MetaData(),
-			"pledge":    pledgeRepresentation.MetaData(),
-			"transfer":  transferRepresentation.MetaData(),
-			"link":      linkRepresentation.MetaData(),
-			"node":      nodeRepresentation.MetaData(),
+			"genesis":    genesisRepresentation.MetaData(),
+			"wallet":     walletRepresentation.MetaData(),
+			"validator":  validatorRepresentation.MetaData(),
+			"user":       userRepresentation.MetaData(),
+			"request":    requestRepresentation.MetaData(),
+			"vote":       voteRepresentation.MetaData(),
+			"pledge":     pledgeRepresentation.MetaData(),
+			"transfer":   transferRepresentation.MetaData(),
+			"link":       linkRepresentation.MetaData(),
+			"node":       nodeRepresentation.MetaData(),
+			"withdrawal": withdrawalRepresentation.MetaData(),
+			"deposit":    depositRepresentation.MetaData(),
 		}
 
 		// add the additional reads to the map:
@@ -202,7 +208,9 @@ var SDKFunc = struct {
 						Datastore: store,
 					})
 
-					balanceRepository := balance.SDKFunc.CreateRepository(store)
+					balanceRepository := balance.SDKFunc.CreateRepository(balance.CreateRepositoryParams{
+						Datastore: store,
+					})
 
 					// retrieve genesis:
 					gen, genErr := genesisRepository.Retrieve()

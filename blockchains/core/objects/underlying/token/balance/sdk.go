@@ -20,14 +20,37 @@ type Repository interface {
 	RetrieveByWalletAndToken(wal wallet.Wallet, tok token.Token) (Balance, error)
 }
 
+// CreateRepositoryParams represents a CreateRepository params
+type CreateRepositoryParams struct {
+	Datastore            datastore.DataStore
+	DepositRepository    deposit.Repository
+	WithdrawalRepository withdrawal.Repository
+}
+
 // SDKFunc represents the balance SDK func
 var SDKFunc = struct {
-	CreateRepository func(ds datastore.DataStore) Repository
+	CreateRepository func(params CreateRepositoryParams) Repository
 }{
-	CreateRepository: func(ds datastore.DataStore) Repository {
-		depositRepository := deposit.SDKFunc.CreateRepository(ds)
-		withdrawalRepository := withdrawal.SDKFunc.CreateRepository(ds)
-		out := createRepository(depositRepository, withdrawalRepository)
+	CreateRepository: func(params CreateRepositoryParams) Repository {
+		if params.Datastore != nil {
+			if params.Datastore != nil {
+				depositRepository := deposit.SDKFunc.CreateRepository(deposit.CreateRepositoryParams{
+					Datastore: params.Datastore,
+				})
+
+				withdrawalRepository := withdrawal.SDKFunc.CreateRepository(withdrawal.CreateRepositoryParams{
+					Datastore: params.Datastore,
+				})
+
+				out := createRepository(depositRepository, withdrawalRepository)
+				return out
+			}
+
+			out := createRepository(params.DepositRepository, params.WithdrawalRepository)
+			return out
+		}
+
+		out := createRepository(params.DepositRepository, params.WithdrawalRepository)
 		return out
 	},
 }

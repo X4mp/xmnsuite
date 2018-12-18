@@ -1,0 +1,46 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+      <title>XMN Foreign Exchange</title>
+      <link rel="stylesheet" href="/static/default.css">
+  </head>
+  <body>
+
+      <header>
+          <ul>
+              <li><a href="/banks">Banks</a></li>
+              <li><a href="/currencies">Currencies</a></li>
+              <li id="logo"><a href="/"><span>Home</span></a></li>
+              <li><a href="/deposits">Deposits</a></li>
+              <li><a href="/me">My Profile</a></li>
+          </ul>
+          <div class="clearfloat">&nbsp;</div>
+      </header>
+
+       <div id="main">
+           <h2>Wallets I created:</h2>
+           <table>
+               <thead>
+                   <tr>
+                       <td>ID</td>
+                       <td>Creator</td>
+                       <td>Concensus Needed</td>
+                       <td>Token</td>
+                   </tr>
+               </thead>
+               <tbody>
+                   {{ range $key, $value := .WalletPS.Wallets }}
+                       <td>{{$value.ID}}</td>
+                       <td>{{$value.Creator}}</td>
+                       <td>{{$value.ConcensusNeeded}}</td>
+                       <td>{{$value.TokenAmount}}</td>
+                   {{ end }}
+
+               </tbody>
+           </table>
+       </div>
+       <footer>
+           <p>&copy;  XMN Blockchain Services Ltd.  The software and its blockchain is open source under the <a href="/license">MIT license</a>.</p>
+       </footer>
+  </body>
+</html>

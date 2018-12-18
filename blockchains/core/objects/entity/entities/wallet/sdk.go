@@ -17,6 +17,13 @@ type Wallet interface {
 	ConcensusNeeded() int
 }
 
+// Repository represents the wallet repository
+type Repository interface {
+	RetrieveByID(id *uuid.UUID) (Wallet, error)
+	RetrieveSet(index int, amount int) (entity.PartialSet, error)
+	RetrieveSetByCreatorPublicKey(pubKey crypto.PublicKey, index int, amount int) (entity.PartialSet, error)
+}
+
 // Normalized represents a normalized wallet
 type Normalized interface {
 }
@@ -28,11 +35,17 @@ type CreateParams struct {
 	ConcensusNeeded int
 }
 
+// CreateRepositoryParams represents the CreateRepository params
+type CreateRepositoryParams struct {
+	EntityRepository entity.Repository
+}
+
 // SDKFunc represents the Wallet SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Wallet
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
+	CreateRepository     func(params CreateRepositoryParams) Repository
 }{
 	Create: func(params CreateParams) Wallet {
 		if params.ID == nil {
@@ -51,9 +64,16 @@ var SDKFunc = struct {
 			Met:        createMetaData(),
 			ToStorable: toData,
 			Keynames: func(ins entity.Entity) ([]string, error) {
-				return []string{
-					retrieveAllWalletKeyname(),
-				}, nil
+				if wal, ok := ins.(Wallet); ok {
+					return []string{
+						retrieveAllWalletKeyname(),
+						retrieveByPublicKeyWalletKeyname(wal.Creator()),
+					}, nil
+				}
+
+				str := fmt.Sprintf("the given entity (ID: %s) is not a valid Wallet instance", ins.ID().String())
+				return nil, errors.New(str)
+
 			},
 			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
 				// create the repository and service:
@@ -74,7 +94,7 @@ var SDKFunc = struct {
 								return errors.New(str)
 							}
 
-							// everything is fine:
+							// everything is fine, it will update the wallet:
 							return nil
 						}
 					}
@@ -87,5 +107,10 @@ var SDKFunc = struct {
 				return errors.New(str)
 			},
 		})
+	},
+	CreateRepository: func(params CreateRepositoryParams) Repository {
+		metaData := createMetaData()
+		rep := createRepository(metaData, params.EntityRepository)
+		return rep
 	},
 }

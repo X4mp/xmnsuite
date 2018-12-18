@@ -128,7 +128,8 @@ func (app *application) Query(req routers.QueryRequest) routers.QueryResponse {
 	from := ptr.From()
 	prepHandler := app.router.Route(from, ptr.Path(), routers.Retrieve)
 	if prepHandler == nil {
-		return outputErrorFn(routers.RouteNotFound, "the router could not find any route for the given query")
+		str := fmt.Sprintf("the router could not find any route for the given query, path: %s", ptr.Path())
+		return outputErrorFn(routers.RouteNotFound, str)
 	}
 
 	handler := prepHandler.Handler()

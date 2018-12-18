@@ -14,7 +14,7 @@ import (
 	"github.com/xmnservices/xmnsuite/configs"
 )
 
-func spawnMain(pass string, filename string, rootDir string, port int) (applications.Node, error) {
+func spawn(pass string, filename string, rootDir string, port int) (applications.Node, error) {
 	// create the repository:
 	repository := configs.SDKFunc.CreateRepository()
 

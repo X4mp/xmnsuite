@@ -67,7 +67,7 @@ var SDKFunc = struct {
 		return out
 	},
 	Spawn: func(params SpawnParams) applications.Node {
-		out, outErr := spawnMain(params.Pass, params.Filename, params.Dir, params.Port)
+		out, outErr := spawn(params.Pass, params.Filename, params.Dir, params.Port)
 		if outErr != nil {
 			panic(outErr)
 		}

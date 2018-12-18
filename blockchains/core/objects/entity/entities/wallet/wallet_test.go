@@ -15,6 +15,7 @@ func TestWallet_Success(t *testing.T) {
 	pubKey := privKey.PublicKey()
 
 	wal := CreateWalletWithPublicKeyForTests(pubKey)
+	invalidWal := createWallet(wal.ID(), crypto.SDKFunc.CreatePK(crypto.CreatePKParams{}).PublicKey(), 32)
 	anotherWal := CreateWalletWithPublicKeyForTests(pubKey)
 
 	// create repository and service:
@@ -33,9 +34,16 @@ func TestWallet_Success(t *testing.T) {
 		return
 	}
 
-	// save again, returns error:
+	// save again, updates the wallet:
 	saveAgainErr := service.Save(wal, represenation)
-	if saveAgainErr == nil {
+	if saveAgainErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", saveAgainErr.Error())
+		return
+	}
+
+	// save again, same wallet ID, different creator, returns error:
+	saveInvalidErr := service.Save(invalidWal, represenation)
+	if saveInvalidErr == nil {
 		t.Errorf("the returned error was expected to be valid, nil returned.")
 		return
 	}

@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/category"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 )
 
 const (
@@ -24,6 +24,12 @@ type Currency interface {
 	Description() string
 }
 
+// Repository represents the currency repository
+type Repository interface {
+	RetrieveByID(id *uuid.UUID) (Currency, error)
+	RetrieveSet(index int, amount int) (entity.PartialSet, error)
+}
+
 // Normalized represents a normalized currency
 type Normalized interface {
 }
@@ -37,11 +43,17 @@ type CreateParams struct {
 	Description string
 }
 
+// CreateRepositoryParams represents the CreateRepository params
+type CreateRepositoryParams struct {
+	EntityRepository entity.Repository
+}
+
 // SDKFunc represents the Currency SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Currency
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
+	CreateRepository     func(params CreateRepositoryParams) Repository
 }{
 	Create: func(params CreateParams) Currency {
 		if params.ID == nil {
@@ -82,5 +94,10 @@ var SDKFunc = struct {
 				return nil, errors.New(str)
 			},
 		})
+	},
+	CreateRepository: func(params CreateRepositoryParams) Repository {
+		metaData := createMetaData()
+		out := createRepository(metaData, params.EntityRepository)
+		return out
 	},
 }

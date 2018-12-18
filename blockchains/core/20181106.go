@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"strconv"
@@ -349,7 +350,7 @@ func (app *core20181108) retrieveEntityByID() routers.CreateRouteParams {
 
 func (app *core20181108) retrieveByIntersectKeynames() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
-		Pattern: fmt.Sprintf("%s/<name|[a-z-]+>/<keynames|[a-z0-9-+]+>/intersect", app.routePrefix),
+		Pattern: fmt.Sprintf("%s/<name|[a-z-]+>/<keynames|[^/]+>/intersect", app.routePrefix),
 		QueryTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (routers.QueryResponse, error) {
 
 			// create the dependencies:
@@ -360,8 +361,14 @@ func (app *core20181108) retrieveByIntersectKeynames() routers.CreateRouteParams
 			if name, ok := params["name"]; ok {
 				// retrieve the entity metadata:
 				if metaData, ok := entityMetaDatas[name]; ok {
-					// parse the keynames:
-					keynames := strings.Split(params["keynames"], "|")
+					// decode the keynames:
+					keynamesList, keynamesListErr := base64.StdEncoding.DecodeString(params["keynames"])
+					if keynamesListErr != nil {
+						return nil, keynamesListErr
+					}
+
+					// create the slice:
+					keynames := strings.Split(string(keynamesList), ",")
 
 					// retrieve the entity instance:
 					retIns, retInsErr := dep.entityRepository.RetrieveByIntersectKeynames(metaData, keynames)
@@ -403,7 +410,7 @@ func (app *core20181108) retrieveByIntersectKeynames() routers.CreateRouteParams
 
 func (app *core20181108) retrieveSetByIntersectKeynames() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
-		Pattern: fmt.Sprintf("%s/<name|[a-z-]+>/<keynames|[a-z0-9-+]+>/set/intersect", app.routePrefix),
+		Pattern: fmt.Sprintf("%s/<name|[a-z-]+>/<keynames|[^/]+>/set/intersect", app.routePrefix),
 		QueryTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (routers.QueryResponse, error) {
 			index := 0
 			if indexAsString, ok := params["index"]; ok {
@@ -439,8 +446,14 @@ func (app *core20181108) retrieveSetByIntersectKeynames() routers.CreateRoutePar
 			if name, ok := params["name"]; ok {
 				// retrieve the entity metadata:
 				if metaData, ok := entityMetaDatas[name]; ok {
-					// parse the keynames:
-					keynames := strings.Split(params["keynames"], "|")
+					// decode the keynames:
+					keynamesList, keynamesListErr := base64.StdEncoding.DecodeString(params["keynames"])
+					if keynamesListErr != nil {
+						return nil, keynamesListErr
+					}
+
+					// create the slice:
+					keynames := strings.Split(string(keynamesList), ",")
 
 					// retrieve the entity partial set:
 					retPS, retPSErr := dep.entityRepository.RetrieveSetByIntersectKeynames(metaData, keynames, index, amount)

@@ -35,7 +35,10 @@ func createDependencies(ds datastore.DataStore) *dependencies {
 		EntityService:    entityService,
 	})
 
-	balanceRepository := balance.SDKFunc.CreateRepository(ds)
+	balanceRepository := balance.SDKFunc.CreateRepository(balance.CreateRepositoryParams{
+		Datastore: ds,
+	})
+
 	developerRepository := developer.SDKFunc.CreateRepository(ds)
 
 	out := dependencies{

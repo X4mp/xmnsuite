@@ -7,7 +7,17 @@ import (
 
 	term "github.com/nsf/termbox-go"
 	cliapp "github.com/urfave/cli"
+	"github.com/xmnservices/bitcoin/configs"
 	"github.com/xmnservices/xmnsuite/applications/forex/commands"
+	"github.com/xmnservices/xmnsuite/applications/forex/objects/category"
+	"github.com/xmnservices/xmnsuite/applications/forex/objects/currency"
+	webserver "github.com/xmnservices/xmnsuite/applications/forex/web"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
+	coredeposit "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/balance"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/withdrawal"
 	"github.com/xmnservices/xmnsuite/helpers"
 )
 
@@ -21,6 +31,11 @@ func spawn() *cliapp.Command {
 				Name:  "port",
 				Value: 26657,
 				Usage: "this is the blockchain port",
+			},
+			cliapp.IntFlag{
+				Name:  "wport",
+				Value: 80,
+				Usage: "this is the web port",
 			},
 			cliapp.StringFlag{
 				Name:  "dir",
@@ -39,6 +54,16 @@ func spawn() *cliapp.Command {
 			},
 		},
 		Action: func(c *cliapp.Context) error {
+
+			// create the repository:
+			repository := configs.SDKFunc.CreateRepository()
+
+			// retrieve the configs:
+			retConf, retConfErr := repository.Retrieve(c.String("file"), c.String("pass"))
+			if retConfErr != nil {
+				return retConfErr
+			}
+
 			// spawn the node:
 			node := commands.SDKFunc.Spawn(commands.SpawnParams{
 				Pass:     c.String("pass"),
@@ -47,10 +72,57 @@ func spawn() *cliapp.Command {
 				Port:     c.Int("port"),
 			})
 
-			// render to the cli:
+			// retrieve the client:
 			client, clientErr := node.GetClient()
 			if clientErr != nil {
 				panic(clientErr)
+			}
+
+			// create the entity repository (SDK):
+			entityRepository := entity.SDKFunc.CreateSDKRepository(entity.CreateSDKRepositoryParams{
+				PK:          retConf.WalletPK(),
+				Client:      client,
+				RoutePrefix: "",
+			})
+
+			// create the entity service (SDK):
+			entityService := entity.SDKFunc.CreateSDKService(entity.CreateSDKServiceParams{
+				PK:          retConf.WalletPK(),
+				Client:      client,
+				RoutePrefix: "",
+			})
+
+			// spawn the web server:
+			web := webserver.SDKFunc.Create(webserver.CreateParams{
+				Port:          c.Int("wport"),
+				EntityService: entityService,
+				BalanceRepository: balance.SDKFunc.CreateRepository(balance.CreateRepositoryParams{
+					DepositRepository: coredeposit.SDKFunc.CreateRepository(coredeposit.CreateRepositoryParams{
+						EntityRepository: entityRepository,
+					}),
+					WithdrawalRepository: withdrawal.SDKFunc.CreateRepository(withdrawal.CreateRepositoryParams{
+						EntityRepository: entityRepository,
+					}),
+				}),
+				GenesisRepository: genesis.SDKFunc.CreateRepository(genesis.CreateRepositoryParams{
+					EntityRepository: entityRepository,
+				}),
+				WalletRepository: wallet.SDKFunc.CreateRepository(wallet.CreateRepositoryParams{
+					EntityRepository: entityRepository,
+				}),
+				CategoryRepository: category.SDKFunc.CreateRepository(category.CreateRepositoryParams{
+					EntityRepository: entityRepository,
+				}),
+				CurrencyRepository: currency.SDKFunc.CreateRepository(currency.CreateRepositoryParams{
+					EntityRepository: entityRepository,
+				}),
+			})
+
+			// start the web server:
+			err := web.Start()
+			if err != nil {
+				str := fmt.Sprintf("There was an error while starting the web server: %s", err.Error())
+				helpers.Print(str)
 			}
 
 			// sleep 1 second before listening to keyboard:

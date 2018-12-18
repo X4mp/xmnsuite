@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -46,8 +47,14 @@ func (app *sdkRepository) RetrieveByID(met MetaData, id *uuid.UUID) (Entity, err
 
 // RetrieveByIntersectKeynames retrieves an entity by intersecting keynames
 func (app *sdkRepository) RetrieveByIntersectKeynames(met MetaData, keynames []string) (Entity, error) {
+	// create the comma-separated list:
+	keynamesList := strings.Join(keynames, ",")
+
+	// encode the keynames:
+	encodedKeynames := base64.StdEncoding.EncodeToString([]byte(keynamesList))
+
 	// create the resource pointer:
-	queryPath := fmt.Sprintf("%s/%s/%s/intersect", app.routePrefix, met.Keyname(), strings.Join(keynames, "|"))
+	queryPath := fmt.Sprintf("%s/%s/%s/intersect", app.routePrefix, met.Keyname(), encodedKeynames)
 	queryResp, queryRespErr := app.execute(queryPath)
 	if queryRespErr != nil {
 		return nil, queryRespErr
@@ -69,8 +76,14 @@ func (app *sdkRepository) RetrieveSetByKeyname(met MetaData, keyname string, ind
 
 // RetrieveSetByIntersectKeynames retrieves an entity set by intersecting keynames
 func (app *sdkRepository) RetrieveSetByIntersectKeynames(met MetaData, keynames []string, index int, amount int) (PartialSet, error) {
+	// create the comma-separated list:
+	keynamesList := strings.Join(keynames, ",")
+
+	// encode the keynames:
+	encodedKeynames := base64.StdEncoding.EncodeToString([]byte(keynamesList))
+
 	// create the resource pointer:
-	queryPath := fmt.Sprintf("%s/%s/%s/set/intersect", app.routePrefix, met.Keyname(), strings.Join(keynames, "|"))
+	queryPath := fmt.Sprintf("%s/%s/%s/set/intersect", app.routePrefix, met.Keyname(), encodedKeynames)
 	queryResp, queryRespErr := app.execute(queryPath)
 	if queryRespErr != nil {
 		return nil, queryRespErr

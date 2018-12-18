@@ -1,0 +1,53 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+      <title>XMN Foreign Exchange</title>
+      <link rel="stylesheet" href="/static/default.css">
+  </head>
+  <body>
+
+      <header>
+          <ul>
+              <li><a href="/banks">Banks</a></li>
+              <li><a href="/currencies">Currencies</a></li>
+              <li id="logo"><a href="/"><span>Home</span></a></li>
+              <li><a href="/deposits">Deposits</a></li>
+              <li><a href="/me">My Profile</a></li>
+          </ul>
+          <div class="clearfloat">&nbsp;</div>
+      </header>
+
+      <div id="main">
+          <a href="/bank/new" class="btn right">Create</a>
+          <div class="clearfloat">&nbsp;</div>
+
+          <div id="newbank">
+              <form method="post">
+                  <div class="block">
+                      <label for="currency">Currency:</label>
+                      <select>
+                          {{range .Ins}}
+                            <option id="">{{.Name}}</option>
+                            {{end}}
+                      </select>
+                  </div>
+
+                  <div class="block">
+                      <label for="amount">Amount:</label>
+                      <input type="text" id="amount" value="" />
+                  </div>
+
+                  <div class="block">
+                      <label for="price">Price:</label>
+                      <input type="text" id="price" value="" />
+                  </div>
+
+                  <div class="block">
+                      <input type="submit" value="Save" class="btn right" />
+                      <div class="clearfloat">&nbsp;</div>
+                  </div>
+              </form>
+          </div>
+      </div>
+  </body>
+</html>

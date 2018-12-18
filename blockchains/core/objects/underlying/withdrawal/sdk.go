@@ -37,12 +37,18 @@ type CreateParams struct {
 	Amount int
 }
 
+// CreateRepositoryParams represents the CreateRepository params
+type CreateRepositoryParams struct {
+	Datastore        datastore.DataStore
+	EntityRepository entity.Repository
+}
+
 // SDKFunc represents the Withdrawal SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Withdrawal
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
-	CreateRepository     func(ds datastore.DataStore) Repository
+	CreateRepository     func(params CreateRepositoryParams) Repository
 }{
 	Create: func(params CreateParams) Withdrawal {
 		if params.ID == nil {
@@ -115,7 +121,9 @@ var SDKFunc = struct {
 
 					// create the repositories:
 					repository := entity.SDKFunc.CreateRepository(ds)
-					depositRepository := deposit.SDKFunc.CreateRepository(ds)
+					depositRepository := deposit.SDKFunc.CreateRepository(deposit.CreateRepositoryParams{
+						Datastore: ds,
+					})
 					withdrawalRepository := createRepository(repository, metaData)
 
 					// make sure the withdrawal does not already exists:
@@ -162,10 +170,15 @@ var SDKFunc = struct {
 			},
 		})
 	},
-	CreateRepository: func(ds datastore.DataStore) Repository {
+	CreateRepository: func(params CreateRepositoryParams) Repository {
 		met := createMetaData()
-		entityRepository := entity.SDKFunc.CreateRepository(ds)
-		out := createRepository(entityRepository, met)
+		if params.Datastore != nil {
+			entityRepository := entity.SDKFunc.CreateRepository(params.Datastore)
+			out := createRepository(entityRepository, met)
+			return out
+		}
+
+		out := createRepository(params.EntityRepository, met)
 		return out
 	},
 }

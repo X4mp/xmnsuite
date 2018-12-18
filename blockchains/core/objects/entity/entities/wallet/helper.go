@@ -5,10 +5,16 @@ import (
 	"fmt"
 
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/crypto"
 )
 
 func retrieveAllWalletKeyname() string {
 	return "wallets"
+}
+
+func retrieveByPublicKeyWalletKeyname(pubKey crypto.PublicKey) string {
+	base := retrieveAllWalletKeyname()
+	return fmt.Sprintf("%s:by_pubkey:%s", base, pubKey.String())
 }
 
 func createMetaData() entity.MetaData {

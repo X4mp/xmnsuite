@@ -8,13 +8,18 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 )
 
-func retrieveAllCurrenciesKeyname() string {
-	return "currencies"
+func retrieveAllCategoriesKeyname() string {
+	return "categories"
 }
 
 func retrieveCurrenciesByParentCategoryIDKeyname(parentID *uuid.UUID) string {
-	base := retrieveAllCurrenciesKeyname()
+	base := retrieveAllCategoriesKeyname()
 	return fmt.Sprintf("%s:by_parent_id:%s", base, parentID.String())
+}
+
+func retrieveCurrenciesWithoutParentKeyname() string {
+	base := retrieveAllCategoriesKeyname()
+	return fmt.Sprintf("%s:without_parent", base)
 }
 
 func createMetaData() entity.MetaData {
