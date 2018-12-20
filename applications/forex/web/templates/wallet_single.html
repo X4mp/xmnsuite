@@ -24,28 +24,45 @@
            <div id="breadcrumb">
                <ul>
                    <li><a href="/">Home</a></li>
-                   <li>Users</li>
+                   <li><a href="/wallets">Wallets</a></li>
+                   <li>{{.ID}}</li>
                </ul>
                <div class="clearfloat">&nbsp;</div>
            </div>
 
            <div class="block">
+               <h1>Wallet: {{.ID}}</h1>
+               <table class="tworows">
+                   <tr>
+                       <td class="left highlight">ID:</td>
+                       <td class="highlight">{{.ID}}</td>
+                   </tr>
+                   <tr>
+                       <td class="left">Concensus Needed:</td>
+                       <td>{{.ConcensusNeeded}}</td>
+                   </tr>
+                   <tr>
+                       <td class="left highlight">Balance:</td>
+                       <td class="highlight">{{.TokenAmount}}</td>
+                   </tr>
+               </table>
+           </div>
+
+           <div class="block">
                <h1>Users</h1>
-               <p>This is your users list.  Each user have voting shares in a wallet.  Here's your users list.</p>
+               <p>This is the list of users that have shares in this wallet.</p>
                <table class="onerow">
                    <thead>
                        <tr>
                            <td>ID</td>
                            <td>Shares</td>
-                           <td>Wallet</td>
                        </tr>
                    </thead>
                    <tbody>
-                       {{ range $key, $value := .Users }}
+                       {{ range $key, $value := .Users.Users }}
                            <tr>
                                <td>{{$value.ID}}</td>
                                <td>{{$value.Shares}}</td>
-                               <td>{{$value.WalletID}}</td>
                            </tr>
                        {{ end }}
 

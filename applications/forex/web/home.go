@@ -15,6 +15,13 @@ type homeWallet struct {
 	TokenAmount     int
 }
 
+type singleWallet struct {
+	ID              string
+	ConcensusNeeded int
+	TokenAmount     int
+	Users           *homeUserList
+}
+
 type homeUserList struct {
 	Index       int
 	Amount      int

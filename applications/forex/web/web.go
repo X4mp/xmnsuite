@@ -15,6 +15,7 @@ import (
 	"unsafe"
 
 	"github.com/gorilla/mux"
+	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/category"
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/currency"
 	"github.com/xmnservices/xmnsuite/applications/forex/web/controllers/banks"
@@ -87,6 +88,8 @@ func createWeb(
 	app.rter.HandleFunc("/register", app.register)
 	app.rter.HandleFunc("/genesis", app.genesis)
 	app.rter.HandleFunc("/users", app.users)
+	app.rter.HandleFunc("/wallets", app.wallets)
+	app.rter.HandleFunc("/wallets/{id}", app.walletSingle)
 	app.rter.HandleFunc("/categories", app.categories)
 	app.rter.HandleFunc("/categories/new", app.newCategoriesForm)
 
@@ -477,6 +480,192 @@ func (app *web) users(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	tmpl.Execute(w, templateData)
+}
+
+func (app *web) wallets(w http.ResponseWriter, r *http.Request) {
+	// retrieve the conf:
+	conf := getConfigsFromCookie(loginCookieName, r)
+	if conf == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("cookie not found!")
+		w.Write([]byte(str))
+		return
+	}
+
+	// retrieve all the wallets:
+	allWalPS, allWalPSErr := app.walletRepository.RetrieveSet(0, amountOfElementsPerList)
+	if allWalPSErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("there was an error while retrieving the wallet entity set: %s", allWalPSErr.Error())
+		w.Write([]byte(str))
+		return
+	}
+
+	// retrieve the genesis:
+	gen, genErr := app.genesisRepository.Retrieve()
+	if genErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("there was an error while retrieving the genesis instance: %s", genErr.Error())
+		w.Write([]byte(str))
+		return
+	}
+
+	walsIns := allWalPS.Instances()
+	creatorWallets := []*homeWallet{}
+	for _, oneWalletIns := range walsIns {
+		if wal, ok := oneWalletIns.(walletpkg.Wallet); ok {
+			// retrieve the wallet balance:
+			bal, balErr := app.balanceRepository.RetrieveByWalletAndToken(wal, gen.Deposit().Token())
+			if balErr != nil {
+				log.Printf("there was an error while retrieving the wallet (ID: %s) balance of the given Token (ID: %s): %s", wal.ID().String(), gen.Deposit().Token().ID().String(), balErr.Error())
+				continue
+			}
+
+			creatorWallets = append(creatorWallets, &homeWallet{
+				ID:              wal.ID().String(),
+				Creator:         wal.Creator().String(),
+				ConcensusNeeded: wal.ConcensusNeeded(),
+				TokenAmount:     bal.Amount(),
+			})
+
+			continue
+		}
+
+		log.Printf("the given entity (ID: %s) is not a valid Wallet instance", oneWalletIns.ID().String())
+		continue
+	}
+
+	// template structure:
+	templateData := &homeWalletList{
+		Index:       allWalPS.Index(),
+		Amount:      allWalPS.Amount(),
+		TotalAmount: allWalPS.TotalAmount(),
+		IsLast:      allWalPS.IsLast(),
+		Wallets:     creatorWallets,
+	}
+
+	// retrieve the html page:
+	content, contentErr := ioutil.ReadFile(filepath.Join(app.templateDir, "wallets.html"))
+	if contentErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("the template could not be rendered: %s", contentErr.Error())
+		w.Write([]byte(str))
+		return
+	}
+
+	tmpl, err := template.New("wallets").Parse(string(content))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("the template could not be rendered: %s", err.Error())
+		w.Write([]byte(str))
+	}
+
+	w.WriteHeader(http.StatusOK)
+	tmpl.Execute(w, templateData)
+}
+
+func (app *web) walletSingle(w http.ResponseWriter, r *http.Request) {
+	// retrieve the conf:
+	conf := getConfigsFromCookie(loginCookieName, r)
+	if conf == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("cookie not found!")
+		w.Write([]byte(str))
+		return
+	}
+
+	// get the id from the uri:
+	vars := mux.Vars(r)
+	if idAsString, ok := vars["id"]; ok {
+		// convert the string to an id:
+		id, idErr := uuid.FromString(idAsString)
+		if idErr != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("the wallet ID (%s) is invalid", idAsString)
+			w.Write([]byte(str))
+			return
+		}
+
+		// retrieve the wallet by id:
+		wal, walErr := app.walletRepository.RetrieveByID(&id)
+		if idErr != nil {
+			w.WriteHeader(http.StatusNotFound)
+			w.Write([]byte(walErr.Error()))
+			return
+		}
+
+		// retrieve the genesis:
+		gen, genErr := app.genesisRepository.Retrieve()
+		if genErr != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("there was an error while retrieving the genesis instance: %s", genErr.Error())
+			w.Write([]byte(str))
+			return
+		}
+
+		// retrieve the balance:
+		bal, balErr := app.balanceRepository.RetrieveByWalletAndToken(wal, gen.Deposit().Token())
+		if balErr != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("there was an error while retrieving the wallet (ID: %s) balance of the given Token (ID: %s): %s", wal.ID().String(), gen.Deposit().Token().ID().String(), balErr.Error())
+			w.Write([]byte(str))
+			return
+		}
+
+		// retrieve the users:
+		usrsPS, usrsPSErr := app.userRepository.RetrieveSetByWallet(wal, 0, amountOfElementsPerList)
+		if usrsPSErr != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("there was an error while retrieving the user set related to the wallet (ID: %s): %s", wal.ID().String(), usrsPSErr.Error())
+			w.Write([]byte(str))
+			return
+		}
+
+		usrs := []*homeUser{}
+		usersIns := usrsPS.Instances()
+		for _, oneUserIns := range usersIns {
+			if usr, ok := oneUserIns.(user.User); ok {
+				usrs = append(usrs, &homeUser{
+					ID:       usr.ID().String(),
+					Shares:   usr.Shares(),
+					WalletID: usr.Wallet().ID().String(),
+				})
+			}
+		}
+
+		// template structure:
+		templateData := &singleWallet{
+			ID:              wal.ID().String(),
+			ConcensusNeeded: wal.ConcensusNeeded(),
+			TokenAmount:     bal.Amount(),
+			Users: &homeUserList{
+				Index:       usrsPS.Index(),
+				Amount:      usrsPS.Amount(),
+				TotalAmount: usrsPS.TotalAmount(),
+				IsLast:      usrsPS.IsLast(),
+				Users:       usrs,
+			},
+		}
+
+		// retrieve the html page:
+		content, contentErr := ioutil.ReadFile(filepath.Join(app.templateDir, "wallet_single.html"))
+		if contentErr != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("the template could not be rendered: %s", contentErr.Error())
+			w.Write([]byte(str))
+			return
+		}
+
+		tmpl, err := template.New("walletSingle").Parse(string(content))
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("the template could not be rendered: %s", err.Error())
+			w.Write([]byte(str))
+		}
+
+		w.WriteHeader(http.StatusOK)
+		tmpl.Execute(w, templateData)
+	}
 }
 
 func (app *web) register(w http.ResponseWriter, r *http.Request) {
