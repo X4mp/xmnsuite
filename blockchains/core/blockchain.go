@@ -61,8 +61,7 @@ func spawnBlockchain(
 
 	// create the applications:
 	routerRoleKey := "router-role"
-	maxAmountOfEntitiesToRetrieve := 100
-	apps := createApplications(namespace, name, id, rootDirPath, routePrefix, routerRoleKey, store, met, maxAmountOfEntitiesToRetrieve)
+	apps := createApplications(namespace, name, id, rootDirPath, routePrefix, routerRoleKey, store, met)
 
 	// create the application service:
 	appService := tendermint.SDKFunc.CreateApplicationService()
@@ -111,8 +110,7 @@ func saveThenSpawnBlockchain(
 
 	// create the applications:
 	routerRoleKey := "router-role"
-	maxAmountOfEntitiesToRetrieve := 100
-	apps := createApplicationsWithRootPubKey(namespace, name, id, rootDirPath, routePrefix, routerRoleKey, store, met, rootPubKey, maxAmountOfEntitiesToRetrieve)
+	apps := createApplicationsWithRootPubKey(namespace, name, id, rootDirPath, routePrefix, routerRoleKey, store, met, rootPubKey)
 
 	// create the application service:
 	appService := tendermint.SDKFunc.CreateApplicationService()

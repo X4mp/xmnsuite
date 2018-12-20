@@ -19,6 +19,39 @@
 
        <div id="main">
            <div class="block">
+               <h2>Genesis:</h2>
+               <table>
+                   <tr>
+                       <td class="left">ID:</td>
+                       <td>{{.Genesis.ID}}</td>
+                   </tr>
+                   <tr>
+                       <td class="left">Gaz Price (per KB):</td>
+                       <td>{{.Genesis.GazPricePerKb}}</td>
+                   </tr>
+                   <tr>
+                       <td class="left">Gaz Price in Matrix work (per KB):</td>
+                       <td>{{.Genesis.GazPriceInMatrixWorkKb}}</td>
+                   </tr>
+                   <tr>
+                       <td class="left">Concensus Needed:</td>
+                       <td>{{.Genesis.ConcensusNeeded}}</td>
+                   </tr>
+                   <tr>
+                       <td class="left">Max Amount of Validators:</td>
+                       <td>{{.Genesis.MaxAmountOfValidators}}</td>
+                   </tr>
+                   <tr>
+                       <td class="left">User:</td>
+                       <td>{{.Genesis.UserID}}</td>
+                   </tr>
+                   <tr>
+                       <td class="left">Deposit:</td>
+                       <td>{{.Genesis.DepositID}}</td>
+                   </tr>
+               </table>
+           </div>
+           <div class="block">
                <h2>My Users:</h2>
                <table>
                    <thead>
@@ -30,9 +63,11 @@
                    </thead>
                    <tbody>
                        {{ range $key, $value := .UserPS.Users }}
-                           <td>{{$value.ID}}</td>
-                           <td>{{$value.Shares}}</td>
-                           <td>{{$value.Wallet}}</td>
+                           <tr>
+                               <td>{{$value.ID}}</td>
+                               <td>{{$value.Shares}}</td>
+                               <td>{{$value.WalletID}}</td>
+                           </tr>
                        {{ end }}
 
                    </tbody>
@@ -51,10 +86,12 @@
                    </thead>
                    <tbody>
                        {{ range $key, $value := .WalletPS.Wallets }}
-                           <td>{{$value.ID}}</td>
-                           <td>{{$value.Creator}}</td>
-                           <td>{{$value.ConcensusNeeded}}</td>
-                           <td>{{$value.TokenAmount}}</td>
+                           <tr>
+                               <td>{{$value.ID}}</td>
+                               <td>{{$value.Creator}}</td>
+                               <td>{{$value.ConcensusNeeded}}</td>
+                               <td>{{$value.TokenAmount}}</td>
+                           </tr>
                        {{ end }}
 
                    </tbody>
@@ -73,10 +110,12 @@
                    </thead>
                    <tbody>
                        {{ range $key, $value := .AllWalletPS.Wallets }}
-                           <td>{{$value.ID}}</td>
-                           <td>{{$value.Creator}}</td>
-                           <td>{{$value.ConcensusNeeded}}</td>
-                           <td>{{$value.TokenAmount}}</td>
+                           <tr>
+                               <td>{{$value.ID}}</td>
+                               <td>{{$value.Creator}}</td>
+                               <td>{{$value.ConcensusNeeded}}</td>
+                               <td>{{$value.TokenAmount}}</td>
+                           </tr>
                        {{ end }}
 
                    </tbody>

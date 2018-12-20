@@ -30,12 +30,13 @@ type homeUser struct {
 }
 
 type homeGenesis struct {
-	ID                    string
-	GazPricePerKb         int
-	ConcensusNeeded       int
-	MaxAmountOfValidators int
-	UserID                string
-	DepositID             string
+	ID                     string
+	GazPricePerKb          int
+	GazPriceInMatrixWorkKb int
+	ConcensusNeeded        int
+	MaxAmountOfValidators  int
+	UserID                 string
+	DepositID              string
 }
 
 type home struct {

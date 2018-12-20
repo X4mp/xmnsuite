@@ -35,21 +35,20 @@ const (
 )
 
 type web struct {
-	rter                       *mux.Router
-	port                       int
-	templateDir                string
-	staticFilesDir             string
-	amountOfElementsPerListing int
-	entityService              entity.Service
-	accountService             account.Service
-	userRepository             user.Repository
-	balanceRepository          balance.Repository
-	genesisRepository          genesis.Repository
-	walletRepository           walletpkg.Repository
-	categoryRepository         category.Repository
-	currencyRepository         currency.Repository
-	walletRepresentation       entity.Representation
-	categoryRepresentation     entity.Representation
+	rter                   *mux.Router
+	port                   int
+	templateDir            string
+	staticFilesDir         string
+	entityService          entity.Service
+	accountService         account.Service
+	userRepository         user.Repository
+	balanceRepository      balance.Repository
+	genesisRepository      genesis.Repository
+	walletRepository       walletpkg.Repository
+	categoryRepository     category.Repository
+	currencyRepository     currency.Repository
+	walletRepresentation   entity.Representation
+	categoryRepresentation entity.Representation
 }
 
 func createWeb(
@@ -82,7 +81,6 @@ func createWeb(
 		categoryRepresentation: category.SDKFunc.CreateRepresentation(),
 		walletRepresentation:   walletpkg.SDKFunc.CreateRepresentation(),
 		rter:                   r,
-		amountOfElementsPerListing: 20,
 	}
 
 	app.rter.HandleFunc("/", app.home)
@@ -275,20 +273,20 @@ func (app *web) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// retrieve the users associated with our wallet:
-	usrPS, usrPSErr := app.userRepository.RetrieveSetByPubKey(conf.WalletPK().PublicKey(), 0, app.amountOfElementsPerListing)
-	if usrPSErr != nil {
+	// retrieve the wallets created by our conf PK:
+	walPS, walPSErr := app.walletRepository.RetrieveSetByCreatorPublicKey(conf.WalletPK().PublicKey(), 0, amountOfElementsPerList)
+	if walPSErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		str := fmt.Sprintf("there was an error while retrieving the users entity set from creator's public key (PubKey: %s): %s", conf.WalletPK().PublicKey().String(), usrPSErr.Error())
+		str := fmt.Sprintf("there was an error while retrieving the Wallet entity set from creator's public key (PubKey: %s): %s", conf.WalletPK().PublicKey().String(), walPSErr.Error())
 		w.Write([]byte(str))
 		return
 	}
 
-	// retrieve the wallet created by us:
-	walPS, walPSErr := app.walletRepository.RetrieveSetByCreatorPublicKey(conf.WalletPK().PublicKey(), 0, amountOfElementsPerList)
-	if walPSErr != nil {
+	// retrieve the users associated with our conf PK:
+	usrPS, usrPSErr := app.userRepository.RetrieveSetByPubKey(conf.WalletPK().PublicKey(), 0, amountOfElementsPerList)
+	if usrPSErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		str := fmt.Sprintf("there was an error while retrieving the wallet entity set from creator's public key (PubKey: %s): %s", conf.WalletPK().PublicKey().String(), walPSErr.Error())
+		str := fmt.Sprintf("there was an error while retrieving the users entity set from creator's public key (PubKey: %s): %s", conf.WalletPK().PublicKey().String(), usrPSErr.Error())
 		w.Write([]byte(str))
 		return
 	}
@@ -338,15 +336,14 @@ func (app *web) home(w http.ResponseWriter, r *http.Request) {
 			Users:       homeUsers,
 		},
 		Genesis: &homeGenesis{
-			ID:                    gen.ID().String(),
-			GazPricePerKb:         gen.GazPricePerKb(),
-			MaxAmountOfValidators: gen.MaxAmountOfValidators(),
-			UserID:                gen.User().ID().String(),
-			DepositID:             gen.Deposit().ID().String(),
+			ID:                     gen.ID().String(),
+			GazPricePerKb:          gen.GazPricePerKb(),
+			GazPriceInMatrixWorkKb: gen.GazPriceInMatrixWorkKb(),
+			MaxAmountOfValidators:  gen.MaxAmountOfValidators(),
+			UserID:                 gen.User().ID().String(),
+			DepositID:              gen.Deposit().ID().String(),
 		},
 	}
-
-	log.Printf("\n\n *** %v \n\n", gen.Deposit().To())
 
 	// retrieve the html page:
 	content, contentErr := ioutil.ReadFile(filepath.Join(app.templateDir, "index.html"))
@@ -474,15 +471,13 @@ func (app *web) register(w http.ResponseWriter, r *http.Request) {
 
 func (app *web) categories(w http.ResponseWriter, r *http.Request) {
 	// retrieve the categories:
-	catPS, catPSErr := app.categoryRepository.RetrieveSet(0, app.amountOfElementsPerListing)
+	/*catPS, catPSErr := app.categoryRepository.RetrieveSet(0, amountOfElementsPerList)
 	if catPSErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		str := fmt.Sprintf("there was an error while retrieving a Category instances: %s", catPSErr.Error())
 		w.Write([]byte(str))
 		return
-	}
-
-	fmt.Printf("\n\n %v \n\n", catPS)
+	}*/
 
 	// retrieve the html page:
 	content, contentErr := ioutil.ReadFile(filepath.Join(app.templateDir, "categories.html"))

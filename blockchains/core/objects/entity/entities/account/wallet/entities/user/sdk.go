@@ -28,6 +28,7 @@ type Repository interface {
 	RetrieveByID(id *uuid.UUID) (User, error)
 	RetrieveByPubKeyAndWallet(pubKey crypto.PublicKey, wal wallet.Wallet) (User, error)
 	RetrieveSetByPubKey(pubKey crypto.PublicKey, index int, amount int) (entity.PartialSet, error)
+	RetrieveSetByWallet(wal wallet.Wallet, index int, amount int) (entity.PartialSet, error)
 }
 
 // CreateParams represents the Create params

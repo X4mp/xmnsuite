@@ -25,6 +25,8 @@ import (
 	"github.com/xmnservices/xmnsuite/routers"
 )
 
+const maxAmountOfEntitiesToRetrieve = 500
+
 type incomingVote struct {
 	ID         string `json:"id"`
 	IsApproved bool   `json:"is_approved"`
@@ -37,19 +39,17 @@ type incomingRequest struct {
 }
 
 type core20181108 struct {
-	routePrefix                   string
-	routerRoleKey                 string
-	meta                          meta.Meta
-	maxAmountOfEntitiesToRetrieve int
+	routePrefix   string
+	routerRoleKey string
+	meta          meta.Meta
 }
 
-func createCore20181108(met meta.Meta, routePrefix string, routerRoleKey string, maxAmountOfEntitiesToRetrieve int) *core20181108 {
+func createCore20181108(met meta.Meta, routePrefix string, routerRoleKey string) *core20181108 {
 
 	out := core20181108{
 		routePrefix:   routePrefix,
 		routerRoleKey: routerRoleKey,
 		meta:          met,
-		maxAmountOfEntitiesToRetrieve: maxAmountOfEntitiesToRetrieve,
 	}
 
 	return &out
@@ -67,7 +67,6 @@ func create20181106WithRootPubKey(
 	ds datastore.StoredDataStore,
 	met meta.Meta,
 	rootPubKey crypto.PublicKey,
-	maxAmountOfEntitiesToRetrieve int,
 ) applications.Application {
 	// enable the root user to have write access to the genesis route:
 	store := ds.DataStore()
@@ -75,7 +74,7 @@ func create20181106WithRootPubKey(
 	store.Roles().Add(routerRoleKey, rootPubKey)
 	store.Roles().EnableWriteAccess(routerRoleKey, fmt.Sprintf("%s/genesis", routePrefix))
 
-	return create20181106(namespace, name, id, fromBlockIndex, toBlockIndex, rootDir, routePrefix, routerRoleKey, ds, met, maxAmountOfEntitiesToRetrieve)
+	return create20181106(namespace, name, id, fromBlockIndex, toBlockIndex, rootDir, routePrefix, routerRoleKey, ds, met)
 }
 
 func create20181106(
@@ -89,10 +88,9 @@ func create20181106(
 	routerRoleKey string,
 	ds datastore.StoredDataStore,
 	met meta.Meta,
-	maxAmountOfEntitiesToRetrieve int,
 ) applications.Application {
 	// create core:
-	core := createCore20181108(met, routePrefix, routerRoleKey, maxAmountOfEntitiesToRetrieve)
+	core := createCore20181108(met, routePrefix, routerRoleKey)
 
 	// create application:
 	version := "2018.11.06"
@@ -496,7 +494,7 @@ func (app *core20181108) retrieveSetByIntersectKeynames() routers.CreateRoutePar
 				index = idx
 			}
 
-			amount := app.maxAmountOfEntitiesToRetrieve
+			amount := maxAmountOfEntitiesToRetrieve
 			if amountAsString, ok := params["amount"]; ok {
 				am, amErr := strconv.Atoi(amountAsString)
 				if amErr != nil {
@@ -507,8 +505,8 @@ func (app *core20181108) retrieveSetByIntersectKeynames() routers.CreateRoutePar
 				amount = am
 			}
 
-			if amount > app.maxAmountOfEntitiesToRetrieve {
-				amount = app.maxAmountOfEntitiesToRetrieve
+			if amount > maxAmountOfEntitiesToRetrieve {
+				amount = maxAmountOfEntitiesToRetrieve
 			}
 
 			// create the dependencies:

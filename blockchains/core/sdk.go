@@ -13,18 +13,17 @@ import (
 
 // CreateParams represents the Create params
 type CreateParams struct {
-	Namespace                     string
-	Name                          string
-	ID                            *uuid.UUID
-	Port                          int
-	NodePK                        tcrypto.PrivKey
-	RootDir                       string
-	RoutePrefix                   string
-	RouterRoleKey                 string
-	Store                         datastore.StoredDataStore
-	Meta                          meta.Meta
-	RootPubKey                    crypto.PublicKey
-	MaxAmountOfEntitiesToRetrieve int
+	Namespace     string
+	Name          string
+	ID            *uuid.UUID
+	Port          int
+	NodePK        tcrypto.PrivKey
+	RootDir       string
+	RoutePrefix   string
+	RouterRoleKey string
+	Store         datastore.StoredDataStore
+	Meta          meta.Meta
+	RootPubKey    crypto.PublicKey
 }
 
 // SDKFunc represents the core SDK func
@@ -44,7 +43,6 @@ var SDKFunc = struct {
 				params.RouterRoleKey,
 				params.Store,
 				params.Meta,
-				params.MaxAmountOfEntitiesToRetrieve,
 			)
 		}
 
@@ -58,7 +56,6 @@ var SDKFunc = struct {
 			params.Store,
 			params.Meta,
 			params.RootPubKey,
-			params.MaxAmountOfEntitiesToRetrieve,
 		)
 	},
 	CreateCommands: func() []cliapp.Command {

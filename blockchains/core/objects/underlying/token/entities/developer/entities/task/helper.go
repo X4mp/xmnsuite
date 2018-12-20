@@ -66,7 +66,6 @@ func createMetaData() entity.MetaData {
 			ptr := new(normalizedTask)
 			jsErr := cdc.UnmarshalJSON(data.([]byte), ptr)
 			if jsErr != nil {
-				fmt.Printf("\n\n%s\n\n", data.([]byte))
 				return nil, jsErr
 			}
 

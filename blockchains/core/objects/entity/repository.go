@@ -99,7 +99,7 @@ func (app *repository) RetrieveSetByKeyname(met MetaData, keyname string, index 
 }
 
 // RetrieveSetByIntersectKeynames retrieves an EntityPartialSet by intersecting keynames
-func (app *repository) RetrieveSetByIntersectKeynames(met MetaData, keynames []string, index int, amount int) (PartialSet, error) {
+func (app *repository) RetrieveSetByIntersectKeynames(met MetaData, keynames []string, index int, requestedAmount int) (PartialSet, error) {
 	// create the destination and intersect:
 	destination := fmt.Sprintf("inter:%s", strings.Join(keynames, "|"))
 	amountInDest := app.store.Sets().InterStore(destination, keynames...)
@@ -108,7 +108,7 @@ func (app *repository) RetrieveSetByIntersectKeynames(met MetaData, keynames []s
 	}
 
 	// retrieve set by keyname:
-	entityPartialSet, entityPartialSetErr := app.RetrieveSetByKeyname(met, destination, index, amount)
+	entityPartialSet, entityPartialSetErr := app.RetrieveSetByKeyname(met, destination, index, requestedAmount)
 	if entityPartialSetErr != nil {
 		str := fmt.Sprintf("there was an error while retrieving an EntityPartialSet using an intersect of keynames (%s): %s", strings.Join(keynames, ","), entityPartialSetErr)
 		return nil, errors.New(str)

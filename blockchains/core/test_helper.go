@@ -1,6 +1,7 @@
 package core
 
 import (
+	"bytes"
 	"fmt"
 	"math/rand"
 	"net"
@@ -62,15 +63,55 @@ func saveAccountForTests(t *testing.T, usr user.User, gen genesis.Genesis, accou
 		return nil
 	}
 
+	// create the wallet repository:
+	/*walletRepository := wallet.SDKFunc.CreateRepository(wallet.CreateRepositoryParams{
+		EntityRepository: repository,
+	})*/
+
+	// create the user repository:
+	userRepository := user.SDKFunc.CreateRepository(user.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
 	// retrieve the user:
-	retUser, retUserErr := repository.RetrieveByID(user.SDKFunc.CreateMetaData(), usr.ID())
+	retUser, retUserErr := userRepository.RetrieveByID(usr.ID())
 	if retUserErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", retUserErr.Error())
 		return nil
 	}
 
+	// retrieve user set by pubKey:
+	retUserByPubKeyPS, retUserByPubKeyPSErr := userRepository.RetrieveSetByPubKey(usr.PubKey(), 0, -1)
+	if retUserByPubKeyPSErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", retUserByPubKeyPSErr.Error())
+		return nil
+	}
+
+	// retrieve user by pubKey and wallet:
+	retUserByPubKeyAndWalletPS, retUserByPubKeyAndWalletPSErr := userRepository.RetrieveByPubKeyAndWallet(usr.PubKey(), usr.Wallet())
+	if retUserByPubKeyAndWalletPSErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", retUserByPubKeyAndWalletPSErr.Error())
+		return nil
+	}
+
 	// compare the users:
-	user.CompareUserForTests(t, ac.User(), retUser.(user.User))
+	contains := false
+	ins := retUserByPubKeyPS.Instances()
+	for _, oneIns := range ins {
+		if bytes.Compare(oneIns.ID().Bytes(), ac.User().ID().Bytes()) == 0 {
+			contains = true
+			break
+		}
+	}
+
+	if !contains {
+		t.Errorf("the user (ID: %s) was not in the RetrieveSetByPubKey set", ac.User().ID().String())
+		return nil
+	}
+
+	user.CompareUserForTests(t, ac.User(), retUser)
+	user.CompareUserForTests(t, ac.User(), retUserByPubKeyAndWalletPS)
+	user.CompareUserForTests(t, ac.User(), ins[0].(user.User))
 
 	return ac
 }

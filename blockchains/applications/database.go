@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"log"
 
 	"github.com/xmnservices/xmnsuite/datastore"
 	objects "github.com/xmnservices/xmnsuite/datastore/objects"
@@ -163,7 +164,7 @@ func (app *database) Update(version string) (State, error) {
 	// add the new state in the list:
 	amountAdded := app.DataStore().DataStore().Sets().Add(app.stateKey, app.states[version].Hash())
 	if amountAdded != 1 {
-		fmt.Printf("the hash: %s, already exists in the state key: %s.  Skipping...\n", hashAsString, app.stateKey)
+		log.Printf("the hash: %s, already exists in the state key: %s.  Skipping...\n", hashAsString, app.stateKey)
 		return app.states[version], nil
 	}
 

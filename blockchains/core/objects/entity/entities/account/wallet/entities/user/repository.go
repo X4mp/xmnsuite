@@ -72,3 +72,17 @@ func (app *repository) RetrieveSetByPubKey(pubKey crypto.PublicKey, index int, a
 
 	return insPS, nil
 }
+
+// RetrieveSetByWallet retrieves a list of users connected to wallet
+func (app *repository) RetrieveSetByWallet(wal wallet.Wallet, index int, amount int) (entity.PartialSet, error) {
+	insPS, insPSErr := app.entityRepository.RetrieveSetByIntersectKeynames(app.userMetaData, []string{
+		retrieveAllUserKeyname(),
+		retrieveUserByWalletIDKeyname(wal.ID()),
+	}, index, amount)
+
+	if insPSErr != nil {
+		return nil, insPSErr
+	}
+
+	return insPS, nil
+}
