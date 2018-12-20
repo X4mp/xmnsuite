@@ -85,6 +85,7 @@ func createWeb(
 
 	app.rter.HandleFunc("/", app.home)
 	app.rter.HandleFunc("/register", app.register)
+	app.rter.HandleFunc("/genesis", app.genesis)
 	app.rter.HandleFunc("/categories", app.categories)
 	app.rter.HandleFunc("/categories/new", app.newCategoriesForm)
 
@@ -355,6 +356,55 @@ func (app *web) home(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl, err := template.New("home").Parse(string(content))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("the template could not be rendered: %s", err.Error())
+		w.Write([]byte(str))
+	}
+
+	w.WriteHeader(http.StatusOK)
+	tmpl.Execute(w, templateData)
+}
+
+func (app *web) genesis(w http.ResponseWriter, r *http.Request) {
+	// retrieve the conf:
+	conf := getConfigsFromCookie(loginCookieName, r)
+	if conf == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("cookie not found!")
+		w.Write([]byte(str))
+		return
+	}
+
+	// retrieve the genesis:
+	gen, genErr := app.genesisRepository.Retrieve()
+	if genErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("there was an error while retrieving the genesis instance: %s", genErr.Error())
+		w.Write([]byte(str))
+		return
+	}
+
+	// template structure:
+	templateData := &homeGenesis{
+		ID:                     gen.ID().String(),
+		GazPricePerKb:          gen.GazPricePerKb(),
+		GazPriceInMatrixWorkKb: gen.GazPriceInMatrixWorkKb(),
+		MaxAmountOfValidators:  gen.MaxAmountOfValidators(),
+		UserID:                 gen.User().ID().String(),
+		DepositID:              gen.Deposit().ID().String(),
+	}
+
+	// retrieve the html page:
+	content, contentErr := ioutil.ReadFile(filepath.Join(app.templateDir, "genesis.html"))
+	if contentErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("the template could not be rendered: %s", contentErr.Error())
+		w.Write([]byte(str))
+		return
+	}
+
+	tmpl, err := template.New("genesis").Parse(string(content))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		str := fmt.Sprintf("the template could not be rendered: %s", err.Error())
