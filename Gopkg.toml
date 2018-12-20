@@ -15,6 +15,10 @@
   version = "1.6.2"
 
 [[override]]
+  name = "github.com/oelmekki/matrix"
+  branch = "master"
+
+[[override]]
   name = "github.com/urfave/cli"
   version = "1.20.0"
 

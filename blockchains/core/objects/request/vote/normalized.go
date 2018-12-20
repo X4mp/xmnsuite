@@ -2,7 +2,7 @@ package vote
 
 import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
 )
 
 type normalizedVote struct {

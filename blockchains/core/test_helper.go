@@ -5,16 +5,19 @@ import (
 	"math/rand"
 	"net"
 	"testing"
+	"unsafe"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/pledge"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/meta"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/work"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/link"
@@ -32,6 +35,44 @@ func createTokenVoteRouteFunc(routePrefix string) vote.CreateRouteFn {
 	return func(ins vote.Vote, rep entity.Representation) (string, error) {
 		return fmt.Sprintf("%s/%s/requests/%s/token", routePrefix, rep.MetaData().Keyname(), ins.Request().ID().String()), nil
 	}
+}
+
+func saveAccountForTests(t *testing.T, usr user.User, gen genesis.Genesis, accountService account.Service, repository entity.Repository) account.Account {
+	// find the gaz price:
+	jsUserData, jsUserErr := cdc.MarshalJSON(usr)
+	if jsUserErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", jsUserErr.Error())
+		return nil
+	}
+
+	gazPrice := int(unsafe.Sizeof(jsUserData)) * gen.GazPriceInMatrixWorkKb()
+
+	ac := account.SDKFunc.Create(account.CreateAccountParams{
+		User: usr,
+		Work: work.SDKFunc.Generate(work.GenerateParams{
+			MatrixSize:   gazPrice,
+			MatrixAmount: gazPrice,
+		}),
+	})
+
+	// save the account:
+	saveErr := accountService.Save(ac, gen.GazPriceInMatrixWorkKb())
+	if saveErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", saveErr.Error())
+		return nil
+	}
+
+	// retrieve the user:
+	retUser, retUserErr := repository.RetrieveByID(user.SDKFunc.CreateMetaData(), usr.ID())
+	if retUserErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", retUserErr.Error())
+		return nil
+	}
+
+	// compare the users:
+	user.CompareUserForTests(t, ac.User(), retUser.(user.User))
+
+	return ac
 }
 
 func spawnBlockchainForTests(t *testing.T, pk crypto.PrivateKey, rootPath string, routePrefix string) (applications.Node, applications.Client, entity.Service, entity.Repository) {
@@ -381,7 +422,7 @@ func savePledge(
 	pk crypto.PrivateKey,
 	service entity.Service,
 	repository entity.Repository,
-	fromUser user.User,
+	fromGen genesis.Genesis,
 	newUser user.User,
 	pldge pledge.Pledge,
 ) request.Service {
@@ -390,38 +431,27 @@ func savePledge(
 	toWallet := pldge.To()
 
 	// create the repreentations:
-	walletRepresentation := wallet.SDKFunc.CreateRepresentation()
-	userRepresentation := user.SDKFunc.CreateRepresentation()
 	pldgeRepresentation := pledge.SDKFunc.CreateRepresentation()
 
-	// save the new wallet:
-	savedWallet := saveEntityThenRetrieveEntityByIDThenDeleteEntityByID(t, toWallet, walletRepresentation, service, repository)
+	// create the service:
+	accountService := account.SDKFunc.CreateSDKService(account.CreateSDKServiceParams{
+		PK:          pk,
+		Client:      client,
+		RoutePrefix: routePrefix,
+	})
+
+	// save the to account:
+	toAcc := saveAccountForTests(t, newUser, fromGen, accountService, repository)
+	if toAcc == nil {
+		return nil
+	}
 
 	// compare the wallets:
-	wallet.CompareWalletsForTests(t, toWallet.(wallet.Wallet), savedWallet.(wallet.Wallet))
-
-	// create the user in wallet request:
-	userInWalletRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       fromUser,
-		NewEntity:      newUser,
-		EntityMetaData: user.SDKFunc.CreateMetaData(),
-	})
-
-	// create our user vote:
-	userInWalletRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    userInWalletRequest,
-		Voter:      fromUser,
-		IsApproved: true,
-	})
-
-	// save the new wallet request, then save vote:
-	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, userRepresentation, userInWalletRequest, []crypto.PrivateKey{pk}, []vote.Vote{
-		userInWalletRequestVote,
-	}, createWalletVoteRouteFunc(routePrefix))
+	wallet.CompareWalletsForTests(t, toWallet.(wallet.Wallet), toAcc.User().Wallet())
 
 	// create the user in wallet request:
 	pldgeRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       fromUser,
+		FromUser:       fromGen.User(),
 		NewEntity:      pldge,
 		EntityMetaData: pledge.SDKFunc.CreateMetaData(),
 	})
@@ -429,7 +459,7 @@ func savePledge(
 	// create our user vote:
 	pldgeRequestVote := vote.SDKFunc.Create(vote.CreateParams{
 		Request:    pldgeRequest,
-		Voter:      fromUser,
+		Voter:      fromGen.User(),
 		IsApproved: true,
 	})
 

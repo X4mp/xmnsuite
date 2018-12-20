@@ -12,12 +12,14 @@ import (
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/xmnservices/xmnsuite/blockchains/core/meta"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/transfer"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/validator"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/work"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/pledge"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/transfer"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/validator"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
@@ -171,7 +173,7 @@ func TestSaveGenesis_createSameGenesisInstance_returnsError(t *testing.T) {
 	}
 }
 
-func TestSaveGenesis_createWallet_Success(t *testing.T) {
+func TestSaveGenesis_createAccount_Success(t *testing.T) {
 	// variables:
 	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
 	pubKey := pk.PublicKey()
@@ -180,6 +182,8 @@ func TestSaveGenesis_createWallet_Success(t *testing.T) {
 	newWalletPK := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
 	newWalletPubKey := newWalletPK.PublicKey()
 	walletIns := wallet.CreateWalletWithPublicKeyForTests(newWalletPubKey)
+	userIns := user.CreateUserWithWalletAndPublicKeyAndSharesForTests(walletIns, newWalletPubKey, walletIns.ConcensusNeeded())
+
 	rootPath := filepath.Join("./test_files_TestSaveGenesis_createWallet_Success")
 	routePrefix := "/some-route-prefix"
 	defer func() {
@@ -187,14 +191,77 @@ func TestSaveGenesis_createWallet_Success(t *testing.T) {
 	}()
 
 	// spawn bockchain with genesis instance:
-	node, _, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, genIns)
+	node, _, _, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, genIns)
 	defer node.Stop()
 
-	// save the new wallet:
-	savedWallet := saveEntityThenRetrieveEntityByIDThenDeleteEntityByID(t, walletIns, wallet.SDKFunc.CreateRepresentation(), service, repository)
+	client, clientErr := node.GetClient()
+	if clientErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", clientErr.Error())
+		return
+	}
 
-	// compare the wallets:
-	wallet.CompareWalletsForTests(t, walletIns.(wallet.Wallet), savedWallet.(wallet.Wallet))
+	// create the service:
+	accountService := account.SDKFunc.CreateSDKService(account.CreateSDKServiceParams{
+		PK:          pk,
+		Client:      client,
+		RoutePrefix: routePrefix,
+	})
+
+	// save the account
+	acc := saveAccountForTests(t, userIns, genIns, accountService, repository)
+	if acc == nil {
+		return
+	}
+}
+
+func TestSaveGenesis_createAccount_withWorkMatrixTooSmall_returnsError(t *testing.T) {
+	// variables:
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
+
+	newWalletPK := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	newWalletPubKey := newWalletPK.PublicKey()
+	walletIns := wallet.CreateWalletWithPublicKeyForTests(newWalletPubKey)
+	userIns := user.CreateUserWithWalletAndPublicKeyAndSharesForTests(walletIns, newWalletPubKey, walletIns.ConcensusNeeded())
+
+	ac := account.SDKFunc.Create(account.CreateAccountParams{
+		User: userIns,
+		Work: work.SDKFunc.Generate(work.GenerateParams{
+			MatrixSize:   1,
+			MatrixAmount: 1,
+		}),
+	})
+
+	rootPath := filepath.Join("./test_files_TestSaveGenesis_createWallet_Success")
+	routePrefix := "/some-route-prefix"
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// spawn bockchain with genesis instance:
+	node, _, _, _ := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, genIns)
+	defer node.Stop()
+
+	client, clientErr := node.GetClient()
+	if clientErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", clientErr.Error())
+		return
+	}
+
+	// create the service:
+	accountService := account.SDKFunc.CreateSDKService(account.CreateSDKServiceParams{
+		PK:          pk,
+		Client:      client,
+		RoutePrefix: routePrefix,
+	})
+
+	// save the account:
+	saveErr := accountService.Save(ac, genIns.GazPriceInMatrixWorkKb())
+	if saveErr == nil {
+		t.Errorf("the returned error was expected to be an error, nil returned")
+		return
+	}
 }
 
 func TestSaveGenesis_createWalletWithSameCreator_Success(t *testing.T) {
@@ -202,8 +269,9 @@ func TestSaveGenesis_createWalletWithSameCreator_Success(t *testing.T) {
 	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
 	pubKey := pk.PublicKey()
 	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
-
 	walletIns := wallet.CreateWalletWithPublicKeyForTests(genIns.User().Wallet().Creator())
+	userIns := user.CreateUserWithWalletAndPublicKeyAndSharesForTests(walletIns, walletIns.Creator(), walletIns.ConcensusNeeded())
+
 	rootPath := filepath.Join("./test_files_TestSaveGenesis_createWalletWithSameCreator_Success")
 	routePrefix := "/some-route-prefix"
 	defer func() {
@@ -211,40 +279,33 @@ func TestSaveGenesis_createWalletWithSameCreator_Success(t *testing.T) {
 	}()
 
 	// spawn bockchain with genesis instance:
-	node, _, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, genIns)
+	node, _, _, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, genIns)
 	defer node.Stop()
 
-	// save the new wallet:
-	savedWallet := saveEntityThenRetrieveEntityByIDThenDeleteEntityByID(t, walletIns, wallet.SDKFunc.CreateRepresentation(), service, repository)
-
-	// compare the wallets:
-	wallet.CompareWalletsForTests(t, walletIns.(wallet.Wallet), savedWallet.(wallet.Wallet))
-}
-
-func TestSaveGenesis_createWalletAlreadyInGenesis_returnsError(t *testing.T) {
-	// variables:
-	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
-	pubKey := pk.PublicKey()
-	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
-	rootPath := filepath.Join("./test_files_TestSaveGenesis_createWalletAlreadyInGenesis_returnsError")
-	routePrefix := "/some-route-prefix"
-	defer func() {
-		os.RemoveAll(rootPath)
-	}()
-
-	// spawn bockchain with genesis instance:
-	node, _, service, _ := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, genIns)
-	defer node.Stop()
-
-	// save the genesis wallet again:
-	saveErr := service.Save(genIns.User().Wallet(), wallet.SDKFunc.CreateRepresentation())
-	if saveErr == nil {
-		t.Errorf("the returned error was expected to be an error, nil returned")
+	client, clientErr := node.GetClient()
+	if clientErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", clientErr.Error())
 		return
 	}
+
+	// create the service:
+	accountService := account.SDKFunc.CreateSDKService(account.CreateSDKServiceParams{
+		PK:          pk,
+		Client:      client,
+		RoutePrefix: routePrefix,
+	})
+
+	// save the account
+	acc := saveAccountForTests(t, userIns, genIns, accountService, repository)
+	if acc == nil {
+		return
+	}
+
+	// compare the wallets:
+	wallet.CompareWalletsForTests(t, walletIns.(wallet.Wallet), acc.User().Wallet())
 }
 
-func TestSaveGenesis_createWallet_addUserToWallet_addAnotherUserToWallerWithSamePublicKey_saveVotesWithEnoughSharesToPass_returnsError(t *testing.T) {
+func TestSaveGenesis_addUserToWallet_addAnotherUserToWallerWithSamePublicKey_saveVotesWithEnoughSharesToPass_returnsError(t *testing.T) {
 	// variables:
 	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
 	pubKey := pk.PublicKey()
@@ -444,6 +505,7 @@ func TestSaveGenesis_createNewWallet_createPledge_transferPledgeTokens_returnsEr
 	walPubKey := walPK.PublicKey()
 	walletIns := wallet.CreateWalletWithPublicKeyForTests(walPubKey)
 	userIns := user.CreateUserWithWalletAndPublicKeyAndSharesForTests(walletIns, walPubKey, genIns.Deposit().Amount()*2)
+
 	pldge := pledge.SDKFunc.Create(pledge.CreateParams{
 		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   genIns.Deposit().To(),
@@ -467,7 +529,7 @@ func TestSaveGenesis_createNewWallet_createPledge_transferPledgeTokens_returnsEr
 	defer node.Stop()
 
 	// save the pledge:
-	savePledge(t, routePrefix, client, pk, service, repository, genIns.User(), userIns, pldge)
+	savePledge(t, routePrefix, client, pk, service, repository, genIns, userIns, pldge)
 
 	// transfer the pledge funds, returns error:
 	trsf := transfer.SDKFunc.Create(transfer.CreateParams{
@@ -548,9 +610,7 @@ func TestSaveGenesis_createNewWallet_createValidator_Success(t *testing.T) {
 		}),
 	})
 
-	// create the repreentations:
-	walletRepresentation := wallet.SDKFunc.CreateRepresentation()
-	userRepresentation := user.SDKFunc.CreateRepresentation()
+	// create the representations:
 	validatorRepresentation := validator.SDKFunc.CreateRepresentation()
 
 	rootPath := filepath.Join("./test_files_TestSaveGenesis_createNewWallet_createValidator_Success")
@@ -560,33 +620,24 @@ func TestSaveGenesis_createNewWallet_createValidator_Success(t *testing.T) {
 	}()
 
 	// spawn bockchain with genesis instance:
-	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, genIns)
+	node, client, _, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, genIns)
 	defer node.Stop()
 
-	// save the new wallet:
-	savedWallet := saveEntityThenRetrieveEntityByIDThenDeleteEntityByID(t, walletIns, walletRepresentation, service, repository)
+	// create the service:
+	accountService := account.SDKFunc.CreateSDKService(account.CreateSDKServiceParams{
+		PK:          pk,
+		Client:      client,
+		RoutePrefix: routePrefix,
+	})
+
+	// save the account
+	acc := saveAccountForTests(t, userIns, genIns, accountService, repository)
+	if acc == nil {
+		return
+	}
 
 	// compare the wallets:
-	wallet.CompareWalletsForTests(t, walletIns.(wallet.Wallet), savedWallet.(wallet.Wallet))
-
-	// create the user in wallet request:
-	userInWalletRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       genIns.User(),
-		NewEntity:      userIns,
-		EntityMetaData: user.SDKFunc.CreateMetaData(),
-	})
-
-	// create our user vote:
-	userInWalletRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    userInWalletRequest,
-		Voter:      genIns.User(),
-		IsApproved: true,
-	})
-
-	// save the new wallet request, then save vote:
-	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, userRepresentation, userInWalletRequest, []crypto.PrivateKey{pk}, []vote.Vote{
-		userInWalletRequestVote,
-	}, createWalletVoteRouteFunc(routePrefix))
+	wallet.CompareWalletsForTests(t, walletIns.(wallet.Wallet), acc.User().Wallet())
 
 	// create the user in validator request:
 	validatorRequest := request.SDKFunc.Create(request.CreateParams{
@@ -632,9 +683,7 @@ func TestSaveGenesis_createNewWallet_createTransfer_Success(t *testing.T) {
 		}),
 	})
 
-	// create the repreentations:
-	walletRepresentation := wallet.SDKFunc.CreateRepresentation()
-	userRepresentation := user.SDKFunc.CreateRepresentation()
+	// create the representations:
 	transferRepresentation := transfer.SDKFunc.CreateRepresentation()
 
 	rootPath := filepath.Join("./test_files_TestSaveGenesis_createNewWallet_createTransfer_Success")
@@ -644,33 +693,24 @@ func TestSaveGenesis_createNewWallet_createTransfer_Success(t *testing.T) {
 	}()
 
 	// spawn bockchain with genesis instance:
-	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, genIns)
+	node, client, _, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, genIns)
 	defer node.Stop()
 
-	// save the new wallet:
-	savedWallet := saveEntityThenRetrieveEntityByIDThenDeleteEntityByID(t, walletIns, walletRepresentation, service, repository)
+	// create the service:
+	accountService := account.SDKFunc.CreateSDKService(account.CreateSDKServiceParams{
+		PK:          pk,
+		Client:      client,
+		RoutePrefix: routePrefix,
+	})
+
+	// save the account
+	acc := saveAccountForTests(t, userIns, genIns, accountService, repository)
+	if acc == nil {
+		return
+	}
 
 	// compare the wallets:
-	wallet.CompareWalletsForTests(t, walletIns.(wallet.Wallet), savedWallet.(wallet.Wallet))
-
-	// create the user in wallet request:
-	userInWalletRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       genIns.User(),
-		NewEntity:      userIns,
-		EntityMetaData: user.SDKFunc.CreateMetaData(),
-	})
-
-	// create our user vote:
-	userInWalletRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    userInWalletRequest,
-		Voter:      genIns.User(),
-		IsApproved: true,
-	})
-
-	// save the new wallet request, then save vote:
-	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, userRepresentation, userInWalletRequest, []crypto.PrivateKey{pk}, []vote.Vote{
-		userInWalletRequestVote,
-	}, createWalletVoteRouteFunc(routePrefix))
+	wallet.CompareWalletsForTests(t, walletIns.(wallet.Wallet), acc.User().Wallet())
 
 	// create the user in wallet request:
 	trsfRequest := request.SDKFunc.Create(request.CreateParams{

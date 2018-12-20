@@ -8,11 +8,11 @@ import (
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/pledge"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/transfer"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/validator"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/transfer"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/validator"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
@@ -125,21 +125,6 @@ var SDKFunc = struct {
 			}
 
 			read[keyname] = oneAdditionalRead
-		}
-
-		// create the write:
-		additionalWrites := map[string]entity.Representation{
-			"wallet": walletRepresentation,
-		}
-
-		// add the additional writes to the map:
-		for keyname, oneAdditionalWrite := range additionalWrites {
-			if _, ok := write[keyname]; ok {
-				str := fmt.Sprintf("the keyname (%s) in the 'write' representations is reserved for the core engine", keyname)
-				panic(errors.New(str))
-			}
-
-			write[keyname] = oneAdditionalWrite
 		}
 
 		// create the wallet vote service:

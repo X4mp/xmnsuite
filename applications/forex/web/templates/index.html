@@ -18,26 +18,70 @@
       </header>
 
        <div id="main">
-           <h2>Wallets I created:</h2>
-           <table>
-               <thead>
-                   <tr>
-                       <td>ID</td>
-                       <td>Creator</td>
-                       <td>Concensus Needed</td>
-                       <td>Token</td>
-                   </tr>
-               </thead>
-               <tbody>
-                   {{ range $key, $value := .WalletPS.Wallets }}
-                       <td>{{$value.ID}}</td>
-                       <td>{{$value.Creator}}</td>
-                       <td>{{$value.ConcensusNeeded}}</td>
-                       <td>{{$value.TokenAmount}}</td>
-                   {{ end }}
+           <div class="block">
+               <h2>My Users:</h2>
+               <table>
+                   <thead>
+                       <tr>
+                           <td>ID</td>
+                           <td>Shares</td>
+                           <td>Wallet</td>
+                       </tr>
+                   </thead>
+                   <tbody>
+                       {{ range $key, $value := .UserPS.Users }}
+                           <td>{{$value.ID}}</td>
+                           <td>{{$value.Shares}}</td>
+                           <td>{{$value.Wallet}}</td>
+                       {{ end }}
 
-               </tbody>
-           </table>
+                   </tbody>
+               </table>
+           </div>
+           <div class="block">
+               <h2>Wallets I created:</h2>
+               <table>
+                   <thead>
+                       <tr>
+                           <td>ID</td>
+                           <td>Creator</td>
+                           <td>Concensus Needed</td>
+                           <td>Token</td>
+                       </tr>
+                   </thead>
+                   <tbody>
+                       {{ range $key, $value := .WalletPS.Wallets }}
+                           <td>{{$value.ID}}</td>
+                           <td>{{$value.Creator}}</td>
+                           <td>{{$value.ConcensusNeeded}}</td>
+                           <td>{{$value.TokenAmount}}</td>
+                       {{ end }}
+
+                   </tbody>
+               </table>
+           </div>
+           <div class="block">
+               <h2>All Wallets</h2>
+               <table>
+                   <thead>
+                       <tr>
+                           <td>ID</td>
+                           <td>Creator</td>
+                           <td>Concensus Needed</td>
+                           <td>Token</td>
+                       </tr>
+                   </thead>
+                   <tbody>
+                       {{ range $key, $value := .AllWalletPS.Wallets }}
+                           <td>{{$value.ID}}</td>
+                           <td>{{$value.Creator}}</td>
+                           <td>{{$value.ConcensusNeeded}}</td>
+                           <td>{{$value.TokenAmount}}</td>
+                       {{ end }}
+
+                   </tbody>
+               </table>
+           </div>
        </div>
        <footer>
            <p>&copy;  XMN Blockchain Services Ltd.  The software and its blockchain is open source under the <a href="/license">MIT license</a>.</p>

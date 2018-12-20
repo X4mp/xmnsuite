@@ -7,17 +7,19 @@ import (
 
 	term "github.com/nsf/termbox-go"
 	cliapp "github.com/urfave/cli"
-	"github.com/xmnservices/bitcoin/configs"
 	"github.com/xmnservices/xmnsuite/applications/forex/commands"
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/category"
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/currency"
 	webserver "github.com/xmnservices/xmnsuite/applications/forex/web"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
 	coredeposit "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/balance"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/withdrawal"
+	"github.com/xmnservices/xmnsuite/configs"
 	"github.com/xmnservices/xmnsuite/helpers"
 )
 
@@ -92,10 +94,21 @@ func spawn() *cliapp.Command {
 				RoutePrefix: "",
 			})
 
+			// create the account service:
+			accountService := account.SDKFunc.CreateSDKService(account.CreateSDKServiceParams{
+				PK:          retConf.WalletPK(),
+				Client:      client,
+				RoutePrefix: "",
+			})
+
 			// spawn the web server:
 			web := webserver.SDKFunc.Create(webserver.CreateParams{
-				Port:          c.Int("wport"),
-				EntityService: entityService,
+				Port:           c.Int("wport"),
+				EntityService:  entityService,
+				AccountService: accountService,
+				UserRepository: user.SDKFunc.CreateRepository(user.CreateRepositoryParams{
+					EntityRepository: entityRepository,
+				}),
 				BalanceRepository: balance.SDKFunc.CreateRepository(balance.CreateRepositoryParams{
 					DepositRepository: coredeposit.SDKFunc.CreateRepository(coredeposit.CreateRepositoryParams{
 						EntityRepository: entityRepository,

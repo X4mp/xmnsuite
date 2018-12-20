@@ -3,11 +3,12 @@ package core
 import (
 	amino "github.com/tendermint/go-amino"
 	entity "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	account "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account"
+	wallet "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
+	pledge "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/pledge"
+	transfer "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/transfer"
+	validator "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/validator"
 	genesis "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
-	wallet "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
-	pledge "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/pledge"
-	transfer "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/transfer"
-	validator "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/validator"
 	request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/vote"
 	deposit "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
@@ -23,7 +24,12 @@ import (
 var cdc = amino.NewCodec()
 
 func init() {
+	Register(cdc)
+}
+
+func Register(cdc *amino.Codec) {
 	// dependencies:
+	account.Register(cdc)
 	wallet.Register(cdc)
 	token.Register(cdc)
 	deposit.Register(cdc)

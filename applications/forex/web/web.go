@@ -7,21 +7,25 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"path/filepath"
 	"strings"
 	"time"
+	"unsafe"
 
 	"github.com/gorilla/mux"
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/category"
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/currency"
 	"github.com/xmnservices/xmnsuite/applications/forex/web/controllers/banks"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account"
+	walletpkg "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/work"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
-	walletpkg "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/balance"
 	"github.com/xmnservices/xmnsuite/configs"
-	"github.com/xmnservices/xmnsuite/crypto"
 )
 
 const (
@@ -37,6 +41,8 @@ type web struct {
 	staticFilesDir             string
 	amountOfElementsPerListing int
 	entityService              entity.Service
+	accountService             account.Service
+	userRepository             user.Repository
 	balanceRepository          balance.Repository
 	genesisRepository          genesis.Repository
 	walletRepository           walletpkg.Repository
@@ -44,12 +50,13 @@ type web struct {
 	currencyRepository         currency.Repository
 	walletRepresentation       entity.Representation
 	categoryRepresentation     entity.Representation
-	walletPK                   crypto.PrivateKey
 }
 
 func createWeb(
 	port int,
 	entityService entity.Service,
+	accountService account.Service,
+	userRepository user.Repository,
 	balanceRepository balance.Repository,
 	genesisRepository genesis.Repository,
 	walletRepository walletpkg.Repository,
@@ -65,6 +72,8 @@ func createWeb(
 		templateDir:            templateDir,
 		staticFilesDir:         "./applications/forex/web/static",
 		entityService:          entityService,
+		accountService:         accountService,
+		userRepository:         userRepository,
 		balanceRepository:      balanceRepository,
 		genesisRepository:      genesisRepository,
 		walletRepository:       walletRepository,
@@ -74,7 +83,6 @@ func createWeb(
 		walletRepresentation:   walletpkg.SDKFunc.CreateRepresentation(),
 		rter:                   r,
 		amountOfElementsPerListing: 20,
-		walletPK:                   nil,
 	}
 
 	app.rter.HandleFunc("/", app.home)
@@ -220,6 +228,44 @@ func (app *web) middlewareVerifyConfigsInCookie(next http.Handler) http.Handler 
 }
 
 func (app *web) home(w http.ResponseWriter, r *http.Request) {
+
+	formatWalletPS := func(walPS entity.PartialSet, gen genesis.Genesis) *homeWalletList {
+		walsIns := walPS.Instances()
+		creatorWallets := []*homeWallet{}
+		for _, oneWalletIns := range walsIns {
+			if wal, ok := oneWalletIns.(walletpkg.Wallet); ok {
+				// retrieve the wallet balance:
+				bal, balErr := app.balanceRepository.RetrieveByWalletAndToken(wal, gen.Deposit().Token())
+				if balErr != nil {
+					log.Printf("there was an error while retrieving the wallet (ID: %s) balance of the given Token (ID: %s): %s", wal.ID().String(), gen.Deposit().Token().ID().String(), balErr.Error())
+					continue
+				}
+
+				// retrieve the users:
+
+				creatorWallets = append(creatorWallets, &homeWallet{
+					ID:              wal.ID().String(),
+					Creator:         wal.Creator().String(),
+					ConcensusNeeded: wal.ConcensusNeeded(),
+					TokenAmount:     bal.Amount(),
+				})
+
+				continue
+			}
+
+			log.Printf("the given entity (ID: %s) is not a valid Wallet instance", oneWalletIns.ID().String())
+			continue
+		}
+
+		return &homeWalletList{
+			Index:       walPS.Index(),
+			Amount:      walPS.Amount(),
+			TotalAmount: walPS.TotalAmount(),
+			IsLast:      walPS.IsLast(),
+			Wallets:     creatorWallets,
+		}
+	}
+
 	// retrieve the conf:
 	conf := getConfigsFromCookie(loginCookieName, r)
 	if conf == nil {
@@ -230,12 +276,28 @@ func (app *web) home(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// retrieve the users associated with our wallet:
+	usrPS, usrPSErr := app.userRepository.RetrieveSetByPubKey(conf.WalletPK().PublicKey(), 0, app.amountOfElementsPerListing)
+	if usrPSErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("there was an error while retrieving the users entity set from creator's public key (PubKey: %s): %s", conf.WalletPK().PublicKey().String(), usrPSErr.Error())
+		w.Write([]byte(str))
+		return
+	}
 
 	// retrieve the wallet created by us:
 	walPS, walPSErr := app.walletRepository.RetrieveSetByCreatorPublicKey(conf.WalletPK().PublicKey(), 0, amountOfElementsPerList)
 	if walPSErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		str := fmt.Sprintf("there was an error while retrieving the wallet entity set from creator's public key (PubKey: %s): %s", conf.WalletPK().PublicKey().String(), walPSErr.Error())
+		w.Write([]byte(str))
+		return
+	}
+
+	// retrieve all the wallets:
+	allWalPS, allWalPSErr := app.walletRepository.RetrieveSet(0, amountOfElementsPerList)
+	if allWalPSErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("there was an error while retrieving the wallet entity set: %s", allWalPSErr.Error())
 		w.Write([]byte(str))
 		return
 	}
@@ -249,43 +311,31 @@ func (app *web) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	walsIns := walPS.Instances()
-	creatorWallets := []*homeWallet{}
-	for _, oneWalletIns := range walsIns {
-		if wal, ok := oneWalletIns.(walletpkg.Wallet); ok {
-			// retrieve the wallet balance:
-			bal, balErr := app.balanceRepository.RetrieveByWalletAndToken(wal, gen.Deposit().Token())
-			if balErr != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				str := fmt.Sprintf("there was an error while retrieving the wallet (ID: %s) balance of the given Token (ID: %s): %s", wal.ID().String(), gen.Deposit().Token().ID().String(), balErr.Error())
-				w.Write([]byte(str))
-				return
-			}
-
-			// retrieve the users:
-
-			creatorWallets = append(creatorWallets, &homeWallet{
-				ID:              wal.ID().String(),
-				Creator:         wal.Creator().String(),
-				ConcensusNeeded: wal.ConcensusNeeded(),
-				TokenAmount:     bal.Amount(),
+	homeUsers := []*homeUser{}
+	usersIns := usrPS.Instances()
+	for _, oneUserIns := range usersIns {
+		if usr, ok := oneUserIns.(user.User); ok {
+			homeUsers = append(homeUsers, &homeUser{
+				ID:       usr.ID().String(),
+				Shares:   usr.Shares(),
+				WalletID: usr.Wallet().ID().String(),
 			})
-
-			continue
 		}
 
-		log.Printf("the given entity (ID: %s) is not a valid Wallet instance", oneWalletIns.ID().String())
+		log.Printf("the given entity (ID: %s) is not a valid User instance", oneUserIns.ID().String())
 		continue
 	}
 
 	// template structure:
 	templateData := home{
-		WalletPS: &homeWalletList{
-			Index:       walPS.Index(),
-			Amount:      walPS.Amount(),
-			TotalAmount: walPS.TotalAmount(),
-			IsLast:      walPS.IsLast(),
-			Wallets:     creatorWallets,
+		WalletPS:    formatWalletPS(walPS, gen),
+		AllWalletPS: formatWalletPS(allWalPS, gen),
+		UserPS: &homeUserList{
+			Index:       usrPS.Index(),
+			Amount:      usrPS.Amount(),
+			TotalAmount: usrPS.TotalAmount(),
+			IsLast:      usrPS.IsLast(),
+			Users:       homeUsers,
 		},
 		Genesis: &homeGenesis{
 			ID:                    gen.ID().String(),
@@ -296,7 +346,7 @@ func (app *web) home(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	log.Printf("\n\n *** %d \n\n", templateData.WalletPS.Amount)
+	log.Printf("\n\n *** %v \n\n", gen.Deposit().To())
 
 	// retrieve the html page:
 	content, contentErr := ioutil.ReadFile(filepath.Join(app.templateDir, "index.html"))
@@ -332,17 +382,51 @@ func (app *web) register(w http.ResponseWriter, r *http.Request) {
 		// generate the configs:
 		conf := configs.SDKFunc.Generate()
 
-		// create the wallet:
-		wal := walletpkg.SDKFunc.Create(walletpkg.CreateParams{
-			Creator:         conf.WalletPK().PublicKey(),
-			ConcensusNeeded: 100,
+		// retrieve the genesis:
+		gen, genErr := app.genesisRepository.Retrieve()
+		if genErr != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("there was an error while retrieving the genesis instance: %s", genErr.Error())
+			w.Write([]byte(str))
+			return
+		}
+
+		// create the user:
+		usr := user.SDKFunc.Create(user.CreateParams{
+			PubKey: conf.WalletPK().PublicKey(),
+			Shares: 100,
+			Wallet: walletpkg.SDKFunc.Create(walletpkg.CreateParams{
+				Creator:         conf.WalletPK().PublicKey(),
+				ConcensusNeeded: 100,
+			}),
 		})
 
-		// save the wallet:
-		saveErr := app.entityService.Save(wal, app.walletRepresentation)
+		// convert the user to json:
+		jsUserData, jsUserErr := cdc.MarshalJSON(usr)
+		if jsUserErr != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("there was an error while converting a user to json: %s", jsUserErr.Error())
+			w.Write([]byte(str))
+			return
+		}
+
+		// calculate the gaz price:
+		gazPrice := int(unsafe.Sizeof(jsUserData)) * gen.GazPriceInMatrixWorkKb()
+
+		// create the account:
+		ac := account.SDKFunc.Create(account.CreateAccountParams{
+			User: usr,
+			Work: work.SDKFunc.Generate(work.GenerateParams{
+				MatrixSize:   gazPrice,
+				MatrixAmount: gazPrice,
+			}),
+		})
+
+		// save the account:
+		saveErr := app.accountService.Save(ac, int(math.Ceil(float64(gazPrice/100))))
 		if saveErr != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			str := fmt.Sprintf("there was an error while saving the Wallet instance: %s", saveErr.Error())
+			str := fmt.Sprintf("there was an error while saving an Account instance: %s", saveErr.Error())
 			w.Write([]byte(str))
 			return
 		}

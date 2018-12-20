@@ -15,6 +15,20 @@ type homeWallet struct {
 	TokenAmount     int
 }
 
+type homeUserList struct {
+	Index       int
+	Amount      int
+	TotalAmount int
+	IsLast      bool
+	Users       []*homeUser
+}
+
+type homeUser struct {
+	ID       string
+	Shares   int
+	WalletID string
+}
+
 type homeGenesis struct {
 	ID                    string
 	GazPricePerKb         int
@@ -25,6 +39,8 @@ type homeGenesis struct {
 }
 
 type home struct {
-	Genesis  *homeGenesis
-	WalletPS *homeWalletList
+	Genesis     *homeGenesis
+	WalletPS    *homeWalletList
+	AllWalletPS *homeWalletList
+	UserPS      *homeUserList
 }

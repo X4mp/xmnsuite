@@ -6,7 +6,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 	"github.com/xmnservices/xmnsuite/datastore"
@@ -116,7 +116,8 @@ var SDKFunc = struct {
 
 				if with, ok := ins.(Withdrawal); ok {
 
-					//create the metadata:
+					//create the metadata and representation:
+					walletRepresentation := wallet.SDKFunc.CreateRepresentation()
 					metaData := createMetaData()
 
 					// create the repositories:
@@ -136,6 +137,13 @@ var SDKFunc = struct {
 					// fetch the wallet and token:
 					wal := with.From()
 					tok := with.Token()
+
+					// try to retrieve the wallet:
+					_, retToWalletErr := repository.RetrieveByID(walletRepresentation.MetaData(), wal.ID())
+					if retToWalletErr != nil {
+						str := fmt.Sprintf("the Withdrawal instance (ID: %s) contains a Wallet instance (ID: %s) that do not exists", with.ID().String(), wal.ID().String())
+						return errors.New(str)
+					}
 
 					// retrieve all the withdrawals related to our wallet and token:
 					withsPS, withsPSErr := withdrawalRepository.RetrieveSetByFromWalletAndToken(wal, tok)

@@ -2,8 +2,10 @@ package core
 
 import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/balance"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/developer"
 	"github.com/xmnservices/xmnsuite/datastore"
@@ -16,6 +18,7 @@ type dependencies struct {
 	genesisRepository   genesis.Repository
 	genesisService      genesis.Service
 	balanceRepository   balance.Repository
+	accountService      account.Service
 	developerRepository developer.Repository
 }
 
@@ -39,6 +42,16 @@ func createDependencies(ds datastore.DataStore) *dependencies {
 		Datastore: ds,
 	})
 
+	walletRepository := wallet.SDKFunc.CreateRepository(wallet.CreateRepositoryParams{
+		EntityRepository: entityRepository,
+	})
+
+	accountService := account.SDKFunc.CreateService(account.CreateServiceParams{
+		UserRepository:   userRepository,
+		WalletRepository: walletRepository,
+		EntityService:    entityService,
+	})
+
 	developerRepository := developer.SDKFunc.CreateRepository(ds)
 
 	out := dependencies{
@@ -48,6 +61,7 @@ func createDependencies(ds datastore.DataStore) *dependencies {
 		genesisRepository:   genesisRepository,
 		genesisService:      genesisService,
 		balanceRepository:   balanceRepository,
+		accountService:      accountService,
 		developerRepository: developerRepository,
 	}
 

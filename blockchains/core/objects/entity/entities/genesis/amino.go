@@ -3,7 +3,7 @@ package genesis
 import (
 	amino "github.com/tendermint/go-amino"
 	deposit "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
-	user "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
+	user "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
 )
 
 const (

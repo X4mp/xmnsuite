@@ -4,8 +4,10 @@ import (
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/category"
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/currency"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account"
+	walletpkg "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
-	walletpkg "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/balance"
 )
 
@@ -19,6 +21,8 @@ type Web interface {
 type CreateParams struct {
 	Port               int
 	EntityService      entity.Service
+	AccountService     account.Service
+	UserRepository     user.Repository
 	BalanceRepository  balance.Repository
 	GenesisRepository  genesis.Repository
 	WalletRepository   walletpkg.Repository
@@ -34,6 +38,8 @@ var SDKFunc = struct {
 		out := createWeb(
 			params.Port,
 			params.EntityService,
+			params.AccountService,
+			params.UserRepository,
 			params.BalanceRepository,
 			params.GenesisRepository,
 			params.WalletRepository,

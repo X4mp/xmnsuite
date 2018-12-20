@@ -7,7 +7,7 @@ import (
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/deposit"
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/fiatchain"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/meta"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 )

@@ -3,7 +3,7 @@ package genesis
 import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
@@ -12,6 +12,7 @@ import (
 type Genesis interface {
 	ID() *uuid.UUID
 	GazPricePerKb() int
+	GazPriceInMatrixWorkKb() int
 	ConcensusNeeded() int
 	MaxAmountOfValidators() int
 	User() user.User
@@ -34,12 +35,13 @@ type Repository interface {
 
 // CreateParams represents the Create params
 type CreateParams struct {
-	ID                    *uuid.UUID
-	GazPricePerKb         int
-	ConcensusNeeded       int
-	MaxAmountOfValidators int
-	User                  user.User
-	Deposit               deposit.Deposit
+	ID                     *uuid.UUID
+	GazPricePerKb          int
+	GazPriceInMatrixWorkKb int
+	ConcensusNeeded        int
+	MaxAmountOfValidators  int
+	User                   user.User
+	Deposit                deposit.Deposit
 }
 
 // CreateRepositoryParams represents the CreateRepository params
@@ -69,7 +71,7 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out, outErr := createGenesis(params.ID, params.ConcensusNeeded, params.GazPricePerKb, params.MaxAmountOfValidators, params.Deposit, params.User)
+		out, outErr := createGenesis(params.ID, params.ConcensusNeeded, params.GazPriceInMatrixWorkKb, params.GazPricePerKb, params.MaxAmountOfValidators, params.Deposit, params.User)
 		if outErr != nil {
 			panic(outErr)
 		}
