@@ -86,6 +86,7 @@ func createWeb(
 	app.rter.HandleFunc("/", app.home)
 	app.rter.HandleFunc("/register", app.register)
 	app.rter.HandleFunc("/genesis", app.genesis)
+	app.rter.HandleFunc("/users", app.users)
 	app.rter.HandleFunc("/categories", app.categories)
 	app.rter.HandleFunc("/categories/new", app.newCategoriesForm)
 
@@ -405,6 +406,69 @@ func (app *web) genesis(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tmpl, err := template.New("genesis").Parse(string(content))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("the template could not be rendered: %s", err.Error())
+		w.Write([]byte(str))
+	}
+
+	w.WriteHeader(http.StatusOK)
+	tmpl.Execute(w, templateData)
+}
+
+func (app *web) users(w http.ResponseWriter, r *http.Request) {
+	// retrieve the conf:
+	conf := getConfigsFromCookie(loginCookieName, r)
+	if conf == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("cookie not found!")
+		w.Write([]byte(str))
+		return
+	}
+
+	// retrieve the users associated with our conf PK:
+	usrPS, usrPSErr := app.userRepository.RetrieveSetByPubKey(conf.WalletPK().PublicKey(), 0, amountOfElementsPerList)
+	if usrPSErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("there was an error while retrieving the users entity set from creator's public key (PubKey: %s): %s", conf.WalletPK().PublicKey().String(), usrPSErr.Error())
+		w.Write([]byte(str))
+		return
+	}
+
+	usrs := []*homeUser{}
+	usersIns := usrPS.Instances()
+	for _, oneUserIns := range usersIns {
+		if usr, ok := oneUserIns.(user.User); ok {
+			usrs = append(usrs, &homeUser{
+				ID:       usr.ID().String(),
+				Shares:   usr.Shares(),
+				WalletID: usr.Wallet().ID().String(),
+			})
+		}
+
+		log.Printf("the given entity (ID: %s) is not a valid User instance", oneUserIns.ID().String())
+		continue
+	}
+
+	// template structure:
+	templateData := &homeUserList{
+		Index:       usrPS.Index(),
+		Amount:      usrPS.Amount(),
+		TotalAmount: usrPS.TotalAmount(),
+		IsLast:      usrPS.IsLast(),
+		Users:       usrs,
+	}
+
+	// retrieve the html page:
+	content, contentErr := ioutil.ReadFile(filepath.Join(app.templateDir, "users.html"))
+	if contentErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("the template could not be rendered: %s", contentErr.Error())
+		w.Write([]byte(str))
+		return
+	}
+
+	tmpl, err := template.New("users").Parse(string(content))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		str := fmt.Sprintf("the template could not be rendered: %s", err.Error())

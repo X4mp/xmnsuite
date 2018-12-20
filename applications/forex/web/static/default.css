@@ -41,7 +41,12 @@ footer {padding: 5px; margin: 5px auto 5px auto; width: 800px; font-size: 12px; 
 #main #breadcrumb ul li {float: left; padding: 0px 10px 0px 0px; margin: 0;}
 #main #breadcrumb ul li a:after {content: " / ";}
 
-#main .block .tworows td {width: 90%; padding: 5px; border-bottom: 1px solid #000000;}
-#main .block .tworows .left {background-color: #f2f8fc;}
+#main .block .tworows {width: 90%; }
+#main .block .tworows td {padding: 5px; border-bottom: 1px solid #000000;}
+#main .block .tworows .left {width: 90%; background-color: #0677cc; color: #ffffff;}
+
+#main .block .onerow {width: 90%; }
+#main .block .onerow td {padding: 5px; border-bottom: 1px solid #000000;}
+#main .block .onerow thead td {background-color: #0677cc; color: #ffffff;}
 
 .clearfloat {clear: both; height: 1px; display: block;}

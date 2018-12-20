@@ -1,0 +1,60 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+      <title>XMN Foreign Exchange</title>
+      <link rel="stylesheet" href="/static/default.css">
+  </head>
+  <body>
+
+      <header>
+          <ul>
+              <li><a href="/genesis">Genesis</a></li>
+              <li><a href="/users">Users</a></li>
+              <li><a href="/banks">Banks</a></li>
+              <li id="logo"><a href="/"><span>Home</span></a></li>
+              <li><a href="/currencies">Currencies</a></li>
+              <li><a href="/deposits">Deposits</a></li>
+              <li><a href="/blocks">Blocks</a></li>
+          </ul>
+          <div class="clearfloat">&nbsp;</div>
+      </header>
+
+       <div id="main">
+
+           <div id="breadcrumb">
+               <ul>
+                   <li><a href="/">Home</a></li>
+                   <li>Users</li>
+               </ul>
+               <div class="clearfloat">&nbsp;</div>
+           </div>
+
+           <div class="block">
+               <h1>Users</h1>
+               <p>This is your users list.  Each user have voting shares in a wallet.  Here's your users list.</p>
+               <table class="onerow">
+                   <thead>
+                       <tr>
+                           <td>ID</td>
+                           <td>Shares</td>
+                           <td>Wallet</td>
+                       </tr>
+                   </thead>
+                   <tbody>
+                       {{ range $key, $value := .Users }}
+                           <tr>
+                               <td>{{$value.ID}}</td>
+                               <td>{{$value.Shares}}</td>
+                               <td>{{$value.WalletID}}</td>
+                           </tr>
+                       {{ end }}
+
+                   </tbody>
+               </table>
+           </div>
+       </div>
+       <footer>
+           <p>&copy;  XMN Blockchain Services Ltd.  The software and its blockchain is open source under the <a href="/license">MIT license</a>.</p>
+       </footer>
+  </body>
+</html>
