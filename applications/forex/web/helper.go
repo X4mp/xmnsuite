@@ -11,7 +11,7 @@ func getConfigsFromCookie(name string, r *http.Request) configs.Configs {
 	defer func() {
 		if r := recover(); r != nil {
 			// log:
-			log.Printf("the cookie could not be found or was invalid, redirect: %s", r)
+			log.Printf("the cookie could not be found or was invalid: %s", r)
 		}
 	}()
 
@@ -20,8 +20,6 @@ func getConfigsFromCookie(name string, r *http.Request) configs.Configs {
 	if cookieConfigsErr != nil {
 		panic(cookieConfigsErr)
 	}
-
-	log.Printf("\n in cookie: %s \n", cookieConfigs.Value)
 
 	// convert the string to a config instance:
 	conf := configs.SDKFunc.Create(configs.CreateParams{

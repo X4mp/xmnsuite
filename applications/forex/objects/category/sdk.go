@@ -25,7 +25,7 @@ type Category interface {
 // Repository represents the category repository
 type Repository interface {
 	RetrieveByID(id *uuid.UUID) (Category, error)
-	RetrieveSet(index int, amount int) (entity.PartialSet, error)
+	RetrieveSetWithNoParent(index int, amount int) (entity.PartialSet, error)
 }
 
 // Normalized represents a normalized category
@@ -87,11 +87,11 @@ var SDKFunc = struct {
 					}
 
 					if cat.HasParent() {
-						keynames = append(keynames, retrieveCurrenciesByParentCategoryIDKeyname(cat.Parent().ID()))
+						keynames = append(keynames, retrieveCategoriesByParentCategoryIDKeyname(cat.Parent().ID()))
 					}
 
 					if !cat.HasParent() {
-						keynames = append(keynames, retrieveCurrenciesWithoutParentKeyname())
+						keynames = append(keynames, retrieveCcategoriesWithoutParentKeyname())
 					}
 
 					return keynames, nil

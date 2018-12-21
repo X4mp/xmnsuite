@@ -12,12 +12,12 @@ func retrieveAllCategoriesKeyname() string {
 	return "categories"
 }
 
-func retrieveCurrenciesByParentCategoryIDKeyname(parentID *uuid.UUID) string {
+func retrieveCategoriesByParentCategoryIDKeyname(parentID *uuid.UUID) string {
 	base := retrieveAllCategoriesKeyname()
 	return fmt.Sprintf("%s:by_parent_id:%s", base, parentID.String())
 }
 
-func retrieveCurrenciesWithoutParentKeyname() string {
+func retrieveCcategoriesWithoutParentKeyname() string {
 	base := retrieveAllCategoriesKeyname()
 	return fmt.Sprintf("%s:without_parent", base)
 }

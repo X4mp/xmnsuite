@@ -50,13 +50,25 @@ type CreateSDKServiceParams struct {
 	RoutePrefix string
 }
 
+// CreateRepositoryParams represents the CreateRepository params
+type CreateRepositoryParams struct {
+	EntityRepository entity.Repository
+}
+
+// RegisterParams represents the register params
+type RegisterParams struct {
+	EntityMetaData entity.MetaData
+}
+
 var reg = createRegistry()
 
 // SDKFunc represents the request SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Request
+	Register             func(params RegisterParams)
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
+	CreateRepository     func(params CreateRepositoryParams) Repository
 	CreateSDKService     func(params CreateSDKServiceParams) Service
 }{
 	Create: func(params CreateParams) Request {
@@ -67,16 +79,15 @@ var SDKFunc = struct {
 
 		// get the keyname:
 		name := params.EntityMetaData.Keyname()
-
-		// register:
+		out := createRequest(params.ID, params.FromUser, params.NewEntity, name)
+		return out
+	},
+	Register: func(params RegisterParams) {
 		regErr := reg.register(params.EntityMetaData)
 		if regErr != nil {
 			str := fmt.Sprintf("there was an error while registering an entity for a request: %s", regErr.Error())
 			panic(str)
 		}
-
-		out := createRequest(params.ID, params.FromUser, params.NewEntity, name)
-		return out
 	},
 	CreateMetaData: func() entity.MetaData {
 		return createMetaData(reg)
@@ -99,16 +110,20 @@ var SDKFunc = struct {
 			},
 			Keynames: func(ins entity.Entity) ([]string, error) {
 				if req, ok := ins.(Request); ok {
-					base := retrieveAllRequestsKeyname()
 					return []string{
-						base,
-						fmt.Sprintf("%s:by_from_id:%s", base, req.From().ID().String()),
+						retrieveAllRequestsKeyname(),
+						retrieveAllRequestsFromUserKeyname(req.From()),
 					}, nil
 				}
 
 				return nil, errors.New("the given entity is not a valid Request instance")
 			},
 		})
+	},
+	CreateRepository: func(params CreateRepositoryParams) Repository {
+		metaData := createMetaData(reg)
+		out := createRepository(params.EntityRepository, metaData)
+		return out
 	},
 	CreateSDKService: func(params CreateSDKServiceParams) Service {
 		out := createSDKService(params.PK, params.Client, params.RoutePrefix)

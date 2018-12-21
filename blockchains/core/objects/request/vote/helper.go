@@ -6,8 +6,8 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 )
 
 func retrieveAllVotesKeyname() string {
@@ -124,9 +124,8 @@ func createRepresentation() entity.Representation {
 		},
 		Keynames: func(ins entity.Entity) ([]string, error) {
 			if vote, ok := ins.(Vote); ok {
-				base := retrieveAllVotesKeyname()
 				return []string{
-					base,
+					retrieveAllVotesKeyname(),
 					retrieveVotesByRequestIDKeyname(vote.Request().ID()),
 					retrieveVotesByVoterIDKeyname(vote.Voter().ID()),
 				}, nil

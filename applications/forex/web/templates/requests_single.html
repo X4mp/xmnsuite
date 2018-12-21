@@ -1,0 +1,96 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+      <title>XMN Foreign Exchange</title>
+      <link rel="stylesheet" href="/static/default.css">
+  </head>
+  <body>
+
+      <header>
+          <ul>
+              <li><a href="/genesis">Genesis</a></li>
+              <li><a href="/users">Users</a></li>
+              <li><a href="/wallets">Wallets</a></li>
+              <li id="logo"><a href="/"><span>Home</span></a></li>
+              <li><a href="/banks">Banks</a></li>
+              <li><a href="/currencies">Currencies</a></li>
+              <li><a href="/deposits">Deposits</a></li>
+          </ul>
+          <div class="clearfloat">&nbsp;</div>
+      </header>
+
+       <div id="main">
+
+           <div id="breadcrumb">
+               <ul>
+                   <li><a href="/">Home</a></li>
+                   <li><a href="/requests">Requests</a></li>
+                   <li>{{.ID}}</li>
+               </ul>
+               <div class="clearfloat">&nbsp;</div>
+           </div>
+           <div class="block">
+               <h1>Request: {{.ID}}</h1>
+               <table class="tworows">
+                   <tr>
+                       <td class="left highlight">ID:</td>
+                       <td class="highlight">{{.ID}}</td>
+                   </tr>
+                   <tr>
+                       <td class="left">From User:</td>
+                       <td><a href="/users/{{.FromUserID}}">{{.FromUserID}}</a></td>
+                   </tr>
+                   <tr>
+                       <td class="left">Entity Name:</td>
+                       <td>{{.NewName}}</td>
+                   </tr>
+                   <tr>
+                       <td colspan="2">
+                           <p>Entity JSON:</p>
+                           <pre>{{.NewJS}}</pre>
+                       </td>
+                   </tr>
+                   <tr>
+                       <td class="left">Vote:</td>
+                       <td>
+                           Do you <a href="/requests/{{.ID}}/approve">approve</a> or <a href="/requests/{{.ID}}/disapprove">disapprove</a> this request?
+                       </td>
+                   </tr>
+               </table>
+           </div>
+           <div class="block">
+               <h2>Votes</h2>
+
+               {{if .Votes.Votes}}
+                   <p>These are the votes created by users on the current request.</p>
+                   <table class="onerow">
+                       <thead>
+                           <tr>
+                               <td>ID</td>
+                               <td>User</td>
+                               <td>Shares</td>
+                               <td>IsApproved?</td>
+                           </tr>
+                       </thead>
+                       <tbody>
+                           {{ range $key, $value := .Votes.Votes }}
+                               <tr>
+                                   <td>{{$value.ID}}</td>
+                                   <td><a href="/users/{{$value.UserVoterID}}">{{$value.UserVoterID}}</a></td>
+                                   <td>{{$value.UserAmountShares}}</td>
+                                   <td>{{$value.IsApproved}}</td>
+                               </tr>
+                           {{ end }}
+
+                       </tbody>
+                   </table>
+               {{ else }}
+                    <p>There is currently no vote for this request.</p>
+               {{ end }}
+           </div>
+       </div>
+       <footer>
+           <p>&copy;  XMN Blockchain Services Ltd.  The software and its blockchain is open source under the <a href="/license">MIT license</a>.</p>
+       </footer>
+  </body>
+</html>

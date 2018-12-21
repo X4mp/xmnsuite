@@ -37,11 +37,11 @@ func (app *repository) RetrieveByID(id *uuid.UUID) (Category, error) {
 	return nil, errors.New(str)
 }
 
-// RetrieveSet retrieves a category set
-func (app *repository) RetrieveSet(index int, amount int) (entity.PartialSet, error) {
+// RetrieveSetWithNoParent retrieves a category set
+func (app *repository) RetrieveSetWithNoParent(index int, amount int) (entity.PartialSet, error) {
 	keynames := []string{
 		retrieveAllCategoriesKeyname(),
-		retrieveCurrenciesWithoutParentKeyname(),
+		retrieveCcategoriesWithoutParentKeyname(),
 	}
 
 	catPS, catPSErr := app.entityRepository.RetrieveSetByIntersectKeynames(app.metaData, keynames, index, amount)

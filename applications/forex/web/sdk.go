@@ -3,6 +3,8 @@ package web
 import (
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/category"
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/currency"
+	"github.com/xmnservices/xmnsuite/blockchains/applications"
+	"github.com/xmnservices/xmnsuite/blockchains/core/meta"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account"
 	walletpkg "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
@@ -20,6 +22,8 @@ type Web interface {
 // CreateParams represents the create params
 type CreateParams struct {
 	Port               int
+	Client             applications.Client
+	Meta               meta.Meta
 	EntityService      entity.Service
 	AccountService     account.Service
 	UserRepository     user.Repository
@@ -37,6 +41,8 @@ var SDKFunc = struct {
 	Create: func(params CreateParams) Web {
 		out := createWeb(
 			params.Port,
+			params.Meta,
+			params.Client,
 			params.EntityService,
 			params.AccountService,
 			params.UserRepository,

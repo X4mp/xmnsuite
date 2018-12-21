@@ -1,5 +1,61 @@
 package web
 
+type homeRequestList struct {
+	Index       int
+	Amount      int
+	TotalAmount int
+	IsLast      bool
+	Requests    []*homeRequest
+}
+
+type homeRequest struct {
+	ID         string
+	FromUserID string
+	NewName    string
+}
+
+type homeRequestSingle struct {
+	ID         string
+	FromUserID string
+	NewName    string
+	NewJS      string
+	Votes      *homeVoteList
+}
+
+type homeVoteList struct {
+	Index       int
+	Amount      int
+	TotalAmount int
+	IsLast      bool
+	Votes       []*homeVote
+}
+
+type homeVote struct {
+	ID               string
+	UserVoterID      string
+	UserAmountShares int
+	IsApproved       bool
+}
+
+type homeCategory struct {
+	ID          string
+	ParentID    string
+	Name        string
+	Description string
+}
+
+type homeCategoryList struct {
+	Index       int
+	Amount      int
+	TotalAmount int
+	IsLast      bool
+	Categories  []*homeCategory
+}
+
+type homeCategoryNew struct {
+	Users *homeUserList
+}
+
 type homeWalletList struct {
 	Index       int
 	Amount      int

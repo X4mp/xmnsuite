@@ -63,11 +63,6 @@ func saveAccountForTests(t *testing.T, usr user.User, gen genesis.Genesis, accou
 		return nil
 	}
 
-	// create the wallet repository:
-	/*walletRepository := wallet.SDKFunc.CreateRepository(wallet.CreateRepositoryParams{
-		EntityRepository: repository,
-	})*/
-
 	// create the user repository:
 	userRepository := user.SDKFunc.CreateRepository(user.CreateRepositoryParams{
 		EntityRepository: repository,

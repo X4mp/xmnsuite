@@ -24,39 +24,30 @@
            <div id="breadcrumb">
                <ul>
                    <li><a href="/">Home</a></li>
-                   <li>Categories</li>
+                   <li>Requests</li>
                </ul>
                <div class="clearfloat">&nbsp;</div>
            </div>
 
            <div class="block">
-
-               <div id="title">
-                   <h1>Categories</h1>
-                   <a href="/categories/new" class="btn right">Create</a>
-                   <span class="clearfloat">&nbsp;</span>
-               </div>
-
-               <p>Categories represents a type of currency.  Each category can have a parent.</p>
+               <h1>Requests</h1>
+               <p>Requests are made by users on the blockchain.  Each request needs to be voted by another entity type (token holders, wallet share holders, etc.)</p>
                <table class="onerow">
                    <thead>
                        <tr>
                            <td>ID</td>
-                           <td>Parent Category</td>
-                           <td>Name</td>
-                           <td>Description</td>
+                           <td>From User</td>
+                           <td>Entity Name</td>
                        </tr>
                    </thead>
                    <tbody>
-                       {{ range $key, $value := .Categories }}
+                       {{ range $key, $value := .Requests }}
                            <tr>
-                               <td><a href="/categories/{{$value.ID}}">{{$value.ID}}</a></td>
-                               <td>{{$value.ParentID}}</td>
-                               <td>{{$value.Name}}</td>
-                               <td>{{$value.Description}}</td>
+                               <td><a href="/requests/{{$value.ID}}">{{$value.ID}}</a></td>
+                               <td><a href="/users/{{$value.FromUserID}}">{{$value.FromUserID}}</a></td>
+                               <td>{{$value.NewName}}</td>
                            </tr>
                        {{ end }}
-
                    </tbody>
                </table>
            </div>

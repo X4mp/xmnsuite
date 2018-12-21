@@ -8,6 +8,7 @@ import (
 	term "github.com/nsf/termbox-go"
 	cliapp "github.com/urfave/cli"
 	"github.com/xmnservices/xmnsuite/applications/forex/commands"
+	"github.com/xmnservices/xmnsuite/applications/forex/meta"
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/category"
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/currency"
 	webserver "github.com/xmnservices/xmnsuite/applications/forex/web"
@@ -104,6 +105,8 @@ func spawn() *cliapp.Command {
 			// spawn the web server:
 			web := webserver.SDKFunc.Create(webserver.CreateParams{
 				Port:           c.Int("wport"),
+				Client:         client,
+				Meta:           meta.SDKFunc.CreateMetaData(),
 				EntityService:  entityService,
 				AccountService: accountService,
 				UserRepository: user.SDKFunc.CreateRepository(user.CreateRepositoryParams{

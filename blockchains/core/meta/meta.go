@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 )
 
 type meta struct {
@@ -34,6 +35,11 @@ func createMeta(
 		for _, oneRepresentation := range representations {
 			keyname := oneRepresentation.MetaData().Keyname()
 			allWriteOnEntReqRepresentation[keyname] = oneRepresentation
+
+			// register:
+			request.SDKFunc.Register(request.RegisterParams{
+				EntityMetaData: oneRepresentation.MetaData(),
+			})
 		}
 	}
 
@@ -99,6 +105,14 @@ func (obj *meta) AddToWriteOnEntityRequest(requestedBy entity.MetaData, rep enti
 		return errors.New(str)
 	}
 
+	// add to the list:
 	obj.wrOnEntReq[keyname].Add(rep)
+	obj.allWriteOnEntReqRepresentation[rep.MetaData().Keyname()] = rep
+
+	// register:
+	request.SDKFunc.Register(request.RegisterParams{
+		EntityMetaData: rep.MetaData(),
+	})
+
 	return nil
 }

@@ -36,6 +36,13 @@ type Service interface {
 	Save(ins Vote, rep entity.Representation) error
 }
 
+// Repository represents the vote repository
+type Repository interface {
+	RetrieveByID(id *uuid.UUID) (Vote, error)
+	RetrieveByRequestVoter(req request.Request, voter user.User) (Vote, error)
+	RetrieveSetByRequest(req request.Request, index int, amount int) (entity.PartialSet, error)
+}
+
 // CreateParams represents the Create params
 type CreateParams struct {
 	ID         *uuid.UUID
@@ -57,11 +64,17 @@ type CreateSDKServiceParams struct {
 	CreateRouteFunc CreateRouteFn
 }
 
+// CreateRepositoryParams represents the CreateRepository params
+type CreateRepositoryParams struct {
+	EntityRepository entity.Repository
+}
+
 // SDKFunc represents the vote SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Vote
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
+	CreateRepository     func(params CreateRepositoryParams) Repository
 	CreateService        func(params CreateServiceParams) Service
 	CreateSDKService     func(params CreateSDKServiceParams) Service
 }{
@@ -83,6 +96,11 @@ var SDKFunc = struct {
 	},
 	CreateRepresentation: func() entity.Representation {
 		return createRepresentation()
+	},
+	CreateRepository: func(params CreateRepositoryParams) Repository {
+		metaData := createMetaData()
+		out := createRepository(params.EntityRepository, metaData)
+		return out
 	},
 	CreateService: func(params CreateServiceParams) Service {
 		voteRepresentation := createRepresentation()

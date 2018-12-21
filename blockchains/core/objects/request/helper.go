@@ -13,6 +13,11 @@ func retrieveAllRequestsKeyname() string {
 	return "requests"
 }
 
+func retrieveAllRequestsFromUserKeyname(usr user.User) string {
+	base := retrieveAllRequestsKeyname()
+	return fmt.Sprintf("%s:by_from_id:%s", base, usr.ID().String())
+}
+
 func createMetaData(reg *registry) entity.MetaData {
 	return entity.SDKFunc.CreateMetaData(entity.CreateMetaDataParams{
 		Name: "Request",
