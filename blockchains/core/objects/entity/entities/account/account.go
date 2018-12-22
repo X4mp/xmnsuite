@@ -10,7 +10,7 @@ import (
 
 type account struct {
 	Usr user.User `json:"user"`
-	Wrk work.Work `json:"Work"`
+	Wrk work.Work `json:"work"`
 }
 
 func createAccount(usr user.User, wrk work.Work) (Account, error) {

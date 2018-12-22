@@ -7,21 +7,24 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 )
 
 type request struct {
-	UUID   *uuid.UUID    `json:"id"`
-	Frm    user.User     `json:"from"`
-	Nw     entity.Entity `json:"new_entity"`
-	NwName string        `json:"new_entity_name"`
+	UUID  *uuid.UUID      `json:"id"`
+	Frm   user.User       `json:"from"`
+	Nw    entity.Entity   `json:"new_entity"`
+	Rson  string          `json:"reason"`
+	Kname keyname.Keyname `json:"keyname"`
 }
 
-func createRequest(id *uuid.UUID, frm user.User, nw entity.Entity, newName string) Request {
+func createRequest(id *uuid.UUID, frm user.User, nw entity.Entity, reason string, kname keyname.Keyname) Request {
 	out := request{
-		UUID:   id,
-		Frm:    frm,
-		Nw:     nw,
-		NwName: newName,
+		UUID:  id,
+		Frm:   frm,
+		Nw:    nw,
+		Rson:  reason,
+		Kname: kname,
 	}
 
 	return &out
@@ -39,14 +42,24 @@ func createRequestFromNormalized(normalized *normalizedRequest) (Request, error)
 		return nil, fromInsErr
 	}
 
-	ins, insErr := reg.fromJSONToEntity(normalized.NewEntityJS, normalized.NewEntityName)
-	if insErr != nil {
-		return nil, insErr
+	knameIns, knameInsErr := keyname.SDKFunc.CreateMetaData().Denormalize()(normalized.Keyname)
+	if knameInsErr != nil {
+		return nil, knameInsErr
 	}
 
 	if from, ok := fromIns.(user.User); ok {
-		out := createRequest(&id, from, ins, normalized.NewEntityName)
-		return out, nil
+		if kname, ok := knameIns.(keyname.Keyname); ok {
+			ins, insErr := reg.fromJSONToEntity(normalized.NewEntityJS, kname.Name())
+			if insErr != nil {
+				return nil, insErr
+			}
+
+			out := createRequest(&id, from, ins, normalized.Reason, kname)
+			return out, nil
+		}
+
+		str := fmt.Sprintf("the entity (ID: %s) is not a valid Keyname instance", knameIns.ID().String())
+		return nil, errors.New(str)
 	}
 
 	str := fmt.Sprintf("the entity (ID: %s) is not a valid User instance", fromIns.ID().String())
@@ -68,7 +81,12 @@ func (req *request) New() entity.Entity {
 	return req.Nw
 }
 
-// NewName returns the new entity name
-func (req *request) NewName() string {
-	return req.NwName
+// Reason returns the reason
+func (req *request) Reason() string {
+	return req.Rson
+}
+
+// Keyname returns the keyname
+func (req *request) Keyname() keyname.Keyname {
+	return req.Kname
 }

@@ -7,13 +7,15 @@ import (
 
 	"github.com/xmnservices/xmnsuite/applications/forex/objects/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/transfer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/validator"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/group"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/balance"
@@ -97,24 +99,44 @@ var SDKFunc = struct {
 		linkRepresentation := link.SDKFunc.CreateRepresentation()
 		nodeRepresentation := node.SDKFunc.CreateRepresentation()
 		requestRepresentation := request.SDKFunc.CreateRepresentation()
+		keynameRepresentation := keyname.SDKFunc.CreateRepresentation()
+		groupRepresentation := group.SDKFunc.CreateRepresentation()
 		voteRepresentation := vote.SDKFunc.CreateRepresentation()
 		withdrawalRepresentation := withdrawal.SDKFunc.CreateRepresentation()
 		depositRepresentation := deposit.SDKFunc.CreateRepresentation()
 
+		// create the additional writes:
+		additionalWrites := map[string]entity.Representation{
+			keynameRepresentation.MetaData().Keyname(): keynameRepresentation,
+			groupRepresentation.MetaData().Keyname():   groupRepresentation,
+		}
+
+		// add the additional writes to the map:
+		for keyname, oneAdditionalWrite := range additionalWrites {
+			if _, ok := write[keyname]; ok {
+				str := fmt.Sprintf("the keyname (%s) in the 'write' metaData is reserved for the core engine", keyname)
+				panic(errors.New(str))
+			}
+
+			write[keyname] = oneAdditionalWrite
+		}
+
 		// create the read:
 		additionalReads := map[string]entity.MetaData{
-			"genesis":    genesisRepresentation.MetaData(),
-			"wallet":     walletRepresentation.MetaData(),
-			"validator":  validatorRepresentation.MetaData(),
-			"user":       userRepresentation.MetaData(),
-			"request":    requestRepresentation.MetaData(),
-			"vote":       voteRepresentation.MetaData(),
-			"pledge":     pledgeRepresentation.MetaData(),
-			"transfer":   transferRepresentation.MetaData(),
-			"link":       linkRepresentation.MetaData(),
-			"node":       nodeRepresentation.MetaData(),
-			"withdrawal": withdrawalRepresentation.MetaData(),
-			"deposit":    depositRepresentation.MetaData(),
+			genesisRepresentation.MetaData().Keyname():    genesisRepresentation.MetaData(),
+			walletRepresentation.MetaData().Keyname():     walletRepresentation.MetaData(),
+			validatorRepresentation.MetaData().Keyname():  validatorRepresentation.MetaData(),
+			userRepresentation.MetaData().Keyname():       userRepresentation.MetaData(),
+			requestRepresentation.MetaData().Keyname():    requestRepresentation.MetaData(),
+			voteRepresentation.MetaData().Keyname():       voteRepresentation.MetaData(),
+			pledgeRepresentation.MetaData().Keyname():     pledgeRepresentation.MetaData(),
+			transferRepresentation.MetaData().Keyname():   transferRepresentation.MetaData(),
+			linkRepresentation.MetaData().Keyname():       linkRepresentation.MetaData(),
+			nodeRepresentation.MetaData().Keyname():       nodeRepresentation.MetaData(),
+			withdrawalRepresentation.MetaData().Keyname(): withdrawalRepresentation.MetaData(),
+			depositRepresentation.MetaData().Keyname():    depositRepresentation.MetaData(),
+			keynameRepresentation.MetaData().Keyname():    keynameRepresentation.MetaData(),
+			groupRepresentation.MetaData().Keyname():      groupRepresentation.MetaData(),
 		}
 
 		// add the additional reads to the map:
@@ -158,7 +180,7 @@ var SDKFunc = struct {
 							log.Printf("the entity (ID: %s) is not a valid Vote instance", oneVoteIns.ID().String())
 						}
 
-						// if there is enugh approved or disapproved votes, the concensus passed:
+						// if there is enough approved or disapproved votes, the concensus passed:
 						concensusPassed := (approved >= neededConcensus) || (disapproved >= neededConcensus)
 
 						// vote is approved, insert the new entity:
@@ -177,11 +199,11 @@ var SDKFunc = struct {
 
 		// create the additional writes for wallets:
 		additionalWriteForWallet := createEntityRequest(walletRepresentation, map[string]entity.Representation{
-			"pledge":    pledgeRepresentation,
-			"transfer":  transferRepresentation,
-			"user":      userRepresentation,
-			"validator": validatorRepresentation,
-			"wallet":    walletRepresentation, // for updates
+			pledgeRepresentation.MetaData().Keyname():    pledgeRepresentation,
+			transferRepresentation.MetaData().Keyname():  transferRepresentation,
+			userRepresentation.MetaData().Keyname():      userRepresentation,
+			validatorRepresentation.MetaData().Keyname(): validatorRepresentation,
+			walletRepresentation.MetaData().Keyname():    walletRepresentation, // for updates
 		}, walletVoteService)
 
 		// create the token vote service:
@@ -253,8 +275,8 @@ var SDKFunc = struct {
 		// create the additional writes for tokens:
 		tokenRepresentation := token.SDKFunc.CreateRepresentation()
 		additionalWriteForToken := createEntityRequest(tokenRepresentation, map[string]entity.Representation{
-			"link": linkRepresentation,
-			"node": nodeRepresentation,
+			linkRepresentation.MetaData().Keyname(): linkRepresentation,
+			nodeRepresentation.MetaData().Keyname(): nodeRepresentation,
 		}, tokenVoteService)
 
 		// add the additional writes for wallet:

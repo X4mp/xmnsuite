@@ -7,6 +7,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 )
 
 func retrieveAllRequestsKeyname() string {
@@ -16,6 +17,11 @@ func retrieveAllRequestsKeyname() string {
 func retrieveAllRequestsFromUserKeyname(usr user.User) string {
 	base := retrieveAllRequestsKeyname()
 	return fmt.Sprintf("%s:by_from_id:%s", base, usr.ID().String())
+}
+
+func retrieveAllRequestsByKeynameKeyname(kname keyname.Keyname) string {
+	base := retrieveAllRequestsKeyname()
+	return fmt.Sprintf("%s:by_keyname_id:%s", base, kname.ID().String())
 }
 
 func createMetaData(reg *registry) entity.MetaData {
@@ -35,20 +41,35 @@ func createMetaData(reg *registry) entity.MetaData {
 					return nil, errors.New(str)
 				}
 
-				newIns, newInsErr := reg.fromJSONToEntity(storable.NewEntityJS, storable.NewEntityName)
-				if newInsErr != nil {
-					return nil, newInsErr
+				knameID, knameIDErr := uuid.FromString(storable.KeynameID)
+				if knameIDErr != nil {
+					str := fmt.Sprintf("the storable KeynameID (%s) is invalid: %s", storable.KeynameID, knameIDErr.Error())
+					return nil, errors.New(str)
 				}
 
-				userMetaData := user.SDKFunc.CreateMetaData()
-				from, fromErr := rep.RetrieveByID(userMetaData, &fromID)
-				if fromErr != nil {
-					return nil, fromErr
+				fromIns, fromInsErr := rep.RetrieveByID(user.SDKFunc.CreateMetaData(), &fromID)
+				if fromInsErr != nil {
+					return nil, fromInsErr
 				}
 
-				if fromUser, ok := from.(user.User); ok {
-					out := createRequest(&id, fromUser, newIns, storable.NewEntityName)
-					return out, nil
+				knameIns, knameInsErr := rep.RetrieveByID(keyname.SDKFunc.CreateMetaData(), &knameID)
+				if knameInsErr != nil {
+					return nil, knameInsErr
+				}
+
+				if fromUser, ok := fromIns.(user.User); ok {
+					if kname, ok := knameIns.(keyname.Keyname); ok {
+						newIns, newInsErr := reg.fromJSONToEntity(storable.NewEntityJS, kname.Name())
+						if newInsErr != nil {
+							return nil, newInsErr
+						}
+
+						out := createRequest(&id, fromUser, newIns, storable.Reason, kname)
+						return out, nil
+					}
+
+					str := fmt.Sprintf("the entity (ID: %s) is not a valid Keyname instance", knameIns.ID().String())
+					return nil, errors.New(str)
 				}
 
 				str := fmt.Sprintf("the entity (ID: %s) is not a valid User instance", id.String())

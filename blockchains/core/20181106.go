@@ -29,11 +29,14 @@ const maxAmountOfEntitiesToRetrieve = 500
 
 type incomingVote struct {
 	ID         string `json:"id"`
+	Reason     string `json:"reason"`
+	IsNeutral  bool   `json:"is_neutral"`
 	IsApproved bool   `json:"is_approved"`
 }
 
 type incomingRequest struct {
 	ID         string `json:"id"`
+	Reason     string `json:"reason"`
 	WalletID   string `json:"wallet_id"`
 	EntityJSON []byte `json:"entity"`
 }
@@ -644,7 +647,7 @@ func (app *core20181108) deleteEntityByID() routers.CreateRouteParams {
 
 func (app *core20181108) saveRequest() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
-		Pattern: fmt.Sprintf("%s/<name|[a-z-]+>/requests", app.routePrefix),
+		Pattern: fmt.Sprintf("%s/<keyname|[a-z-]+>/requests", app.routePrefix),
 		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
 
 			// create the dependencies:
@@ -692,67 +695,80 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 					return nil, errors.New(str)
 				}
 
-				// retrieve the name:
-				allRequestRepresentations := app.meta.WriteOnAllEntityRequest()
-				if name, ok := params["name"]; ok {
-					// retrieve the entity representation:
-					if representation, ok := allRequestRepresentations[name]; ok {
-						// converts the data to an entity:
-						ins, insErr := representation.MetaData().ToEntity()(dep.entityRepository, ptr.EntityJSON)
-						if insErr != nil {
-							return nil, insErr
-						}
-
-						// create the request:
-						req := request.SDKFunc.Create(request.CreateParams{
-							ID:             &reqID,
-							FromUser:       usr,
-							NewEntity:      ins,
-							EntityMetaData: representation.MetaData(),
-						})
-
-						// save the request:
-						representation := request.SDKFunc.CreateRepresentation()
-						saveErr := dep.entityService.Save(req, representation)
-						if saveErr != nil {
-							return nil, saveErr
-						}
-
-						// enable the voting on the request:
-						store.Roles().EnableWriteAccess(app.routerRoleKey, fmt.Sprintf("%s/%s/requests/%s/[a-z-]+", app.routePrefix, name, reqID.String()))
-
-						// convert to json:
-						storable, storableErr := representation.ToStorable()(req)
-						if storableErr != nil {
-							return nil, storableErr
-						}
-
-						jsData, jsDataErr := cdc.MarshalJSON(storable)
-						if jsDataErr != nil {
-							return nil, jsDataErr
-						}
-
-						// create the gaz price:
-						gazUsed := int(unsafe.Sizeof(jsData)) * gen.GazPricePerKb()
-
-						// return the response:
-						resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
-							Code:    routers.IsSuccessful,
-							Log:     "success",
-							GazUsed: int64(gazUsed),
-							Tags: map[string][]byte{
-								path: jsData,
-							},
-						})
-
-						return resp, nil
+				if keynameName, ok := params["keyname"]; ok {
+					// retrieve the keyname by name:
+					kname, knameErr := dep.keynameRepository.RetrieveByName(keynameName)
+					if knameErr != nil {
+						str := fmt.Sprintf("the keyname (name: %s) is invalid: %s", keynameName, knameErr.Error())
+						return nil, errors.New(str)
 					}
 
-					str := fmt.Sprintf("the given entity name (%s) is not supported for requests", name)
+					// retrieve the representation:
+					wrOnEntityReq := app.meta.WriteOnEntityRequest()
+					if wrReq, ok := wrOnEntityReq[kname.Group().Name()]; ok {
+						mp := wrReq.Map()
+						if representation, ok := mp[kname.Name()]; ok {
+							// converts the data to an entity:
+							ins, insErr := representation.MetaData().ToEntity()(dep.entityRepository, ptr.EntityJSON)
+							if insErr != nil {
+								return nil, insErr
+							}
+
+							// create the request:
+							req := request.SDKFunc.Create(request.CreateParams{
+								ID:        &reqID,
+								FromUser:  usr,
+								NewEntity: ins,
+								Reason:    ptr.Reason,
+								Keyname:   kname,
+							})
+
+							// save the request:
+							representation := request.SDKFunc.CreateRepresentation()
+							saveErr := dep.entityService.Save(req, representation)
+							if saveErr != nil {
+								return nil, saveErr
+							}
+
+							// enable the voting on the request:
+							store.Roles().EnableWriteAccess(app.routerRoleKey, fmt.Sprintf("%s/%s/requests/%s", app.routePrefix, kname.Name(), req.ID().String()))
+
+							// convert to json:
+							storable, storableErr := representation.ToStorable()(req)
+							if storableErr != nil {
+								return nil, storableErr
+							}
+
+							jsData, jsDataErr := cdc.MarshalJSON(storable)
+							if jsDataErr != nil {
+								return nil, jsDataErr
+							}
+
+							// create the gaz price:
+							gazUsed := int(unsafe.Sizeof(jsData)) * gen.GazPricePerKb()
+
+							// return the response:
+							resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
+								Code:    routers.IsSuccessful,
+								Log:     "success",
+								GazUsed: int64(gazUsed),
+								Tags: map[string][]byte{
+									path: jsData,
+								},
+							})
+
+							return resp, nil
+						}
+
+						str := fmt.Sprintf("the keyname (%s) is not supported on the group (%s) for requests", kname.Name(), kname.Group().Name())
+						return nil, errors.New(str)
+					}
+
+					str := fmt.Sprintf("the group (%s) is not supported for requests", kname.Group().Name())
 					return nil, errors.New(str)
 				}
 
-				return nil, errors.New("an entity name must be provided")
+				return nil, errors.New("the keyname is mandatory")
 			}
 
 			str := fmt.Sprintf("the entity (ID: %s) was expected to be a wallet instance", walIns.ID().String())
@@ -763,67 +779,66 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 
 func (app *core20181108) saveEntityRequestVote() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
-		Pattern: fmt.Sprintf("%s/<entityname|[a-z-]+>/requests/<requestid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>/<name|[a-z-]+>", app.routePrefix),
+		Pattern: fmt.Sprintf("%s/<keyname|[a-z-]+>/requests/<requestid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", app.routePrefix),
 		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
-			entityRequests := app.meta.WriteOnEntityRequest()
-			if entityRequest, ok := entityRequests[params["name"]]; ok {
-				// create the dependencies:
-				dep := createDependencies(store)
+			// create the dependencies:
+			dep := createDependencies(store)
 
-				// retrieve the genesis:
-				gen, genErr := dep.genesisRepository.Retrieve()
-				if genErr != nil {
-					str := fmt.Sprintf("there was an error while retrieving the Genesis instance: %s", genErr.Error())
-					return nil, errors.New(str)
-				}
+			// retrieve the genesis:
+			gen, genErr := dep.genesisRepository.Retrieve()
+			if genErr != nil {
+				str := fmt.Sprintf("there was an error while retrieving the Genesis instance: %s", genErr.Error())
+				return nil, errors.New(str)
+			}
 
-				// parse the requestID:
-				requestID, requestIDErr := uuid.FromString(params["requestid"])
-				if requestIDErr != nil {
-					str := fmt.Sprintf("the given requestID (%s) is invalid: %s", params["requestid"], requestIDErr.Error())
-					return nil, errors.New(str)
-				}
+			// parse the requestID:
+			requestID, requestIDErr := uuid.FromString(params["requestid"])
+			if requestIDErr != nil {
+				str := fmt.Sprintf("the given requestID (%s) is invalid: %s", params["requestid"], requestIDErr.Error())
+				return nil, errors.New(str)
+			}
 
-				// retrieve the request:
-				reqIns, reqInsErr := dep.entityRepository.RetrieveByID(app.meta.Request().MetaData(), &requestID)
-				if reqInsErr != nil {
-					return nil, reqInsErr
-				}
+			// retrieve the request:
+			reqIns, reqInsErr := dep.entityRepository.RetrieveByID(app.meta.Request().MetaData(), &requestID)
+			if reqInsErr != nil {
+				return nil, reqInsErr
+			}
 
-				if req, ok := reqIns.(request.Request); ok {
-					// convert the data to the incoming vote:
-					ptr := new(incomingVote)
-					jsErr := cdc.UnmarshalJSON(data, ptr)
-					if jsErr != nil {
-						return nil, jsErr
-					}
+			if req, ok := reqIns.(request.Request); ok {
+				entityRequests := app.meta.WriteOnEntityRequest()
+				if entityRequest, ok := entityRequests[req.Keyname().Group().Name()]; ok {
+					if keynameName, ok := params["keyname"]; ok {
+						// convert the data to the incoming vote:
+						ptr := new(incomingVote)
+						jsErr := cdc.UnmarshalJSON(data, ptr)
+						if jsErr != nil {
+							return nil, jsErr
+						}
 
-					// retrieve the name:
-					if entityName, ok := params["entityname"]; ok {
-						// retrieve the representation:
-						requestRepresentations := entityRequest.Map()
-						if representation, ok := requestRepresentations[entityName]; ok {
+						// retrieve the voter:
+						voter, voterErr := dep.userRepository.RetrieveByPubKeyAndWallet(from, req.From().Wallet())
+						if voterErr != nil {
+							return nil, voterErr
+						}
 
-							// retrieve the voter:
-							voter, voterErr := dep.userRepository.RetrieveByPubKeyAndWallet(from, req.From().Wallet())
-							if voterErr != nil {
-								return nil, voterErr
-							}
+						voteID, voteIDErr := uuid.FromString(ptr.ID)
+						if voteIDErr != nil {
+							str := fmt.Sprintf("the given voteID (%s) is invalid: %s", ptr.ID, voteIDErr.Error())
+							return nil, errors.New(str)
+						}
 
-							voteID, voteIDErr := uuid.FromString(ptr.ID)
-							if voteIDErr != nil {
-								str := fmt.Sprintf("the given voteID (%s) is invalid: %s", ptr.ID, voteIDErr.Error())
-								return nil, errors.New(str)
-							}
+						// create the vote:
+						voteIns := vote.SDKFunc.Create(vote.CreateParams{
+							ID:         &voteID,
+							Request:    req,
+							Voter:      voter,
+							Reason:     ptr.Reason,
+							IsNeutral:  ptr.IsNeutral,
+							IsApproved: ptr.IsApproved,
+						})
 
-							// create the vote:
-							voteIns := vote.SDKFunc.Create(vote.CreateParams{
-								ID:         &voteID,
-								Request:    req,
-								Voter:      voter,
-								IsApproved: ptr.IsApproved,
-							})
-
+						representations := entityRequest.Map()
+						if representation, ok := representations[keynameName]; ok {
 							saveErr := entityRequest.VoteService(store).Save(voteIns, representation)
 							if saveErr != nil {
 								return nil, saveErr
@@ -854,21 +869,20 @@ func (app *core20181108) saveEntityRequestVote() routers.CreateRouteParams {
 							})
 
 							return resp, nil
-
 						}
 
-						str := fmt.Sprintf("the given entityName (%s) is not supported", entityName)
+						str := fmt.Sprintf("the keyname (name: %s) cannot be voted on by group (name: %s)", keynameName, req.Keyname().Group().Name())
 						return nil, errors.New(str)
 					}
 
-					return nil, errors.New("an entityName must be provided")
+					return nil, errors.New("an keyname must be provided")
 				}
 
-				str := fmt.Sprintf("the entity (ID: %s) was expected to be a request instance", reqIns.ID().String())
+				str := fmt.Sprintf("the group (name: %s) is not an entity that can be voted on", req.Keyname().Group().Name())
 				return nil, errors.New(str)
 			}
 
-			str := fmt.Sprintf("the name (%s) is not an entity that can be voted on", params["name"])
+			str := fmt.Sprintf("the entity (ID: %s) is not a valid Request instance", reqIns.ID().String())
 			return nil, errors.New(str)
 		},
 	}

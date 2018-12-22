@@ -8,7 +8,9 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 	"github.com/xmnservices/xmnsuite/crypto"
+	"github.com/xmnservices/xmnsuite/datastore"
 )
 
 // Request represents an entity request
@@ -16,7 +18,8 @@ type Request interface {
 	ID() *uuid.UUID
 	From() user.User
 	New() entity.Entity
-	NewName() string
+	Reason() string
+	Keyname() keyname.Keyname
 }
 
 // Normalized represents a normalized request
@@ -37,10 +40,11 @@ type Repository interface {
 
 // CreateParams represents the create params
 type CreateParams struct {
-	ID             *uuid.UUID
-	FromUser       user.User
-	NewEntity      entity.Entity
-	EntityMetaData entity.MetaData
+	ID        *uuid.UUID
+	FromUser  user.User
+	NewEntity entity.Entity
+	Reason    string
+	Keyname   keyname.Keyname
 }
 
 // CreateSDKServiceParams represents the CreateSDKService params
@@ -78,8 +82,7 @@ var SDKFunc = struct {
 		}
 
 		// get the keyname:
-		name := params.EntityMetaData.Keyname()
-		out := createRequest(params.ID, params.FromUser, params.NewEntity, name)
+		out := createRequest(params.ID, params.FromUser, params.NewEntity, params.Reason, params.Keyname)
 		return out
 	},
 	Register: func(params RegisterParams) {
@@ -113,10 +116,46 @@ var SDKFunc = struct {
 					return []string{
 						retrieveAllRequestsKeyname(),
 						retrieveAllRequestsFromUserKeyname(req.From()),
+						retrieveAllRequestsByKeynameKeyname(req.Keyname()),
 					}, nil
 				}
 
 				return nil, errors.New("the given entity is not a valid Request instance")
+			},
+			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+				if req, ok := ins.(Request); ok {
+					// metadata:
+					metaData := createMetaData(reg)
+					keynameRepresentation := keyname.SDKFunc.CreateRepresentation()
+
+					// create the repository and service:
+					repository := entity.SDKFunc.CreateRepository(ds)
+					service := entity.SDKFunc.CreateService(ds)
+					keynameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+						EntityRepository: repository,
+					})
+
+					// the request:
+					_, retKnameErr := repository.RetrieveByID(metaData, req.ID())
+					if retKnameErr == nil {
+						str := fmt.Sprintf("the Request (ID: %s) already exists", req.ID().String())
+						return errors.New(str)
+					}
+
+					// if the keyname does not exists, create it:
+					_, retKeynameErr := keynameRepository.RetrieveByName(req.Keyname().Name())
+					if retKeynameErr != nil {
+						saveErr := service.Save(req.Keyname(), keynameRepresentation)
+						if saveErr != nil {
+							return saveErr
+						}
+					}
+
+					return nil
+				}
+
+				str := fmt.Sprintf("the given entity (ID: %s) is not a valid Keyname instance", ins.ID().String())
+				return errors.New(str)
 			},
 		})
 	},

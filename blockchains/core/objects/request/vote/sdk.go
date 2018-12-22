@@ -24,6 +24,8 @@ type Vote interface {
 	ID() *uuid.UUID
 	Request() request.Request
 	Voter() user.User
+	Reason() string
+	IsNeutral() bool
 	IsApproved() bool
 }
 
@@ -48,7 +50,9 @@ type CreateParams struct {
 	ID         *uuid.UUID
 	Request    request.Request
 	Voter      user.User
+	Reason     string
 	IsApproved bool
+	IsNeutral  bool
 }
 
 // CreateServiceParams represents the CreateService params
@@ -84,7 +88,7 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out, outErr := createVote(params.ID, params.Request, params.Voter, params.IsApproved)
+		out, outErr := createVote(params.ID, params.Request, params.Voter, params.Reason, params.IsNeutral, params.IsApproved)
 		if outErr != nil {
 			panic(outErr)
 		}

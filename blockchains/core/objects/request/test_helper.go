@@ -3,6 +3,8 @@ package request
 import (
 	"reflect"
 	"testing"
+
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 )
 
 // CompareRequestForTests compares 2 Request instances for tests
@@ -23,4 +25,7 @@ func CompareRequestForTests(t *testing.T, first Request, second Request) {
 		t.Errorf("the new from user ID is invalid, expected: %s, returned: %s", first.From().ID().String(), second.From().ID().String())
 		return
 	}
+
+	// compare the keynames:
+	keyname.CompareKeynameForTests(t, first.Keyname(), second.Keyname())
 }

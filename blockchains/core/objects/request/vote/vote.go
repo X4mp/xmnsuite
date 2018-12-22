@@ -6,18 +6,20 @@ import (
 	"fmt"
 
 	uuid "github.com/satori/go.uuid"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 )
 
 type vote struct {
-	UUID   *uuid.UUID      `json:"id"`
-	Req    request.Request `json:"request"`
-	Votr   user.User       `json:"voter"`
-	IsAppr bool            `json:"is_approved"`
+	UUID     *uuid.UUID      `json:"id"`
+	Req      request.Request `json:"request"`
+	Votr     user.User       `json:"voter"`
+	Rson     string          `json:"reason"`
+	IsNeutrl bool            `json:"is_neutral"`
+	IsAppr   bool            `json:"is_approved"`
 }
 
-func createVote(id *uuid.UUID, req request.Request, votr user.User, isApproved bool) (Vote, error) {
+func createVote(id *uuid.UUID, req request.Request, votr user.User, reason string, isNeutrl bool, isApproved bool) (Vote, error) {
 	// make sure the voter has the same walletID as the requester:
 	requesterWalletID := req.From().Wallet().ID()
 	voterWalletID := votr.Wallet().ID()
@@ -26,11 +28,18 @@ func createVote(id *uuid.UUID, req request.Request, votr user.User, isApproved b
 		return nil, errors.New(str)
 	}
 
+	if isNeutrl == isApproved {
+		str := fmt.Sprintf("the vote cannot have the same value for neutral and approved")
+		return nil, errors.New(str)
+	}
+
 	out := vote{
-		UUID:   id,
-		Req:    req,
-		Votr:   votr,
-		IsAppr: isApproved,
+		UUID:     id,
+		Req:      req,
+		Votr:     votr,
+		Rson:     reason,
+		IsNeutrl: isNeutrl,
+		IsAppr:   isApproved,
 	}
 
 	return &out, nil
@@ -54,7 +63,7 @@ func createVoteFromNormalized(normalized *normalizedVote) (Vote, error) {
 
 	if req, ok := reqIns.(request.Request); ok {
 		if voter, ok := voterIns.(user.User); ok {
-			return createVote(&id, req, voter, normalized.IsApproved)
+			return createVote(&id, req, voter, normalized.Reason, normalized.IsNeutral, normalized.IsApproved)
 		}
 
 		str := fmt.Sprintf("the entity (ID: %s) is not a valid User instance", voterIns.ID().String())
@@ -78,6 +87,16 @@ func (obj *vote) Request() request.Request {
 // Voter returns the voter
 func (obj *vote) Voter() user.User {
 	return obj.Votr
+}
+
+// IsApproved returns true if the vote is approved, false otherwise
+func (obj *vote) Reason() string {
+	return obj.Rson
+}
+
+// IsNeutral returns true if the vote is neutral, false otherwise
+func (obj *vote) IsNeutral() bool {
+	return obj.IsNeutrl
 }
 
 // IsApproved returns true if the vote is approved, false otherwise

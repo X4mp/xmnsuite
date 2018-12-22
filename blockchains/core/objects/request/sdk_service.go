@@ -12,6 +12,7 @@ import (
 
 type outgoingRequest struct {
 	ID         string `json:"id"`
+	Reason     string `json:"reason"`
 	WalletID   string `json:"wallet_id"`
 	EntityJSON []byte `json:"entity"`
 }
@@ -45,6 +46,7 @@ func (app *sdkService) Save(req Request, rep entity.Representation) error {
 
 	outReq := outgoingRequest{
 		ID:         req.ID().String(),
+		Reason:     req.Reason(),
 		WalletID:   req.From().Wallet().ID().String(),
 		EntityJSON: insJS,
 	}
@@ -55,7 +57,7 @@ func (app *sdkService) Save(req Request, rep entity.Representation) error {
 	}
 
 	// create the resource:
-	route := fmt.Sprintf("%s/%s/requests", app.routePrefix, rep.MetaData().Keyname())
+	route := fmt.Sprintf("%s/%s/requests", app.routePrefix, req.Keyname().Name())
 	firstRes := routers.SDKFunc.CreateResource(routers.CreateResourceParams{
 		ResPtr: routers.SDKFunc.CreateResourcePointer(routers.CreateResourcePointerParams{
 			From: app.pk.PublicKey(),

@@ -52,7 +52,7 @@ func (app *repository) RetrieveByID(met MetaData, id *uuid.UUID) (Entity, error)
 	// retrieve the instance:
 	amountRet := app.store.Objects().Retrieve(&obj)
 	if amountRet != 1 {
-		str := fmt.Sprintf("there was an error while retrieving the %s instance, on keyname: %s", met.Name(), key)
+		str := fmt.Sprintf("there was an error while retrieving the %s instance, on keyname: %s: amount of elements in the database: %d", met.Name(), key, amountRet)
 		return nil, errors.New(str)
 	}
 

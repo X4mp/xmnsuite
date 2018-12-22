@@ -60,7 +60,7 @@ func createMetaData() entity.MetaData {
 
 				if req, ok := reqIns.(request.Request); ok {
 					if usr, ok := usrIns.(user.User); ok {
-						out, outErr := createVote(&id, req, usr, storable.IsAppr)
+						out, outErr := createVote(&id, req, usr, storable.Reason, storable.IsNeutral, storable.IsAppr)
 						if outErr != nil {
 							return nil, outErr
 						}

@@ -20,6 +20,8 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/work"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/group"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/link"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/node"
@@ -28,13 +30,13 @@ import (
 
 func createWalletVoteRouteFunc(routePrefix string) vote.CreateRouteFn {
 	return func(ins vote.Vote, rep entity.Representation) (string, error) {
-		return fmt.Sprintf("%s/%s/requests/%s/wallet", routePrefix, rep.MetaData().Keyname(), ins.Request().ID().String()), nil
+		return fmt.Sprintf("%s/%s/requests/%s", routePrefix, rep.MetaData().Keyname(), ins.Request().ID().String()), nil
 	}
 }
 
 func createTokenVoteRouteFunc(routePrefix string) vote.CreateRouteFn {
 	return func(ins vote.Vote, rep entity.Representation) (string, error) {
-		return fmt.Sprintf("%s/%s/requests/%s/token", routePrefix, rep.MetaData().Keyname(), ins.Request().ID().String()), nil
+		return fmt.Sprintf("%s/%s/requests/%s", routePrefix, rep.MetaData().Keyname(), ins.Request().ID().String()), nil
 	}
 }
 
@@ -216,6 +218,42 @@ func spawnBlockchainWithGenesisForTests(t *testing.T, pk crypto.PrivateKey, root
 	genInstances := retGenSetByIntersectKeynames.Instances()
 	genesis.CompareGenesisForTests(t, genIns, genInstances[0].(genesis.Genesis))
 
+	// save the request group and keyname:
+	meta := meta.SDKFunc.Create(meta.CreateParams{})
+	entReqs := meta.WriteOnEntityRequest()
+	for _, entReq := range entReqs {
+		grp := group.SDKFunc.Create(group.CreateParams{
+			Name: entReq.RequestedBy().MetaData().Keyname(),
+		})
+
+		mp := entReq.Map()
+		keynameRepresentation := keyname.SDKFunc.CreateRepresentation()
+		for _, oneRepresentation := range mp {
+			kname := keyname.SDKFunc.Create(keyname.CreateParams{
+				Name:  oneRepresentation.MetaData().Keyname(),
+				Group: grp,
+			})
+
+			// save the keyname:
+			saveKeynameErr := service.Save(kname, keynameRepresentation)
+			if saveKeynameErr != nil {
+				t.Errorf("the returned error was expected to be nil, error returned: %s", saveKeynameErr.Error())
+				return nil, nil, nil, nil
+			}
+
+			// retrieve the keyname:
+			retKeyname, retKeynameErr := repository.RetrieveByID(keynameRepresentation.MetaData(), kname.ID())
+			if retKeynameErr != nil {
+				t.Errorf("the returned error was expected to be nil, error returned: %s", retKeynameErr.Error())
+				return nil, nil, nil, nil
+			}
+
+			// compare the keyname instances:
+			keyname.CompareKeynameForTests(t, kname, retKeyname.(keyname.Keyname))
+		}
+
+	}
+
 	// returns:
 	return node, client, service, repository
 }
@@ -255,28 +293,6 @@ func saveEntityThenRetrieveEntityByIDThenDeleteEntityByID(
 
 	// return the retrieved entity:
 	return retInsID
-}
-
-func spawnBlockchainWithGenesisThenSaveRequestThenSaveVotesForTests(
-	t *testing.T,
-	pk crypto.PrivateKey,
-	rootPath string,
-	routePrefix string,
-	gen genesis.Genesis,
-	representation entity.Representation,
-	req request.Request,
-	votesPK []crypto.PrivateKey,
-	reqVotes []vote.Vote,
-	createRouteFunc vote.CreateRouteFn,
-) (applications.Node, applications.Client, entity.Service, entity.Repository, request.Service) {
-	// spawn bockchain with genesis instance:
-	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, gen)
-
-	// save the request then save votes:
-	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, representation, req, votesPK, reqVotes, createRouteFunc)
-
-	// return:
-	return node, client, service, repository, requestService
 }
 
 func saveRequestThenSaveVotesForTests(
@@ -387,11 +403,22 @@ func saveLink(
 	// create the representations:
 	linkRepresentation := link.SDKFunc.CreateRepresentation()
 
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(link.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
 	// create the link request:
 	newLinkRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       fromUser,
-		NewEntity:      lnk,
-		EntityMetaData: link.SDKFunc.CreateMetaData(),
+		FromUser:  fromUser,
+		NewEntity: lnk,
+		Reason:    "TEST",
+		Keyname:   kname,
 	})
 
 	// create our user vote:
@@ -428,11 +455,22 @@ func saveNode(
 	// save the link:
 	saveLink(t, routePrefix, client, pk, service, repository, fromUser, lnk)
 
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(node.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
 	// create the node request:
 	newNodeRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       fromUser,
-		NewEntity:      nod,
-		EntityMetaData: node.SDKFunc.CreateMetaData(),
+		FromUser:  fromUser,
+		NewEntity: nod,
+		Reason:    "TEST",
+		Keyname:   kname,
 	})
 
 	// create our user vote:
@@ -485,11 +523,22 @@ func savePledge(
 	// compare the wallets:
 	wallet.CompareWalletsForTests(t, toWallet.(wallet.Wallet), toAcc.User().Wallet())
 
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(pledge.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
 	// create the user in wallet request:
 	pldgeRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       fromGen.User(),
-		NewEntity:      pldge,
-		EntityMetaData: pledge.SDKFunc.CreateMetaData(),
+		FromUser:  fromGen.User(),
+		NewEntity: pldge,
+		Reason:    "TEST",
+		Keyname:   kname,
 	})
 
 	// create our user vote:

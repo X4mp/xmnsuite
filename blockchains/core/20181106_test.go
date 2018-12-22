@@ -21,6 +21,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/work"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/link"
@@ -318,11 +319,26 @@ func TestSaveGenesis_addUserToWallet_addAnotherUserToWallerWithSamePublicKey_sav
 		os.RemoveAll(rootPath)
 	}()
 
+	// spawn bockchain with genesis instance:
+	node, client, _, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, genIns)
+	defer node.Stop()
+
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(user.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
 	// create the user in wallet request:
 	req := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       genIns.User(),
-		NewEntity:      userIns,
-		EntityMetaData: user.SDKFunc.CreateMetaData(),
+		FromUser:  genIns.User(),
+		NewEntity: userIns,
+		Reason:    "TEST",
+		Keyname:   kname,
 	})
 
 	// create the request vote:
@@ -331,10 +347,6 @@ func TestSaveGenesis_addUserToWallet_addAnotherUserToWallerWithSamePublicKey_sav
 		Voter:      genIns.User(),
 		IsApproved: true,
 	})
-
-	// spawn bockchain with genesis instance:
-	node, client, _, _ := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, genIns)
-	defer node.Stop()
 
 	// create the request service:
 	requestService := request.SDKFunc.CreateSDKService(request.CreateSDKServiceParams{
@@ -378,11 +390,26 @@ func TestSaveGenesis_createNewUserOnWallet_Success(t *testing.T) {
 		os.RemoveAll(rootPath)
 	}()
 
+	// spawn bockchain with genesis instance:
+	node, client, _, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, genIns)
+	defer node.Stop()
+
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(user.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
 	// create the user in wallet request:
 	userInWalletRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       genIns.User(),
-		NewEntity:      userIns,
-		EntityMetaData: user.SDKFunc.CreateMetaData(),
+		FromUser:  genIns.User(),
+		NewEntity: userIns,
+		Reason:    "TEST",
+		Keyname:   kname,
 	})
 
 	// create our genesis user vote:
@@ -392,12 +419,10 @@ func TestSaveGenesis_createNewUserOnWallet_Success(t *testing.T) {
 		IsApproved: true,
 	})
 
-	// save the new wallet request, then save vote:
-	node, _, _, _, _ := spawnBlockchainWithGenesisThenSaveRequestThenSaveVotesForTests(t, pk, rootPath, routePrefix, genIns, user.SDKFunc.CreateRepresentation(), userInWalletRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+	// save the request then save votes:
+	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, user.SDKFunc.CreateRepresentation(), userInWalletRequest, []crypto.PrivateKey{pk}, []vote.Vote{
 		userInWalletRequestVote,
 	}, createWalletVoteRouteFunc(routePrefix))
-
-	defer node.Stop()
 }
 
 func TestSaveGenesis_addUserToWallet_increaseTheNeededConcensus_voteUsingTwoUsers_Success(t *testing.T) {
@@ -419,11 +444,26 @@ func TestSaveGenesis_addUserToWallet_increaseTheNeededConcensus_voteUsingTwoUser
 	userRepresentation := user.SDKFunc.CreateRepresentation()
 	walletRepresentation := wallet.SDKFunc.CreateRepresentation()
 
+	// spawn bockchain with genesis instance:
+	node, client, _, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, genIns)
+	defer node.Stop()
+
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(user.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
 	// create the user in wallet request:
 	userInWalletRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       genIns.User(),
-		NewEntity:      userIns,
-		EntityMetaData: user.SDKFunc.CreateMetaData(),
+		FromUser:  genIns.User(),
+		NewEntity: userIns,
+		Reason:    "TEST",
+		Keyname:   kname,
 	})
 
 	// create our genesis user vote:
@@ -433,12 +473,16 @@ func TestSaveGenesis_addUserToWallet_increaseTheNeededConcensus_voteUsingTwoUser
 		IsApproved: true,
 	})
 
-	// save the new wallet request, then save vote:
-	node, client, _, repository, _ := spawnBlockchainWithGenesisThenSaveRequestThenSaveVotesForTests(t, pk, rootPath, routePrefix, genIns, userRepresentation, userInWalletRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+	// save the request then save votes:
+	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, userRepresentation, userInWalletRequest, []crypto.PrivateKey{pk}, []vote.Vote{
 		userInWalletRequestVote,
 	}, createWalletVoteRouteFunc(routePrefix))
 
-	defer node.Stop()
+	// retrieve the keyname:
+	walletKanme, walletKanmeErr := knameRepository.RetrieveByName(wallet.SDKFunc.CreateMetaData().Keyname())
+	if walletKanmeErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", walletKanmeErr.Error())
+	}
 
 	// update the wallet to increase concensus:
 	updateWalletRequest := request.SDKFunc.Create(request.CreateParams{
@@ -448,7 +492,8 @@ func TestSaveGenesis_addUserToWallet_increaseTheNeededConcensus_voteUsingTwoUser
 			Creator:         wal.Creator(),
 			ConcensusNeeded: genIns.User().Shares() + userIns.Shares(),
 		}),
-		EntityMetaData: wallet.SDKFunc.CreateMetaData(),
+		Reason:  "TEST",
+		Keyname: walletKanme,
 	})
 
 	// create our genesis user vote on the wallet update:
@@ -471,7 +516,8 @@ func TestSaveGenesis_addUserToWallet_increaseTheNeededConcensus_voteUsingTwoUser
 			Creator:         wal.Creator(),
 			ConcensusNeeded: genIns.User().Shares(),
 		}),
-		EntityMetaData: wallet.SDKFunc.CreateMetaData(),
+		Reason:  "TEST",
+		Keyname: walletKanme,
 	})
 
 	// create our genesis user vote on the wallet update:
@@ -545,11 +591,22 @@ func TestSaveGenesis_createNewWallet_createPledge_transferPledgeTokens_returnsEr
 		}),
 	})
 
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(transfer.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
 	// create the user in wallet request:
 	trsfRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       userIns,
-		NewEntity:      trsf,
-		EntityMetaData: transfer.SDKFunc.CreateMetaData(),
+		FromUser:  userIns,
+		NewEntity: trsf,
+		Reason:    "TEST",
+		Keyname:   kname,
 	})
 
 	// create our user vote:
@@ -639,11 +696,22 @@ func TestSaveGenesis_createNewWallet_createValidator_Success(t *testing.T) {
 	// compare the wallets:
 	wallet.CompareWalletsForTests(t, walletIns.(wallet.Wallet), acc.User().Wallet())
 
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(validator.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
 	// create the user in validator request:
 	validatorRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       genIns.User(),
-		NewEntity:      vldator,
-		EntityMetaData: validator.SDKFunc.CreateMetaData(),
+		FromUser:  genIns.User(),
+		NewEntity: vldator,
+		Reason:    "TEST",
+		Keyname:   kname,
 	})
 
 	// create our user vote:
@@ -712,11 +780,22 @@ func TestSaveGenesis_createNewWallet_createTransfer_Success(t *testing.T) {
 	// compare the wallets:
 	wallet.CompareWalletsForTests(t, walletIns.(wallet.Wallet), acc.User().Wallet())
 
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(transfer.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
 	// create the user in wallet request:
 	trsfRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:       genIns.User(),
-		NewEntity:      trsf,
-		EntityMetaData: transfer.SDKFunc.CreateMetaData(),
+		FromUser:  genIns.User(),
+		NewEntity: trsf,
+		Reason:    "TEST",
+		Keyname:   kname,
 	})
 
 	// create our user vote:
