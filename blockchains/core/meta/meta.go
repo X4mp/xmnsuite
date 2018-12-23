@@ -34,7 +34,9 @@ func createMeta(
 		representations := oneReq.Map()
 		for _, oneRepresentation := range representations {
 			keyname := oneRepresentation.MetaData().Keyname()
-			allWriteOnEntReqRepresentation[keyname] = oneRepresentation
+			if _, ok := allWriteOnEntReqRepresentation[keyname]; !ok {
+				allWriteOnEntReqRepresentation[keyname] = oneRepresentation
+			}
 
 			// register:
 			request.SDKFunc.Register(request.RegisterParams{
@@ -106,8 +108,11 @@ func (obj *meta) AddToWriteOnEntityRequest(requestedBy entity.MetaData, rep enti
 	}
 
 	// add to the list:
+	metKeyname := rep.MetaData().Keyname()
 	obj.wrOnEntReq[keyname].Add(rep)
-	obj.allWriteOnEntReqRepresentation[rep.MetaData().Keyname()] = rep
+	if _, ok := obj.allWriteOnEntReqRepresentation[metKeyname]; !ok {
+		obj.allWriteOnEntReqRepresentation[metKeyname] = rep
+	}
 
 	// register:
 	request.SDKFunc.Register(request.RegisterParams{

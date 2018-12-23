@@ -30,6 +30,8 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/work"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/group"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/balance"
 	"github.com/xmnservices/xmnsuite/configs"
@@ -52,6 +54,8 @@ type web struct {
 	accountService         account.Service
 	requestService         request.Service
 	requestRepository      request.Repository
+	keynameRepository      keyname.Repository
+	groupRepository        group.Repository
 	voteRepository         vote.Repository
 	voteService            vote.Service
 	userRepository         user.Repository
@@ -91,6 +95,8 @@ func createWeb(
 		accountService:         accountService,
 		requestService:         nil,
 		requestRepository:      nil,
+		keynameRepository:      nil,
+		groupRepository:        nil,
 		voteRepository:         nil,
 		voteService:            nil,
 		userRepository:         userRepository,
@@ -113,8 +119,10 @@ func createWeb(
 	app.rter.HandleFunc("/categories", app.categories)
 	app.rter.HandleFunc("/categories/new", app.newCategoriesForm)
 	app.rter.HandleFunc("/requests", app.requests)
-	app.rter.HandleFunc("/requests/{id}", app.requestSingle)
-	app.rter.HandleFunc("/requests/{id}/{action}", app.requestSingleVote)
+	app.rter.HandleFunc("/requests/{name}", app.requestsOfGroup)
+	app.rter.HandleFunc("/requests/{groupname}/{keyname}", app.requestsOfGroupOfKeyname)
+	app.rter.HandleFunc("/requests/{groupname}/{keyname}/{id}", app.requestSingle)
+	app.rter.HandleFunc("/requests/{groupname}/{keyname}/{id}/vote", app.requestSingleVote)
 
 	// bank controllers:
 	banks.SDKFunc.ShowBanks(banks.ShowBankParams{
@@ -261,6 +269,14 @@ func (app *web) middlewareVerifyConfigsInCookie(next http.Handler) http.Handler 
 			EntityRepository: entityRepository,
 		})
 
+		app.keynameRepository = keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+			EntityRepository: entityRepository,
+		})
+
+		app.groupRepository = group.SDKFunc.CreateRepository(group.CreateRepositoryParams{
+			EntityRepository: entityRepository,
+		})
+
 		app.voteRepository = vote.SDKFunc.CreateRepository(vote.CreateRepositoryParams{
 			EntityRepository: entityRepository,
 		})
@@ -272,10 +288,9 @@ func (app *web) middlewareVerifyConfigsInCookie(next http.Handler) http.Handler 
 				keyname := rep.MetaData().Keyname()
 				entRequests := app.meta.WriteOnEntityRequest()
 				for _, oneReq := range entRequests {
-					reqBy := oneReq.RequestedBy()
 					mp := oneReq.Map()
 					if _, ok := mp[keyname]; ok {
-						return fmt.Sprintf("%s/requests/%s/%s", rep.MetaData().Keyname(), ins.Request().ID().String(), reqBy.MetaData().Keyname()), nil
+						return fmt.Sprintf("/%s/requests/%s", rep.MetaData().Keyname(), ins.Request().ID().String()), nil
 					}
 				}
 
@@ -926,6 +941,7 @@ func (app *web) newCategoriesForm(w http.ResponseWriter, r *http.Request) {
 
 	categoryName := r.FormValue("name")
 	categoryDescription := r.FormValue("description")
+	categoryReason := r.FormValue("reason")
 	fromWalletID := r.FormValue("fromwalletid")
 	if categoryName != "" && categoryDescription != "" && fromWalletID != "" {
 		// parse the walletID:
@@ -955,6 +971,15 @@ func (app *web) newCategoriesForm(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// retrieve the keyname:
+		kname, knameErr := app.keynameRepository.RetrieveByName(app.categoryRepresentation.MetaData().Keyname())
+		if knameErr != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("there was an error while retrieving a keyname: %s", knameErr.Error())
+			w.Write([]byte(str))
+			return
+		}
+
 		// create the new category instance:
 		cat := category.SDKFunc.Create(category.CreateParams{
 			Name:        categoryName,
@@ -963,9 +988,10 @@ func (app *web) newCategoriesForm(w http.ResponseWriter, r *http.Request) {
 
 		// create the request:
 		catRequest := request.SDKFunc.Create(request.CreateParams{
-			FromUser:       usr,
-			NewEntity:      cat,
-			EntityMetaData: app.categoryRepresentation.MetaData(),
+			FromUser:  usr,
+			NewEntity: cat,
+			Reason:    categoryReason,
+			Keyname:   kname,
 		})
 
 		// save the request:
@@ -978,7 +1004,7 @@ func (app *web) newCategoriesForm(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// redirect:
-		uri := fmt.Sprintf("/requests/%s", catRequest.ID().String())
+		uri := fmt.Sprintf("/requests/%s/%s/%s", kname.Group().Name(), kname.Name(), catRequest.ID().String())
 		http.Redirect(w, r, uri, http.StatusPermanentRedirect)
 		return
 	}
@@ -1048,42 +1074,40 @@ func (app *web) requests(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// retrieve the requests:
-	reqPS, reqPSErr := app.requestRepository.RetrieveSet(0, amountOfElementsPerList)
-	if reqPSErr != nil {
+	// retrieve the groups:
+	retGroupsPS, retGroupsPSErr := app.groupRepository.RetrieveSet(0, amountOfElementsPerList)
+	if retGroupsPSErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		str := fmt.Sprintf("there was an error while retireving requests: %s", reqPSErr.Error())
+		str := fmt.Sprintf("there was an error while retireving request groups: %s", retGroupsPSErr.Error())
 		w.Write([]byte(str))
 		return
 	}
 
-	reqs := []*homeRequest{}
-	reqsIns := reqPS.Instances()
-	for _, oneReqIns := range reqsIns {
-		if req, ok := oneReqIns.(request.Request); ok {
-			reqs = append(reqs, &homeRequest{
-				ID:         req.ID().String(),
-				FromUserID: req.From().ID().String(),
-				NewName:    req.NewName(),
+	grps := []*homeRequestGroup{}
+	grpsIns := retGroupsPS.Instances()
+	for _, oneGrpIns := range grpsIns {
+		if grp, ok := oneGrpIns.(group.Group); ok {
+			grps = append(grps, &homeRequestGroup{
+				ID:   grp.ID().String(),
+				Name: grp.Name(),
 			})
-
 		}
 
-		log.Printf("the given entity (ID: %s) is not a valid Request instance", oneReqIns.ID().String())
+		log.Printf("the given entity (ID: %s) is not a valid request Group instance", oneGrpIns.ID().String())
 		continue
 	}
 
 	// template structure:
-	templateData := &homeRequestList{
-		Index:       reqPS.Index(),
-		Amount:      reqPS.Amount(),
-		TotalAmount: reqPS.TotalAmount(),
-		IsLast:      reqPS.IsLast(),
-		Requests:    reqs,
+	templateData := &homeRequestGroupList{
+		Index:       retGroupsPS.Index(),
+		Amount:      retGroupsPS.Amount(),
+		TotalAmount: retGroupsPS.TotalAmount(),
+		IsLast:      retGroupsPS.IsLast(),
+		Requests:    grps,
 	}
 
 	// retrieve the html page:
-	content, contentErr := ioutil.ReadFile(filepath.Join(app.templateDir, "requests.html"))
+	content, contentErr := ioutil.ReadFile(filepath.Join(app.templateDir, "request_groups.html"))
 	if contentErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		str := fmt.Sprintf("the template could not be rendered: %s", contentErr.Error())
@@ -1091,7 +1115,7 @@ func (app *web) requests(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tmpl, err := template.New("requests").Parse(string(content))
+	tmpl, err := template.New("request_groups").Parse(string(content))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		str := fmt.Sprintf("the template could not be rendered: %s", err.Error())
@@ -1104,7 +1128,7 @@ func (app *web) requests(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (app *web) requestSingle(w http.ResponseWriter, r *http.Request) {
+func (app *web) requestsOfGroup(w http.ResponseWriter, r *http.Request) {
 	// retrieve the conf:
 	conf := getConfigsFromCookie(loginCookieName, r)
 	if conf == nil {
@@ -1114,78 +1138,63 @@ func (app *web) requestSingle(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// parse the id:
+	// retrieve the group name:
 	vars := mux.Vars(r)
-	if reqIDAsString, ok := vars["id"]; ok {
-		// parse the ID:
-		reqID, reqIDErr := uuid.FromString(reqIDAsString)
-		if reqIDErr != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			str := fmt.Sprintf("the given ID (%s) is invalid", reqIDAsString)
+	if groupName, ok := vars["name"]; ok {
+		// retrieve the group:
+		grp, grpErr := app.groupRepository.RetrieveByName(groupName)
+		if grpErr != nil {
+			w.WriteHeader(http.StatusNotFound)
+			str := fmt.Sprintf("the given group (name: %s) could not be found: %s", groupName, grpErr.Error())
 			w.Write([]byte(str))
 			return
 		}
 
-		// retrieve the request:
-		req, reqErr := app.requestRepository.RetrieveByID(&reqID)
-		if reqErr != nil {
+		// retrieve the keynames by group:
+		knamePS, knamePSErr := app.keynameRepository.RetrieveSetByGroup(grp, 0, amountOfElementsPerList)
+		if knamePSErr != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			str := fmt.Sprintf("there was an error while retrieving the Request (ID: %s): %s", reqID.String(), reqErr.Error())
+			str := fmt.Sprintf("there was an error while retireving request keynames by grpoup (ID: %s): %s", grp.ID().String(), knamePSErr.Error())
 			w.Write([]byte(str))
 			return
 		}
 
-		// retrieve the votes:
-		votesPS, votesPSErr := app.voteRepository.RetrieveSetByRequest(req, 0, amountOfElementsPerList)
-		if votesPSErr != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			str := fmt.Sprintf("there was an error while retrieving the Vote set by Request (ID: %s): %s", reqID.String(), votesPSErr.Error())
-			w.Write([]byte(str))
-			return
-		}
-
-		vots := []*homeVote{}
-		votsIns := votesPS.Instances()
-		for _, oneVoteIns := range votsIns {
-			if vot, ok := oneVoteIns.(vote.Vote); ok {
-				vots = append(vots, &homeVote{
-					ID:               vot.ID().String(),
-					UserVoterID:      vot.Voter().ID().String(),
-					UserAmountShares: vot.Voter().Shares(),
-					IsApproved:       vot.IsApproved(),
+		knames := []*homeRequestKeyname{}
+		knamesIns := knamePS.Instances()
+		for _, oneKnameIns := range knamesIns {
+			if kname, ok := oneKnameIns.(keyname.Keyname); ok {
+				knameGrp := kname.Group()
+				knames = append(knames, &homeRequestKeyname{
+					ID:   kname.ID().String(),
+					Name: kname.Name(),
+					Group: &homeRequestGroup{
+						ID:   knameGrp.ID().String(),
+						Name: knameGrp.Name(),
+					},
 				})
-
 			}
 
-			log.Printf("the given entity (ID: %s) is not a valid Vote instance", oneVoteIns.ID().String())
+			log.Printf("the given entity (ID: %s) is not a valid request Keyname instance", oneKnameIns.ID().String())
 			continue
 		}
 
-		jsData, jsDataErr := json.MarshalIndent(req.New(), "", "    ")
-		if jsDataErr != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			str := fmt.Sprintf("there was an error while converting the entity in request (ID: %s): %s", reqID.String(), jsDataErr.Error())
-			w.Write([]byte(str))
-			return
-		}
-
 		// template structure:
-		templateData := &homeRequestSingle{
-			ID:         req.ID().String(),
-			FromUserID: req.From().ID().String(),
-			NewName:    req.NewName(),
-			NewJS:      string(jsData),
-			Votes: &homeVoteList{
-				Index:       votesPS.Index(),
-				Amount:      votesPS.Amount(),
-				TotalAmount: votesPS.TotalAmount(),
-				IsLast:      votesPS.IsLast(),
-				Votes:       vots,
+		templateData := &homeRequestKeynamesOfGroup{
+			Group: &homeRequestGroup{
+				ID:   grp.ID().String(),
+				Name: grp.Name(),
+			},
+			Keynames: &homeRequestKeynamesList{
+				Index:       knamePS.Index(),
+				Amount:      knamePS.Amount(),
+				TotalAmount: knamePS.TotalAmount(),
+				IsLast:      knamePS.IsLast(),
+				Keynames:    knames,
 			},
 		}
 
 		// retrieve the html page:
-		content, contentErr := ioutil.ReadFile(filepath.Join(app.templateDir, "requests_single.html"))
+		content, contentErr := ioutil.ReadFile(filepath.Join(app.templateDir, "request_groups_keynames.html"))
 		if contentErr != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			str := fmt.Sprintf("the template could not be rendered: %s", contentErr.Error())
@@ -1193,7 +1202,7 @@ func (app *web) requestSingle(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		tmpl, err := template.New("requests_single").Parse(string(content))
+		tmpl, err := template.New("request_groups_keynames").Parse(string(content))
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			str := fmt.Sprintf("the template could not be rendered: %s", err.Error())
@@ -1206,10 +1215,11 @@ func (app *web) requestSingle(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusInternalServerError)
-	w.Write([]byte("the ID could not be found"))
+	str := fmt.Sprintf("the group name is mandatory")
+	w.Write([]byte(str))
 }
 
-func (app *web) requestSingleVote(w http.ResponseWriter, r *http.Request) {
+func (app *web) requestsOfGroupOfKeyname(w http.ResponseWriter, r *http.Request) {
 	// retrieve the conf:
 	conf := getConfigsFromCookie(loginCookieName, r)
 	if conf == nil {
@@ -1219,82 +1229,451 @@ func (app *web) requestSingleVote(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// parse the id:
+	// retrieve the group name:
 	vars := mux.Vars(r)
-	if reqIDAsString, ok := vars["id"]; ok {
-		// parse the ID:
-		reqID, reqIDErr := uuid.FromString(reqIDAsString)
-		if reqIDErr != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			str := fmt.Sprintf("the given ID (%s) is invalid", reqIDAsString)
-			w.Write([]byte(str))
-			return
-		}
-
-		// retrieve the action:
-		isApproved := false
-		if action, ok := vars["action"]; ok {
-			if action == "approved" {
-				isApproved = true
-			}
-		}
-
-		// retrieve the request:
-		req, reqErr := app.requestRepository.RetrieveByID(&reqID)
-		if reqErr != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			str := fmt.Sprintf("there was an error while retrieving the Request (ID: %s): %s", reqID.String(), reqErr.Error())
-			w.Write([]byte(str))
-			return
-		}
-
-		// retrieve all our users:
-		usrPS, usrPSErr := app.userRepository.RetrieveSetByPubKey(conf.WalletPK().PublicKey(), 0, -1)
-		if usrPSErr != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			str := fmt.Sprintf("there was an error while retrieving the user (Pubkey: %s): %s", conf.WalletPK().PublicKey().String(), usrPSErr.Error())
-			w.Write([]byte(str))
-			return
-		}
-
-		// we submit a vote request for each user we have:
-		usrsIns := usrPS.Instances()
-		for _, oneUsrIns := range usrsIns {
-			if usr, ok := oneUsrIns.(user.User); ok {
-
-				// create the vote:
-				vot := vote.SDKFunc.Create(vote.CreateParams{
-					Request:    req,
-					Voter:      usr,
-					IsApproved: isApproved,
-				})
-
-				// save the vote:
-				reps := app.meta.WriteOnAllEntityRequest()
-				if oneRep, ok := reps[req.NewName()]; ok {
-					app.voteService.Save(vot, oneRep)
-					continue
-				}
-
-				w.WriteHeader(http.StatusInternalServerError)
-				str := fmt.Sprintf("the request entity (name: %s) cannot be voted on", req.NewName())
+	if groupName, ok := vars["groupname"]; ok {
+		// retrieve the keyname:
+		if keyname, ok := vars["keyname"]; ok {
+			// retrieve the group:
+			grp, grpErr := app.groupRepository.RetrieveByName(groupName)
+			if grpErr != nil {
+				w.WriteHeader(http.StatusNotFound)
+				str := fmt.Sprintf("the given group (name: %s) could not be found: %s", groupName, grpErr.Error())
 				w.Write([]byte(str))
 				return
-
 			}
 
-			w.WriteHeader(http.StatusInternalServerError)
-			str := fmt.Sprintf("the entity (ID: %s) is not a valid User instance", oneUsrIns.ID().String())
-			w.Write([]byte(str))
+			// retrieve the keyname:
+			kname, knameErr := app.keynameRepository.RetrieveByName(keyname)
+			if knameErr != nil {
+				w.WriteHeader(http.StatusNotFound)
+				str := fmt.Sprintf("the given keyname (name: %s) could not be found: %s", keyname, knameErr.Error())
+				w.Write([]byte(str))
+				return
+			}
+
+			// make sure the group in the keyname fits the group:
+			if bytes.Compare(grp.ID().Bytes(), kname.Group().ID().Bytes()) != 0 {
+				w.WriteHeader(http.StatusNotFound)
+				str := fmt.Sprintf("the given group (%s) does not fit the given keyname (%s) group (%s)", grp.Name(), kname.Name(), kname.Group().Name())
+				w.Write([]byte(str))
+				return
+			}
+
+			// retrieve the request related to our keyname:
+			reqPS, reqPSErr := app.requestRepository.RetrieveSetByKeyname(kname, 0, amountOfElementsPerList)
+			if reqPSErr != nil {
+				w.WriteHeader(http.StatusNotFound)
+				str := fmt.Sprintf("there was an error while retrieving the requests related to the given keyname (ID: %s): %s", kname.ID().String(), reqPSErr.Error())
+				w.Write([]byte(str))
+				return
+			}
+
+			reqs := []*homeRequest{}
+			reqsIns := reqPS.Instances()
+			for _, oneReqIns := range reqsIns {
+				if req, ok := oneReqIns.(request.Request); ok {
+					reqs = append(reqs, &homeRequest{
+						ID:         req.ID().String(),
+						FromUserID: req.From().ID().String(),
+						Reason:     req.Reason(),
+					})
+				}
+
+				log.Printf("the given entity (ID: %s) is not a valid request Request instance", oneReqIns.ID().String())
+				continue
+			}
+
+			// template structure:
+			templateData := &homeRequests{
+				Keyname: &homeRequestKeyname{
+					ID:   kname.ID().String(),
+					Name: kname.Name(),
+					Group: &homeRequestGroup{
+						ID:   grp.ID().String(),
+						Name: grp.Name(),
+					},
+				},
+				Requests: &homeRequestList{
+					Index:       reqPS.Index(),
+					Amount:      reqPS.Amount(),
+					TotalAmount: reqPS.TotalAmount(),
+					IsLast:      reqPS.IsLast(),
+					Requests:    reqs,
+				},
+			}
+
+			// retrieve the html page:
+			content, contentErr := ioutil.ReadFile(filepath.Join(app.templateDir, "requests.html"))
+			if contentErr != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				str := fmt.Sprintf("the template could not be rendered: %s", contentErr.Error())
+				w.Write([]byte(str))
+				return
+			}
+
+			tmpl, err := template.New("requests").Parse(string(content))
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				str := fmt.Sprintf("the template could not be rendered: %s", err.Error())
+				w.Write([]byte(str))
+			}
+
+			w.WriteHeader(http.StatusOK)
+			tmpl.Execute(w, templateData)
 			return
 		}
 
-		// we redirect to the request:
-		uri := fmt.Sprintf("/requests/%s", req.ID().String())
-		http.Redirect(w, r, uri, http.StatusTemporaryRedirect)
-		return
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("the keyname is mandatory")
+		w.Write([]byte(str))
 	}
 
 	w.WriteHeader(http.StatusInternalServerError)
-	w.Write([]byte("the ID could not be found"))
+	str := fmt.Sprintf("the group name is mandatory")
+	w.Write([]byte(str))
+}
+
+func (app *web) requestSingle(w http.ResponseWriter, r *http.Request) {
+	// retrieve the conf:
+	conf := getConfigsFromCookie(loginCookieName, r)
+	if conf == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("cookie not found!")
+		w.Write([]byte(str))
+		return
+	}
+
+	// retrieve the group name:
+	vars := mux.Vars(r)
+	if groupName, ok := vars["groupname"]; ok {
+		// retrieve the keyname:
+		if keyname, ok := vars["keyname"]; ok {
+			if requestIDAsString, ok := vars["id"]; ok {
+				// parse the id:
+				id, idErr := uuid.FromString(requestIDAsString)
+				if idErr != nil {
+					w.WriteHeader(http.StatusNotFound)
+					str := fmt.Sprintf("the id (%s) is invalid: %s", requestIDAsString, idErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				// retrieve the group:
+				grp, grpErr := app.groupRepository.RetrieveByName(groupName)
+				if grpErr != nil {
+					w.WriteHeader(http.StatusNotFound)
+					str := fmt.Sprintf("the given group (name: %s) could not be found: %s", groupName, grpErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				// retrieve the keyname:
+				kname, knameErr := app.keynameRepository.RetrieveByName(keyname)
+				if knameErr != nil {
+					w.WriteHeader(http.StatusNotFound)
+					str := fmt.Sprintf("the given keyname (name: %s) could not be found: %s", keyname, knameErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				// retrieve the request:
+				req, reqErr := app.requestRepository.RetrieveByID(&id)
+				if reqErr != nil {
+					w.WriteHeader(http.StatusNotFound)
+					str := fmt.Sprintf("the given request (ID: %s) could not be found: %s", id.String(), reqErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				// make sure the group in the keyname fits the group:
+				if bytes.Compare(grp.ID().Bytes(), kname.Group().ID().Bytes()) != 0 {
+					w.WriteHeader(http.StatusNotFound)
+					str := fmt.Sprintf("the given group (%s) does not fit the given keyname (%s) group (%s)", grp.Name(), kname.Name(), kname.Group().Name())
+					w.Write([]byte(str))
+					return
+				}
+
+				// make sure the keyname and the keyname in the request fits:
+				if bytes.Compare(kname.ID().Bytes(), req.Keyname().ID().Bytes()) != 0 {
+					w.WriteHeader(http.StatusNotFound)
+					str := fmt.Sprintf("the given keyname (%s) does not fit the given request (ID: %s) keyname (%s)", kname.Name(), req.ID().String(), req.Keyname().ID().String())
+					w.Write([]byte(str))
+					return
+				}
+
+				// retrieve
+				myUsersPS, myUsersPSErr := app.userRepository.RetrieveSetByPubKey(conf.WalletPK().PublicKey(), 0, amountOfElementsPerList)
+				if myUsersPSErr != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					str := fmt.Sprintf("there was an error while retrieving the user set (PubKey: %s): %s", conf.WalletPK().PublicKey().String(), myUsersPSErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				myUsers := []*homeUser{}
+				myUsersIns := myUsersPS.Instances()
+				for _, oneMyUserIns := range myUsersIns {
+					if myUsr, ok := oneMyUserIns.(user.User); ok {
+						myUsers = append(myUsers, &homeUser{
+							ID:       myUsr.ID().String(),
+							Shares:   myUsr.Shares(),
+							WalletID: myUsr.Wallet().ID().String(),
+						})
+					}
+
+					log.Printf("the given entity (ID: %s) is not a valid User instance", oneMyUserIns.ID().String())
+					continue
+				}
+
+				// retrieve the votes associated with the request:
+				votesPS, votesPSErr := app.voteRepository.RetrieveSetByRequest(req, 0, amountOfElementsPerList)
+				if votesPSErr != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					str := fmt.Sprintf("there was an  error while retrieving votes related to the given Request (ID: %s): %s", req.ID().String(), votesPSErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				vots := []*homeVote{}
+				votsIns := votesPS.Instances()
+				for _, oneVoteIns := range votsIns {
+					if vot, ok := oneVoteIns.(vote.Vote); ok {
+						vots = append(vots, &homeVote{
+							ID:               vot.ID().String(),
+							Reason:           vot.Reason(),
+							UserVoterID:      vot.Voter().ID().String(),
+							UserAmountShares: vot.Voter().Shares(),
+							IsApproved:       vot.IsApproved(),
+							IsNeutral:        vot.IsNeutral(),
+						})
+					}
+
+					log.Printf("the given entity (ID: %s) is not a valid request Vote instance", oneVoteIns.ID().String())
+					continue
+				}
+
+				// convert the entity to json:
+				newEntityJS, newEntityJSErr := json.MarshalIndent(req.New(), "", "\t")
+				if newEntityJSErr != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					str := fmt.Sprintf("there was an error while converting a Request's entity to JSON: %s", newEntityJSErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				// template structure:
+				templateData := &homeRequestSingle{
+					ID:              req.ID().String(),
+					FromUserID:      req.From().ID().String(),
+					Reason:          req.Reason(),
+					NewJS:           string(newEntityJS),
+					ConcensusNeeded: req.From().Wallet().ConcensusNeeded(),
+					Keyname: &homeRequestKeyname{
+						ID:   kname.ID().String(),
+						Name: kname.Name(),
+						Group: &homeRequestGroup{
+							ID:   grp.ID().String(),
+							Name: grp.Name(),
+						},
+					},
+					MyUsers: &homeUserList{
+						Index:       myUsersPS.Index(),
+						Amount:      myUsersPS.Amount(),
+						TotalAmount: myUsersPS.TotalAmount(),
+						IsLast:      myUsersPS.IsLast(),
+						Users:       myUsers,
+					},
+					Votes: &homeVoteList{
+						Index:       votesPS.Index(),
+						Amount:      votesPS.Amount(),
+						TotalAmount: votesPS.TotalAmount(),
+						IsLast:      votesPS.IsLast(),
+						Votes:       vots,
+					},
+				}
+
+				// retrieve the html page:
+				content, contentErr := ioutil.ReadFile(filepath.Join(app.templateDir, "requests_single.html"))
+				if contentErr != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					str := fmt.Sprintf("the template could not be rendered: %s", contentErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				tmpl, err := template.New("requests_single").Parse(string(content))
+				if err != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					str := fmt.Sprintf("the template could not be rendered: %s", err.Error())
+					w.Write([]byte(str))
+				}
+
+				w.WriteHeader(http.StatusOK)
+				tmpl.Execute(w, templateData)
+				return
+			}
+
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("the id is mandatory")
+			w.Write([]byte(str))
+
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("the keyname is mandatory")
+		w.Write([]byte(str))
+	}
+
+	w.WriteHeader(http.StatusInternalServerError)
+	str := fmt.Sprintf("the group name is mandatory")
+	w.Write([]byte(str))
+}
+
+func (app *web) requestSingleVote(w http.ResponseWriter, r *http.Request) {
+
+	if parseFormErr := r.ParseForm(); parseFormErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("there was an error while parsing form elements: %s", parseFormErr.Error())
+		w.Write([]byte(str))
+		return
+	}
+
+	// retrieve the conf:
+	conf := getConfigsFromCookie(loginCookieName, r)
+	if conf == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("cookie not found!")
+		w.Write([]byte(str))
+		return
+	}
+
+	// retrieve the group name:
+	vars := mux.Vars(r)
+	if groupName, ok := vars["groupname"]; ok {
+		// retrieve the keyname:
+		if keyname, ok := vars["keyname"]; ok {
+			if requestIDAsString, ok := vars["id"]; ok {
+				// parse the id:
+				id, idErr := uuid.FromString(requestIDAsString)
+				if idErr != nil {
+					w.WriteHeader(http.StatusNotFound)
+					str := fmt.Sprintf("the id (%s) is invalid: %s", requestIDAsString, idErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				// retrieve the group:
+				grp, grpErr := app.groupRepository.RetrieveByName(groupName)
+				if grpErr != nil {
+					w.WriteHeader(http.StatusNotFound)
+					str := fmt.Sprintf("the given group (name: %s) could not be found: %s", groupName, grpErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				// retrieve the keyname:
+				kname, knameErr := app.keynameRepository.RetrieveByName(keyname)
+				if knameErr != nil {
+					w.WriteHeader(http.StatusNotFound)
+					str := fmt.Sprintf("the given keyname (name: %s) could not be found: %s", keyname, knameErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				// retrieve the request:
+				req, reqErr := app.requestRepository.RetrieveByID(&id)
+				if reqErr != nil {
+					w.WriteHeader(http.StatusNotFound)
+					str := fmt.Sprintf("the given request (ID: %s) could not be found: %s", id.String(), reqErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				// make sure the group in the keyname fits the group:
+				if bytes.Compare(grp.ID().Bytes(), kname.Group().ID().Bytes()) != 0 {
+					w.WriteHeader(http.StatusNotFound)
+					str := fmt.Sprintf("the given group (%s) does not fit the given keyname (%s) group (%s)", grp.Name(), kname.Name(), kname.Group().Name())
+					w.Write([]byte(str))
+					return
+				}
+
+				// make sure the keyname and the keyname in the request fits:
+				if bytes.Compare(kname.ID().Bytes(), req.Keyname().ID().Bytes()) != 0 {
+					w.WriteHeader(http.StatusNotFound)
+					str := fmt.Sprintf("the given keyname (%s) does not fit the given request (ID: %s) keyname (%s)", kname.Name(), req.ID().String(), req.Keyname().ID().String())
+					w.Write([]byte(str))
+					return
+				}
+
+				myUserIDAsString := r.FormValue("myuser")
+				decision := r.FormValue("decision")
+				reason := r.FormValue("reason")
+
+				isApproved := false
+				isNeutral := false
+				if decision == "is_approved" {
+					isApproved = true
+				}
+
+				if decision == "is_neutral" {
+					isNeutral = true
+				}
+
+				// parse the walletID:
+				myUserID, myUserIDErr := uuid.FromString(myUserIDAsString)
+				if myUserIDErr != nil {
+					w.WriteHeader(http.StatusNotFound)
+					str := fmt.Sprintf("the posted userID (%s) is invalid: %s", myUserID, myUserIDErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				// retrieve the user:
+				myUsr, myUsrErr := app.userRepository.RetrieveByID(&myUserID)
+				if myUsrErr != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					str := fmt.Sprintf("the posted user (ID: %s) could not be found: %s", myUserID.String(), myUsrErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				// save the vote:
+				reqs := app.meta.WriteOnEntityRequest()
+				mps := reqs[groupName].Map()
+				saveVoteErr := app.voteService.Save(vote.SDKFunc.Create(vote.CreateParams{
+					Request:    req,
+					Voter:      myUsr,
+					Reason:     reason,
+					IsApproved: isApproved,
+					IsNeutral:  isNeutral,
+				}), mps[keyname])
+
+				if saveVoteErr != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					str := fmt.Sprintf("there was an error while saving the vote: %s", saveVoteErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				// redirect:
+				url := fmt.Sprintf("/requests/%s/%s/%s", req.Keyname().Group().Name(), req.Keyname().Name(), req.ID().String())
+				http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+				return
+			}
+
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("the id is mandatory")
+			w.Write([]byte(str))
+
+		}
+
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("the keyname is mandatory")
+		w.Write([]byte(str))
+	}
+
+	w.WriteHeader(http.StatusInternalServerError)
+	str := fmt.Sprintf("the group name is mandatory")
+	w.Write([]byte(str))
 }

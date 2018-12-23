@@ -12,6 +12,7 @@ import (
 
 type outgoingVote struct {
 	ID         string `json:"id"`
+	UserID     string `json:"user_id"`
 	Reason     string `json:"reason"`
 	IsNeutral  bool   `json:"is_neutral"`
 	IsApproved bool   `json:"is_approved"`
@@ -43,6 +44,7 @@ func (app *sdkService) Save(ins Vote, rep entity.Representation) error {
 	// create the vote:
 	outVote := outgoingVote{
 		ID:         ins.ID().String(),
+		UserID:     ins.Voter().ID().String(),
 		Reason:     ins.Reason(),
 		IsNeutral:  ins.IsNeutral(),
 		IsApproved: ins.IsApproved(),

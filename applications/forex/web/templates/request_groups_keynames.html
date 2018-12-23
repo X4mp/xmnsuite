@@ -25,31 +25,27 @@
                <ul>
                    <li><a href="/">Home</a></li>
                    <li><a href="/requests">Request Groups</a></li>
-                   <li><a href="/requests/{{.Keyname.Group.Name}}">{{.Keyname.Group.Name}}</a></li>
-                   <li>{{.Keyname.Name}}</li>
+                   <li>{{.Group.Name}}</li>
                </ul>
                <div class="clearfloat">&nbsp;</div>
            </div>
 
            <div class="block">
-               <h1>Requests of {{.Keyname.Name}} keyname</h1>
-               <p>These are the requests of the {{.Keyname.Name}} entity that can be interacted by the entity group: {{.Keyname.Group.Name}}.</p>
+               <h1>Keynames of {{.Group.Name}} Requests</h1>
+               <p>These are the entity keynames that can be interacted by the entity group: {{.Group.Name}}.</p>
                <table class="onerow">
                    <thead>
                        <tr>
                            <td>ID</td>
-                           <td>From User</td>
-                           <td>Reason</td>
+                           <td>Name</td>
                        </tr>
                    </thead>
                    <tbody>
-                       {{ $groupName := .Keyname.Group.Name }}
-                       {{ $keyname := .Keyname.Name }}
-                       {{ range $key, $value := .Requests.Requests }}
+                       {{ $groupName := .Group.Name }}
+                       {{ range $key, $value := .Keynames.Keynames }}
                            <tr>
-                               <td><a href="/requests/{{$groupName}}/{{$keyname}}/{{$value.ID}}">{{$value.ID}}</a></td>
-                               <td><a href="/users/{{$value.FromUserID}}">{{$value.FromUserID}}</a></td>
-                               <td>{{$value.Reason}}</td>
+                               <td><a href="/requests/{{$groupName}}/{{$value.Name}}">{{$value.ID}}</a></td>
+                               <td><a href="/requests/{{$groupName}}/{{$value.Name}}">{{$value.Name}}</a></td>
                            </tr>
                        {{ end }}
                    </tbody>

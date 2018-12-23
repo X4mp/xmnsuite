@@ -1,5 +1,42 @@
 package web
 
+type homeRequestGroupList struct {
+	Index       int
+	Amount      int
+	TotalAmount int
+	IsLast      bool
+	Requests    []*homeRequestGroup
+}
+
+type homeRequestGroup struct {
+	ID   string
+	Name string
+}
+
+type homeRequestKeynamesOfGroup struct {
+	Group    *homeRequestGroup
+	Keynames *homeRequestKeynamesList
+}
+
+type homeRequestKeynamesList struct {
+	Index       int
+	Amount      int
+	TotalAmount int
+	IsLast      bool
+	Keynames    []*homeRequestKeyname
+}
+
+type homeRequestKeyname struct {
+	ID    string
+	Name  string
+	Group *homeRequestGroup
+}
+
+type homeRequests struct {
+	Keyname  *homeRequestKeyname
+	Requests *homeRequestList
+}
+
 type homeRequestList struct {
 	Index       int
 	Amount      int
@@ -11,15 +48,18 @@ type homeRequestList struct {
 type homeRequest struct {
 	ID         string
 	FromUserID string
-	NewName    string
+	Reason     string
 }
 
 type homeRequestSingle struct {
-	ID         string
-	FromUserID string
-	NewName    string
-	NewJS      string
-	Votes      *homeVoteList
+	ID              string
+	FromUserID      string
+	Reason          string
+	NewJS           string
+	ConcensusNeeded int
+	Keyname         *homeRequestKeyname
+	MyUsers         *homeUserList
+	Votes           *homeVoteList
 }
 
 type homeVoteList struct {
@@ -34,6 +74,8 @@ type homeVote struct {
 	ID               string
 	UserVoterID      string
 	UserAmountShares int
+	Reason           string
+	IsNeutral        bool
 	IsApproved       bool
 }
 

@@ -20,11 +20,12 @@
       </header>
 
        <div id="main">
-
            <div id="breadcrumb">
                <ul>
                    <li><a href="/">Home</a></li>
-                   <li><a href="/requests">Requests</a></li>
+                   <li><a href="/requests">Request Groups</a></li>
+                   <li><a href="/requests/{{.Keyname.Group.Name}}">{{.Keyname.Group.Name}}</a></li>
+                   <li><a href="/requests/{{.Keyname.Group.Name}}/{{.Keyname.Name}}">{{.Keyname.Name}}</a></li>
                    <li>{{.ID}}</li>
                </ul>
                <div class="clearfloat">&nbsp;</div>
@@ -37,12 +38,20 @@
                        <td class="highlight">{{.ID}}</td>
                    </tr>
                    <tr>
+                       <td class="left">Concensus Needed:</td>
+                       <td>{{.ConcensusNeeded}}</td>
+                   </tr>
+                   <tr>
                        <td class="left">From User:</td>
                        <td><a href="/users/{{.FromUserID}}">{{.FromUserID}}</a></td>
                    </tr>
                    <tr>
-                       <td class="left">Entity Name:</td>
-                       <td>{{.NewName}}</td>
+                       <td class="left">Keyname:</td>
+                       <td><a href="/requests/{{.Keyname.Group.Name}}/{{.Keyname.Name}}">{{.Keyname.Name}}</a></td>
+                   </tr>
+                   <tr>
+                       <td class="left">Reason:</td>
+                       <td>{{.Reason}}</td>
                    </tr>
                    <tr>
                        <td colspan="2">
@@ -51,9 +60,44 @@
                        </td>
                    </tr>
                    <tr>
-                       <td class="left">Vote:</td>
-                       <td>
-                           Do you <a href="/requests/{{.ID}}/approve">approve</a> or <a href="/requests/{{.ID}}/disapprove">disapprove</a> this request?
+                       <td colspan="2">
+                           <h2>Vote on Request</h2>
+                           <p>Please vote on the current request.  Your vote will be added at the bottom of this page when executed.</p>
+                           <form name="vote" id="vote" method="post" action="/requests/{{.Keyname.Group.Name}}/{{.Keyname.Name}}/{{.ID}}/vote">
+                               <table class="tworowsclean">
+                                   <tr>
+                                       <td class="left highlight">User:</td>
+                                       <td class="highlight">
+                                           <select name="myuser" id="myuser">
+                                               {{ range $key, $value := .MyUsers.Users }}
+                                                   <option name="user_id" value="{{$value.ID}}">{{$value.WalletID}} ({{$value.Shares}} shares)</option>
+                                               {{ end }}
+                                           </select>
+                                       </td>
+                                   </tr>
+                                   <tr>
+                                       <td class="left highlight">Decision:</td>
+                                       <td class="highlight">
+                                           <select name="decision" id="decision">
+                                               <option name="is_approved" value="is_approved">Approve</option>
+                                               <option name="is_disapproved" value="is_disapproved">Disaprove</option>
+                                               <option name="is_disapproved" value="is_neutral">Neutral</option>
+                                           </select>
+                                       </td>
+                                   </tr>
+                                   <tr>
+                                       <td class="left highlight">Reason:</td>
+                                       <td class="highlight">
+                                           <textarea rows="4" cols="50" id="reason" name="reason" placeholder="Please describe why you voted in this direction.  This might help other people make clearer votes."></textarea>
+                                       </td>
+                                   </tr>
+                                   <tr>
+                                       <td colspan="2">
+                                           <input type="submit" value="Vote" class="btn" />
+                                       </td>
+                                   </tr>
+                               </table>
+                           </form>
                        </td>
                    </tr>
                </table>
@@ -70,6 +114,7 @@
                                <td>User</td>
                                <td>Shares</td>
                                <td>IsApproved?</td>
+                               <td>IsNeutral?</td>
                            </tr>
                        </thead>
                        <tbody>
@@ -79,6 +124,7 @@
                                    <td><a href="/users/{{$value.UserVoterID}}">{{$value.UserVoterID}}</a></td>
                                    <td>{{$value.UserAmountShares}}</td>
                                    <td>{{$value.IsApproved}}</td>
+                                   <td>{{$value.IsNeutral}}</td>
                                </tr>
                            {{ end }}
 

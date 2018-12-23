@@ -34,7 +34,11 @@ func (obj *entityRequest) Map() map[string]entity.Representation {
 
 // Add adds an entity representation
 func (obj *entityRequest) Add(rep entity.Representation) EntityRequest {
-	obj.mp[rep.MetaData().Keyname()] = rep
+	keyname := rep.MetaData().Keyname()
+	if _, ok := obj.mp[keyname]; !ok {
+		obj.mp[keyname] = rep
+	}
+
 	return obj
 }
 

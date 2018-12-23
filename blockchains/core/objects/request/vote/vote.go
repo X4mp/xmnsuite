@@ -1,7 +1,6 @@
 package vote
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 
@@ -20,14 +19,6 @@ type vote struct {
 }
 
 func createVote(id *uuid.UUID, req request.Request, votr user.User, reason string, isNeutrl bool, isApproved bool) (Vote, error) {
-	// make sure the voter has the same walletID as the requester:
-	requesterWalletID := req.From().Wallet().ID()
-	voterWalletID := votr.Wallet().ID()
-	if bytes.Compare(requesterWalletID.Bytes(), voterWalletID.Bytes()) != 0 {
-		str := fmt.Sprintf("the requester is binded to a wallet (ID: %s) that is different from the voter's wallet (ID: %s)", requesterWalletID.String(), voterWalletID.String())
-		return nil, errors.New(str)
-	}
-
 	if isNeutrl == isApproved {
 		str := fmt.Sprintf("the vote cannot have the same value for neutral and approved")
 		return nil, errors.New(str)

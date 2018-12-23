@@ -39,3 +39,14 @@ func (app *repository) RetrieveByName(name string) (Group, error) {
 	str := fmt.Sprintf("the given entity (ID: %s) is not a valid Group instance", ins.ID().String())
 	return nil, errors.New(str)
 }
+
+// RetrieveSet returns a group set
+func (app *repository) RetrieveSet(index int, amount int) (entity.PartialSet, error) {
+	keyname := retrieveAllGroupsKeyname()
+	insPS, insPSErr := app.entityRepository.RetrieveSetByKeyname(app.metaData, keyname, index, amount)
+	if insPSErr != nil {
+		return nil, insPSErr
+	}
+
+	return insPS, nil
+}

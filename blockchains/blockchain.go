@@ -62,18 +62,6 @@ func createBlockchain(
 		if genNodeStopErr != nil {
 			return nil, genNodeStopErr
 		}
-
-		// execute the command:
-		genNode, genNodeErr = genCmd.Execute()
-		if genNodeErr != nil {
-			return nil, genNodeErr
-		}
-
-		// stop the node:
-		genNodeStopErr = genNode.Stop()
-		if genNodeStopErr != nil {
-			return nil, genNodeStopErr
-		}
 	}
 
 	// execute the start command:

@@ -8,6 +8,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
+	"github.com/xmnservices/xmnsuite/datastore"
 )
 
 func retrieveAllVotesKeyname() string {
@@ -132,6 +133,35 @@ func createRepresentation() entity.Representation {
 			}
 
 			return nil, errors.New("the given entity is not a valid Vote instance")
+		},
+		Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+			if vot, ok := ins.(Vote); ok {
+				// metadata:
+				metaData := createMetaData()
+				requestMetaData := request.SDKFunc.CreateMetaData()
+
+				// create the repository and service:
+				repository := entity.SDKFunc.CreateRepository(ds)
+
+				// make sure the vote does not already exists:
+				_, retVoteErr := repository.RetrieveByID(metaData, vot.ID())
+				if retVoteErr == nil {
+					str := fmt.Sprintf("the given Vote (ID: %s) already exists", vot.ID().String(), retVoteErr.Error())
+					return errors.New(str)
+				}
+
+				// make sure the request already exists:
+				req, retRequestErr := repository.RetrieveByID(requestMetaData, vot.Request().ID())
+				if retRequestErr != nil {
+					str := fmt.Sprintf("the Request (ID: %s) does not exists", req.ID().String(), retRequestErr.Error())
+					return errors.New(str)
+				}
+
+				return nil
+			}
+
+			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Vote instance", ins.ID().String())
+			return errors.New(str)
 		},
 	})
 }

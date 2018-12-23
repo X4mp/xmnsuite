@@ -1,11 +1,11 @@
 package meta
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"log"
 
-	"github.com/xmnservices/xmnsuite/applications/forex/objects/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/pledge"
@@ -17,6 +17,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/group"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/vote"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/balance"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/link"
@@ -168,6 +169,14 @@ var SDKFunc = struct {
 						disapproved := 0
 						for _, oneVoteIns := range votesIns {
 							if oneVote, ok := oneVoteIns.(vote.Vote); ok {
+								requesterWalletID := oneVote.Request().From().Wallet().ID()
+								voterWalletID := oneVote.Voter().Wallet().ID()
+								if bytes.Compare(requesterWalletID.Bytes(), voterWalletID.Bytes()) != 0 {
+									str := fmt.Sprintf("the requester is binded to a wallet (ID: %s) that is different from the voter's wallet (ID: %s), therefore the wallet vote is not counted.  Skipping...", requesterWalletID.String(), voterWalletID.String())
+									log.Printf(str)
+									continue
+								}
+
 								if oneVote.IsApproved() {
 									approved += oneVote.Voter().Shares()
 									continue
@@ -183,7 +192,7 @@ var SDKFunc = struct {
 						// if there is enough approved or disapproved votes, the concensus passed:
 						concensusPassed := (approved >= neededConcensus) || (disapproved >= neededConcensus)
 
-						// vote is approved, insert the new entity:
+						// vote is approved:
 						if approved >= neededConcensus {
 							return true, concensusPassed, nil
 						}

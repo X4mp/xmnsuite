@@ -5,6 +5,8 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/group"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 	"github.com/xmnservices/xmnsuite/blockchains/tendermint"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
@@ -86,23 +88,48 @@ func (app *genesisCommand) Execute() (applications.Node, error) {
 	}
 
 	// create the genesis service:
+	entityService := entity.SDKFunc.CreateSDKService(entity.CreateSDKServiceParams{
+		PK:          app.conf.RootPrivateKey(),
+		Client:      client,
+		RoutePrefix: cons.RoutePrefix(),
+	})
+
 	genesisService := genesis.SDKFunc.CreateService(genesis.CreateServiceParams{
 		EntityRepository: entity.SDKFunc.CreateSDKRepository(entity.CreateSDKRepositoryParams{
 			PK:          app.conf.RootPrivateKey(),
 			Client:      client,
 			RoutePrefix: cons.RoutePrefix(),
 		}),
-		EntityService: entity.SDKFunc.CreateSDKService(entity.CreateSDKServiceParams{
-			PK:          app.conf.RootPrivateKey(),
-			Client:      client,
-			RoutePrefix: cons.RoutePrefix(),
-		}),
+		EntityService: entityService,
 	})
 
 	// save the genesis transaction:
 	saveGenErr := genesisService.Save(app.conf.GenesisTransaction())
 	if saveGenErr != nil {
 		return nil, saveGenErr
+	}
+
+	// save the request group and keyname:
+	entReqs := app.conf.Configs().Meta().WriteOnEntityRequest()
+	for _, entReq := range entReqs {
+		grp := group.SDKFunc.Create(group.CreateParams{
+			Name: entReq.RequestedBy().MetaData().Keyname(),
+		})
+
+		mp := entReq.Map()
+		keynameRepresentation := keyname.SDKFunc.CreateRepresentation()
+		for _, oneRepresentation := range mp {
+			kname := keyname.SDKFunc.Create(keyname.CreateParams{
+				Name:  oneRepresentation.MetaData().Keyname(),
+				Group: grp,
+			})
+
+			// save the keyname:
+			saveKeynameErr := entityService.Save(kname, keynameRepresentation)
+			if saveKeynameErr != nil {
+				return nil, saveKeynameErr
+			}
+		}
 	}
 
 	// everything worked, return:

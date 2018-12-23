@@ -124,7 +124,6 @@ func representation() entity.Representation {
 		},
 		Sync: func(ds datastore.DataStore, ins entity.Entity) error {
 			if gen, ok := ins.(Genesis); ok {
-
 				// the user must have enough shares in order to fill the concensus, on genesis:
 				genUser := gen.User()
 				genTo := gen.Deposit().To()
@@ -133,9 +132,20 @@ func representation() entity.Representation {
 					return errors.New(str)
 				}
 
+				// crate metadata and representation:
+				metaData := createMetaData()
+
 				// create the repository and service:
 				repository := entity.SDKFunc.CreateRepository(ds)
 				service := entity.SDKFunc.CreateService(ds)
+				genRepository := createRepository(repository, metaData)
+
+				// if the genesis exists, return error:
+				_, retGenErr := genRepository.Retrieve()
+				if retGenErr == nil {
+					str := fmt.Sprintf("there is already a Genesis instance")
+					return errors.New(str)
+				}
 
 				// deposit:
 				dep := gen.Deposit()

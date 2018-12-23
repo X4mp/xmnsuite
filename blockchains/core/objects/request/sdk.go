@@ -36,6 +36,7 @@ type Repository interface {
 	RetrieveByID(id *uuid.UUID) (Request, error)
 	RetrieveSet(index int, amount int) (entity.PartialSet, error)
 	RetrieveSetByFromUser(usr user.User, index int, amount int) (entity.PartialSet, error)
+	RetrieveSetByKeyname(kname keyname.Keyname, index int, amount int) (entity.PartialSet, error)
 }
 
 // CreateParams represents the create params
@@ -135,9 +136,9 @@ var SDKFunc = struct {
 						EntityRepository: repository,
 					})
 
-					// the request:
-					_, retKnameErr := repository.RetrieveByID(metaData, req.ID())
-					if retKnameErr == nil {
+					// make sure the request does not exists:
+					_, retReqErr := repository.RetrieveByID(metaData, req.ID())
+					if retReqErr == nil {
 						str := fmt.Sprintf("the Request (ID: %s) already exists", req.ID().String())
 						return errors.New(str)
 					}
@@ -154,7 +155,7 @@ var SDKFunc = struct {
 					return nil
 				}
 
-				str := fmt.Sprintf("the given entity (ID: %s) is not a valid Keyname instance", ins.ID().String())
+				str := fmt.Sprintf("the given entity (ID: %s) is not a valid Request instance", ins.ID().String())
 				return errors.New(str)
 			},
 		})

@@ -7,6 +7,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 )
 
 type repository struct {
@@ -56,6 +57,20 @@ func (app *repository) RetrieveSetByFromUser(usr user.User, index int, amount in
 	keynames := []string{
 		retrieveAllRequestsKeyname(),
 		retrieveAllRequestsFromUserKeyname(usr),
+	}
+	reqPS, reqPSErr := app.entityRepository.RetrieveSetByIntersectKeynames(app.metaData, keynames, index, amount)
+	if reqPSErr != nil {
+		return nil, reqPSErr
+	}
+
+	return reqPS, nil
+}
+
+// RetrieveSetByKeyname retrieves a request set by keyname
+func (app *repository) RetrieveSetByKeyname(kname keyname.Keyname, index int, amount int) (entity.PartialSet, error) {
+	keynames := []string{
+		retrieveAllRequestsKeyname(),
+		retrieveAllRequestsByKeynameKeyname(kname),
 	}
 	reqPS, reqPSErr := app.entityRepository.RetrieveSetByIntersectKeynames(app.metaData, keynames, index, amount)
 	if reqPSErr != nil {

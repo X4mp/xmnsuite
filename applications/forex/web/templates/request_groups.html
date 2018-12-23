@@ -24,32 +24,26 @@
            <div id="breadcrumb">
                <ul>
                    <li><a href="/">Home</a></li>
-                   <li><a href="/requests">Request Groups</a></li>
-                   <li><a href="/requests/{{.Keyname.Group.Name}}">{{.Keyname.Group.Name}}</a></li>
-                   <li>{{.Keyname.Name}}</li>
+                   <li>Request Groups</li>
                </ul>
                <div class="clearfloat">&nbsp;</div>
            </div>
 
            <div class="block">
-               <h1>Requests of {{.Keyname.Name}} keyname</h1>
-               <p>These are the requests of the {{.Keyname.Name}} entity that can be interacted by the entity group: {{.Keyname.Group.Name}}.</p>
+               <h1>Request Groups</h1>
+               <p>Requests are made by users on the blockchain.  Each request are made by a group of entities.  Here's the possible groups that can interact with a Request.</p>
                <table class="onerow">
                    <thead>
                        <tr>
                            <td>ID</td>
-                           <td>From User</td>
-                           <td>Reason</td>
+                           <td>Name</td>
                        </tr>
                    </thead>
                    <tbody>
-                       {{ $groupName := .Keyname.Group.Name }}
-                       {{ $keyname := .Keyname.Name }}
-                       {{ range $key, $value := .Requests.Requests }}
+                       {{ range $key, $value := .Requests }}
                            <tr>
-                               <td><a href="/requests/{{$groupName}}/{{$keyname}}/{{$value.ID}}">{{$value.ID}}</a></td>
-                               <td><a href="/users/{{$value.FromUserID}}">{{$value.FromUserID}}</a></td>
-                               <td>{{$value.Reason}}</td>
+                               <td><a href="/requests/{{$value.Name}}">{{$value.ID}}</a></td>
+                               <td><a href="/requests/{{$value.Name}}">{{$value.Name}}</a></td>
                            </tr>
                        {{ end }}
                    </tbody>

@@ -46,6 +46,10 @@ footer {padding: 5px; margin: 5px auto 5px auto; width: 800px; font-size: 12px; 
 #main .block .tworows td {padding: 5px; border-bottom: 1px solid #000000;}
 #main .block .tworows .left {width: 90%; background-color: #0677cc; color: #ffffff;}
 
+#main .block .tworowsclean {width: 90%; }
+#main .block .tworowsclean td {padding: 5px; border-bottom: 0px;}
+#main .block .tworowsclean .left {width: 90%; background-color: #ffffff; color: #000000;}
+
 #main .block .onerow {width: 90%; }
 #main .block .onerow td {padding: 5px; border-bottom: 1px solid #000000;}
 #main .block .onerow thead td {background-color: #0677cc; color: #ffffff;}

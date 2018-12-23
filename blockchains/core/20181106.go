@@ -29,6 +29,7 @@ const maxAmountOfEntitiesToRetrieve = 500
 
 type incomingVote struct {
 	ID         string `json:"id"`
+	UserID     string `json:"user_id"`
 	Reason     string `json:"reason"`
 	IsNeutral  bool   `json:"is_neutral"`
 	IsApproved bool   `json:"is_approved"`
@@ -815,8 +816,13 @@ func (app *core20181108) saveEntityRequestVote() routers.CreateRouteParams {
 							return nil, jsErr
 						}
 
+						voterID, voterIDErr := uuid.FromString(ptr.UserID)
+						if voterIDErr != nil {
+							return nil, voterIDErr
+						}
+
 						// retrieve the voter:
-						voter, voterErr := dep.userRepository.RetrieveByPubKeyAndWallet(from, req.From().Wallet())
+						voter, voterErr := dep.userRepository.RetrieveByID(&voterID)
 						if voterErr != nil {
 							return nil, voterErr
 						}
@@ -841,6 +847,8 @@ func (app *core20181108) saveEntityRequestVote() routers.CreateRouteParams {
 						if representation, ok := representations[keynameName]; ok {
 							saveErr := entityRequest.VoteService(store).Save(voteIns, representation)
 							if saveErr != nil {
+								log.Printf("\n\n5 - error: %s\n\n", saveErr.Error())
+
 								return nil, saveErr
 							}
 

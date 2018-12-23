@@ -22,6 +22,7 @@ type Normalized interface {
 // Repository represents a group repository
 type Repository interface {
 	RetrieveByName(name string) (Group, error)
+	RetrieveSet(index int, amount int) (entity.PartialSet, error)
 }
 
 // CreateParams represents the create params
