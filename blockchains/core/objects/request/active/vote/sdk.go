@@ -6,9 +6,8 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
+	request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
 	"github.com/xmnservices/xmnsuite/crypto"
-	"github.com/xmnservices/xmnsuite/datastore"
 )
 
 // CalculateFn represents the vote calculation func.
@@ -29,20 +28,13 @@ type Vote interface {
 	IsApproved() bool
 }
 
-// NormalizedVote represents a normalized Vote
-type NormalizedVote interface {
+// Normalized represents a normalized Vote
+type Normalized interface {
 }
 
 // Service represents the vote service
 type Service interface {
 	Save(ins Vote, rep entity.Representation) error
-}
-
-// Repository represents the vote repository
-type Repository interface {
-	RetrieveByID(id *uuid.UUID) (Vote, error)
-	RetrieveByRequestVoter(req request.Request, voter user.User) (Vote, error)
-	RetrieveSetByRequest(req request.Request, index int, amount int) (entity.PartialSet, error)
 }
 
 // CreateParams represents the Create params
@@ -55,12 +47,6 @@ type CreateParams struct {
 	IsNeutral  bool
 }
 
-// CreateServiceParams represents the CreateService params
-type CreateServiceParams struct {
-	CalculateVoteFn CalculateFn
-	DS              datastore.DataStore
-}
-
 // CreateSDKServiceParams represents the CreateSDKService params
 type CreateSDKServiceParams struct {
 	PK              crypto.PrivateKey
@@ -68,18 +54,11 @@ type CreateSDKServiceParams struct {
 	CreateRouteFunc CreateRouteFn
 }
 
-// CreateRepositoryParams represents the CreateRepository params
-type CreateRepositoryParams struct {
-	EntityRepository entity.Repository
-}
-
 // SDKFunc represents the vote SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Vote
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
-	CreateRepository     func(params CreateRepositoryParams) Repository
-	CreateService        func(params CreateServiceParams) Service
 	CreateSDKService     func(params CreateSDKServiceParams) Service
 }{
 	Create: func(params CreateParams) Vote {
@@ -100,19 +79,6 @@ var SDKFunc = struct {
 	},
 	CreateRepresentation: func() entity.Representation {
 		return createRepresentation()
-	},
-	CreateRepository: func(params CreateRepositoryParams) Repository {
-		metaData := createMetaData()
-		out := createRepository(params.EntityRepository, metaData)
-		return out
-	},
-	CreateService: func(params CreateServiceParams) Service {
-		voteRepresentation := createRepresentation()
-		requestRepresentation := request.SDKFunc.CreateRepresentation()
-		entityRepository := entity.SDKFunc.CreateRepository(params.DS)
-		entityService := entity.SDKFunc.CreateService(params.DS)
-		out := createVoteService(params.CalculateVoteFn, entityRepository, entityService, voteRepresentation, requestRepresentation)
-		return out
 	},
 	CreateSDKService: func(params CreateSDKServiceParams) Service {
 		out := createSDKService(params.PK, params.Client, params.CreateRouteFunc)

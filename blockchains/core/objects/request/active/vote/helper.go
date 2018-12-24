@@ -7,7 +7,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
+	request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
 
@@ -146,14 +146,14 @@ func createRepresentation() entity.Representation {
 				// make sure the vote does not already exists:
 				_, retVoteErr := repository.RetrieveByID(metaData, vot.ID())
 				if retVoteErr == nil {
-					str := fmt.Sprintf("the given Vote (ID: %s) already exists", vot.ID().String(), retVoteErr.Error())
+					str := fmt.Sprintf("the given Vote (ID: %s) already exists: %s", vot.ID().String(), retVoteErr.Error())
 					return errors.New(str)
 				}
 
 				// make sure the request already exists:
 				req, retRequestErr := repository.RetrieveByID(requestMetaData, vot.Request().ID())
 				if retRequestErr != nil {
-					str := fmt.Sprintf("the Request (ID: %s) does not exists", req.ID().String(), retRequestErr.Error())
+					str := fmt.Sprintf("the Request (ID: %s) does not exists: %s", req.ID().String(), retRequestErr.Error())
 					return errors.New(str)
 				}
 

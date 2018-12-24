@@ -20,13 +20,20 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/work"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
+	active_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote"
+	active_vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote/active"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/group"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/link"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/node"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
+
+type simpleRequestVote struct {
+	Voter      user.User
+	IsApproved bool
+}
 
 func createWalletVoteRouteFunc(routePrefix string) vote.CreateRouteFn {
 	return func(ins vote.Vote, rep entity.Representation) (string, error) {
@@ -304,18 +311,26 @@ func saveRequestThenSaveVotesForTests(
 	representation entity.Representation,
 	req request.Request,
 	votesPK []crypto.PrivateKey,
-	reqVotes []vote.Vote,
+	reqVotes []*simpleRequestVote,
 	createRouteFunc vote.CreateRouteFn,
 ) request.Service {
 	// create the metadata:
-	requestMetaData := request.SDKFunc.CreateMetaData()
-	voteMetaData := vote.SDKFunc.CreateMetaData()
+	requestMetaData := active_request.SDKFunc.CreateMetaData()
 
 	// create the request service:
 	requestService := request.SDKFunc.CreateSDKService(request.CreateSDKServiceParams{
 		PK:          pk,
 		Client:      client,
 		RoutePrefix: routePrefix,
+	})
+
+	// create the request repository:
+	requestRepository := active_request.SDKFunc.CreateRepository(active_request.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	voteRepository := active_vote.SDKFunc.CreateRepository(active_vote.CreateRepositoryParams{
+		EntityRepository: repository,
 	})
 
 	// save the request:
@@ -326,16 +341,17 @@ func saveRequestThenSaveVotesForTests(
 	}
 
 	// retrieve the request and compare them:
-	retRequest, retRequesterr := repository.RetrieveByID(requestMetaData, req.ID())
+	retRequest, retRequesterr := requestRepository.RetrieveByRequest(req)
 	if retRequesterr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", retRequesterr.Error())
 		return nil
 	}
 
 	// compare the requests:
-	request.CompareRequestForTests(t, req, retRequest.(request.Request))
+	request.CompareRequestForTests(t, req, retRequest.Request().(request.Request))
 
 	// save the votes:
+	crVotes := []vote.Vote{}
 	for index, oneVote := range reqVotes {
 		// create the vote service:
 		oneVoteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
@@ -344,23 +360,34 @@ func saveRequestThenSaveVotesForTests(
 			CreateRouteFunc: createRouteFunc,
 		})
 
+		// create the vote:
+		vot := vote.SDKFunc.Create(vote.CreateParams{
+			Request:    retRequest,
+			Voter:      oneVote.Voter,
+			Reason:     "TEST",
+			IsApproved: oneVote.IsApproved,
+			IsNeutral:  false,
+		})
+
 		// save the vote:
-		savedVoteErr := oneVoteService.Save(oneVote, representation)
+		savedVoteErr := oneVoteService.Save(vot, representation)
 		if savedVoteErr != nil {
 			t.Errorf("the returned error was expected to be nil, error returned: %s", savedVoteErr.Error())
 			return nil
 		}
 
 		if (index + 1) < len(reqVotes) {
-			retVote, retVoteErr := repository.RetrieveByID(voteMetaData, oneVote.ID())
+			retVote, retVoteErr := voteRepository.RetrieveByVote(vot)
 			if retVoteErr != nil {
 				t.Errorf("the returned error was expected to be nil, error returned: %s", retVoteErr.Error())
 				return nil
 			}
 
 			// compare the votes:
-			vote.CompareVoteForTests(t, oneVote, retVote.(vote.Vote))
+			vote.CompareVoteForTests(t, vot, retVote.(active_vote.Vote).Vote())
 		}
+
+		crVotes = append(crVotes, vot)
 	}
 
 	// the request should no longer exists:
@@ -371,8 +398,8 @@ func saveRequestThenSaveVotesForTests(
 	}
 
 	// the votes should no longer exists:
-	for _, oneVote := range reqVotes {
-		_, retVoteErr := repository.RetrieveByID(voteMetaData, oneVote.ID())
+	for _, oneVote := range crVotes {
+		_, retVoteErr := voteRepository.RetrieveByVote(oneVote)
 		if retVoteErr == nil {
 			t.Errorf("the returned error was expected to be valid, nil returned")
 			return nil
@@ -422,14 +449,13 @@ func saveLink(
 	})
 
 	// create our user vote:
-	newLinkRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    newLinkRequest,
+	newLinkRequestVote := &simpleRequestVote{
 		Voter:      fromUser,
 		IsApproved: true,
-	})
+	}
 
 	// save the new token request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, linkRepresentation, newLinkRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, linkRepresentation, newLinkRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		newLinkRequestVote,
 	}, createTokenVoteRouteFunc(routePrefix))
 
@@ -474,14 +500,13 @@ func saveNode(
 	})
 
 	// create our user vote:
-	newNodeRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    newNodeRequest,
+	newNodeRequestVote := &simpleRequestVote{
 		Voter:      fromUser,
 		IsApproved: true,
-	})
+	}
 
 	// save the new token request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, nodeRepresentation, newNodeRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, nodeRepresentation, newNodeRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		newNodeRequestVote,
 	}, createTokenVoteRouteFunc(routePrefix))
 
@@ -542,14 +567,13 @@ func savePledge(
 	})
 
 	// create our user vote:
-	pldgeRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    pldgeRequest,
+	pldgeRequestVote := &simpleRequestVote{
 		Voter:      fromGen.User(),
 		IsApproved: true,
-	})
+	}
 
 	// save the new wallet request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, pldgeRepresentation, pldgeRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, pldgeRepresentation, pldgeRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		pldgeRequestVote,
 	}, createWalletVoteRouteFunc(routePrefix))
 

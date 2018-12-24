@@ -22,21 +22,13 @@ type Request interface {
 	Keyname() keyname.Keyname
 }
 
-// Normalized represents a normalized request
-type Normalized interface {
-}
-
 // Service represents an entity service
 type Service interface {
 	Save(req Request, entityRep entity.Representation) error
 }
 
-// Repository represents a Request repository
-type Repository interface {
-	RetrieveByID(id *uuid.UUID) (Request, error)
-	RetrieveSet(index int, amount int) (entity.PartialSet, error)
-	RetrieveSetByFromUser(usr user.User, index int, amount int) (entity.PartialSet, error)
-	RetrieveSetByKeyname(kname keyname.Keyname, index int, amount int) (entity.PartialSet, error)
+// Normalized represents a normalized request
+type Normalized interface {
 }
 
 // CreateParams represents the create params
@@ -48,21 +40,16 @@ type CreateParams struct {
 	Keyname   keyname.Keyname
 }
 
+// RegisterParams represents the register params
+type RegisterParams struct {
+	EntityMetaData entity.MetaData
+}
+
 // CreateSDKServiceParams represents the CreateSDKService params
 type CreateSDKServiceParams struct {
 	PK          crypto.PrivateKey
 	Client      applications.Client
 	RoutePrefix string
-}
-
-// CreateRepositoryParams represents the CreateRepository params
-type CreateRepositoryParams struct {
-	EntityRepository entity.Repository
-}
-
-// RegisterParams represents the register params
-type RegisterParams struct {
-	EntityMetaData entity.MetaData
 }
 
 var reg = createRegistry()
@@ -73,7 +60,6 @@ var SDKFunc = struct {
 	Register             func(params RegisterParams)
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
-	CreateRepository     func(params CreateRepositoryParams) Repository
 	CreateSDKService     func(params CreateSDKServiceParams) Service
 }{
 	Create: func(params CreateParams) Request {
@@ -113,11 +99,9 @@ var SDKFunc = struct {
 				return nil, errors.New(str)
 			},
 			Keynames: func(ins entity.Entity) ([]string, error) {
-				if req, ok := ins.(Request); ok {
+				if _, ok := ins.(Request); ok {
 					return []string{
 						retrieveAllRequestsKeyname(),
-						retrieveAllRequestsFromUserKeyname(req.From()),
-						retrieveAllRequestsByKeynameKeyname(req.Keyname()),
 					}, nil
 				}
 
@@ -159,11 +143,6 @@ var SDKFunc = struct {
 				return errors.New(str)
 			},
 		})
-	},
-	CreateRepository: func(params CreateRepositoryParams) Repository {
-		metaData := createMetaData(reg)
-		out := createRepository(params.EntityRepository, metaData)
-		return out
 	},
 	CreateSDKService: func(params CreateSDKServiceParams) Service {
 		out := createSDKService(params.PK, params.Client, params.RoutePrefix)

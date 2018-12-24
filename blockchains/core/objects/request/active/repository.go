@@ -1,4 +1,4 @@
-package request
+package active
 
 import (
 	"errors"
@@ -7,6 +7,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
+	core_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 )
 
@@ -27,6 +28,26 @@ func createRepository(entityRepository entity.Repository, metaData entity.MetaDa
 // RetrieveByID retrieves a request by ID
 func (app *repository) RetrieveByID(id *uuid.UUID) (Request, error) {
 	ins, insErr := app.entityRepository.RetrieveByID(app.metaData, id)
+	if insErr != nil {
+		return nil, insErr
+	}
+
+	if req, ok := ins.(Request); ok {
+		return req, nil
+	}
+
+	str := fmt.Sprintf("the entity (ID: %s) is not a valid Request instance", ins.ID().String())
+	return nil, errors.New(str)
+}
+
+// RetrieveByRequest retrieves an active request by request
+func (app *repository) RetrieveByRequest(req core_request.Request) (Request, error) {
+	keynames := []string{
+		retrieveAllRequestsKeyname(),
+		retrieveAllRequestsByRequestKeyname(req),
+	}
+
+	ins, insErr := app.entityRepository.RetrieveByIntersectKeynames(app.metaData, keynames)
 	if insErr != nil {
 		return nil, insErr
 	}

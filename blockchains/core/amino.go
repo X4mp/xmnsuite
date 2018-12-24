@@ -10,7 +10,9 @@ import (
 	validator "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/validator"
 	genesis "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
-	vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/vote"
+	active_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
+	vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote"
+	active_vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote/active"
 	deposit "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
 	token "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 	developer "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/developer"
@@ -19,6 +21,7 @@ import (
 	task "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/developer/entities/task"
 	link "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/link"
 	node "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/node"
+	withdrawal "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/withdrawal"
 )
 
 var cdc = amino.NewCodec()
@@ -33,11 +36,12 @@ func Register(cdc *amino.Codec) {
 	wallet.Register(cdc)
 	token.Register(cdc)
 	deposit.Register(cdc)
+	withdrawal.Register(cdc)
 	genesis.Register(cdc)
 	pledge.Register(cdc)
 	transfer.Register(cdc)
-	request.Register(cdc)
-	vote.Register(cdc)
+	active_request.Register(cdc)
+	active_vote.Register(cdc)
 	validator.Register(cdc)
 	link.Register(cdc)
 	node.Register(cdc)
@@ -49,5 +53,7 @@ func Register(cdc *amino.Codec) {
 	// replace:
 	entity.Replace(cdc)
 	request.Replace(cdc)
+	active_request.Replace(cdc)
 	vote.Replace(cdc)
+	active_vote.Replace(cdc)
 }

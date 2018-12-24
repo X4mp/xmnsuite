@@ -6,6 +6,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
+	active_vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote/active"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/group"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/balance"
@@ -23,6 +24,7 @@ type dependencies struct {
 	genesisService      genesis.Service
 	balanceRepository   balance.Repository
 	accountService      account.Service
+	voteService         active_vote.Service
 	developerRepository developer.Repository
 }
 
@@ -65,6 +67,11 @@ func createDependencies(ds datastore.DataStore) *dependencies {
 		EntityService:    entityService,
 	})
 
+	voteService := active_vote.SDKFunc.CreateService(active_vote.CreateServiceParams{
+		EntityRepository: entityRepository,
+		EntityService:    entityService,
+	})
+
 	developerRepository := developer.SDKFunc.CreateRepository(ds)
 
 	out := dependencies{
@@ -77,6 +84,7 @@ func createDependencies(ds datastore.DataStore) *dependencies {
 		genesisService:      genesisService,
 		balanceRepository:   balanceRepository,
 		accountService:      accountService,
+		voteService:         voteService,
 		developerRepository: developerRepository,
 	}
 

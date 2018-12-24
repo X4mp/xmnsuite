@@ -55,6 +55,29 @@
                    </tr>
                    <tr>
                        <td colspan="2">
+                           <h2>Score</h2>
+                           <table class="tworowsclean">
+                               <tr>
+                                   <td class="left highlight">Approved:</td>
+                                   <td class="highlight">{{.ApprovedPow}}</td>
+                               </tr>
+                               <tr>
+                                   <td class="left highlight">Disapproved:</td>
+                                   <td class="highlight">{{.DisapprovedPow}}</td>
+                               </tr>
+                               <tr>
+                                   <td class="left highlight">Neutral:</td>
+                                   <td class="highlight">{{.NeutralPow}}</td>
+                               </tr>
+                               <tr>
+                                   <td class="left highlight">Total:</td>
+                                   <td class="highlight">{{.TotalPow}}</td>
+                               </tr>
+                           </table>
+                       </td>
+                   </tr>
+                   <tr>
+                       <td colspan="2">
                            <p>Entity JSON:</p>
                            <pre>{{.NewJS}}</pre>
                        </td>
@@ -112,7 +135,7 @@
                            <tr>
                                <td>ID</td>
                                <td>User</td>
-                               <td>Shares</td>
+                               <td>Power</td>
                                <td>IsApproved?</td>
                                <td>IsNeutral?</td>
                            </tr>
@@ -122,7 +145,7 @@
                                <tr>
                                    <td>{{$value.ID}}</td>
                                    <td><a href="/users/{{$value.UserVoterID}}">{{$value.UserVoterID}}</a></td>
-                                   <td>{{$value.UserAmountShares}}</td>
+                                   <td>{{$value.Pow}}</td>
                                    <td>{{$value.IsApproved}}</td>
                                    <td>{{$value.IsNeutral}}</td>
                                </tr>

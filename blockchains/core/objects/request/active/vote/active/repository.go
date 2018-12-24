@@ -1,4 +1,4 @@
-package vote
+package active
 
 import (
 	"errors"
@@ -7,7 +7,8 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
+	active_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
+	core_vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote"
 )
 
 type repository struct {
@@ -35,12 +36,32 @@ func (app *repository) RetrieveByID(id *uuid.UUID) (Vote, error) {
 		return vot, nil
 	}
 
-	str := fmt.Sprintf("the entity (ID: %s) is not a valid Vote instance", ins.ID().String())
+	str := fmt.Sprintf("the entity (ID: %s) is not a valid active Vote instance", ins.ID().String())
 	return nil, errors.New(str)
 }
 
-// RetrieveByRequestVoter retrieves a vote by request and voter
-func (app *repository) RetrieveByRequestVoter(req request.Request, voter user.User) (Vote, error) {
+// RetrieveByVote retrieves a vote by core vote
+func (app *repository) RetrieveByVote(vot core_vote.Vote) (Vote, error) {
+	keynames := []string{
+		retrieveAllVotesKeyname(),
+		retrieveVotesByVoteIDKeyname(vot.ID()),
+	}
+
+	ins, insErr := app.entityRepository.RetrieveByIntersectKeynames(app.metaData, keynames)
+	if insErr != nil {
+		return nil, insErr
+	}
+
+	if vot, ok := ins.(Vote); ok {
+		return vot, nil
+	}
+
+	str := fmt.Sprintf("the entity (ID: %s) is not a valid active Vote instance", ins.ID().String())
+	return nil, errors.New(str)
+}
+
+// RetrieveByVoterOnRequest retrieves an active vote by voter and requst
+func (app *repository) RetrieveByRequestVoter(voter user.User, req active_request.Request) (Vote, error) {
 	keynames := []string{
 		retrieveAllVotesKeyname(),
 		retrieveVotesByRequestIDKeyname(req.ID()),
@@ -56,12 +77,12 @@ func (app *repository) RetrieveByRequestVoter(req request.Request, voter user.Us
 		return vot, nil
 	}
 
-	str := fmt.Sprintf("the entity (ID: %s) is not a valid Vote instance", ins.ID().String())
+	str := fmt.Sprintf("the entity (ID: %s) is not a valid active Vote instance", ins.ID().String())
 	return nil, errors.New(str)
 }
 
 // RetrieveSetByRequest retrieves a vote set by request
-func (app *repository) RetrieveSetByRequest(req request.Request, index int, amount int) (entity.PartialSet, error) {
+func (app *repository) RetrieveSetByRequest(req active_request.Request, index int, amount int) (entity.PartialSet, error) {
 	keynames := []string{
 		retrieveVotesByRequestIDKeyname(req.ID()),
 	}

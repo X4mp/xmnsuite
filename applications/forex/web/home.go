@@ -57,6 +57,10 @@ type homeRequestSingle struct {
 	Reason          string
 	NewJS           string
 	ConcensusNeeded int
+	ApprovedPow     int
+	DisapprovedPow  int
+	NeutralPow      int
+	TotalPow        int
 	Keyname         *homeRequestKeyname
 	MyUsers         *homeUserList
 	Votes           *homeVoteList
@@ -71,12 +75,12 @@ type homeVoteList struct {
 }
 
 type homeVote struct {
-	ID               string
-	UserVoterID      string
-	UserAmountShares int
-	Reason           string
-	IsNeutral        bool
-	IsApproved       bool
+	ID          string
+	UserVoterID string
+	Reason      string
+	Pow         int
+	IsNeutral   bool
+	IsApproved  bool
 }
 
 type homeCategory struct {
@@ -92,6 +96,21 @@ type homeCategoryList struct {
 	TotalAmount int
 	IsLast      bool
 	Categories  []*homeCategory
+}
+
+type homeCurrency struct {
+	ID          string
+	Category    *homeCategory
+	Name        string
+	Description string
+}
+
+type homeCurrencyList struct {
+	Index       int
+	Amount      int
+	TotalAmount int
+	IsLast      bool
+	Currencies  []*homeCurrency
 }
 
 type homeCategoryNew struct {

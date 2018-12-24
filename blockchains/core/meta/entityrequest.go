@@ -2,21 +2,17 @@ package meta
 
 import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/vote"
-	"github.com/xmnservices/xmnsuite/datastore"
 )
 
 type entityRequest struct {
-	ent                 entity.Representation
-	mp                  map[string]entity.Representation
-	createVoteServiceFn CreateVoteServiceFn
+	ent entity.Representation
+	mp  map[string]entity.Representation
 }
 
-func createEntityRequest(ent entity.Representation, mp map[string]entity.Representation, createVoteServiceFn CreateVoteServiceFn) EntityRequest {
+func createEntityRequest(ent entity.Representation, mp map[string]entity.Representation) EntityRequest {
 	out := entityRequest{
-		ent:                 ent,
-		mp:                  mp,
-		createVoteServiceFn: createVoteServiceFn,
+		ent: ent,
+		mp:  mp,
 	}
 
 	return &out
@@ -40,9 +36,4 @@ func (obj *entityRequest) Add(rep entity.Representation) EntityRequest {
 	}
 
 	return obj
-}
-
-// VoteService returns the vote service
-func (obj *entityRequest) VoteService(store datastore.DataStore) vote.Service {
-	return obj.createVoteServiceFn(store)
 }

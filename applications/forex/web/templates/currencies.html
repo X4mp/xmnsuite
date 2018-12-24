@@ -8,25 +8,61 @@
 
       <header>
           <ul>
+              <li><a href="/genesis">Genesis</a></li>
+              <li><a href="/users">Users</a></li>
+              <li><a href="/wallets">Wallets</a></li>
+              <li id="logo"><a href="/"><span>Home</span></a></li>
               <li><a href="/banks">Banks</a></li>
               <li><a href="/currencies">Currencies</a></li>
-              <li id="logo"><a href="/"><span>Home</span></a></li>
               <li><a href="/deposits">Deposits</a></li>
-              <li><a href="/me">My Profile</a></li>
           </ul>
           <div class="clearfloat">&nbsp;</div>
       </header>
 
-      <div id="main">
-          <a href="/currencies/new" class="btn right">Create</a>
-          <div class="clearfloat">&nbsp;</div>
-      </div>
+       <div id="main">
+
+           <div id="breadcrumb">
+               <ul>
+                   <li><a href="/">Home</a></li>
+                   <li>Currencies</li>
+               </ul>
+               <div class="clearfloat">&nbsp;</div>
+           </div>
+
+           <div class="block">
+
+               <div id="title">
+                   <h1>Currencies</h1>
+                   <a href="/currencies/new" class="btn right">Create</a>
+                   <span class="clearfloat">&nbsp;</span>
+               </div>
+
+               <p>Currencies represents a type of token that can be transacted.</p>
+               <table class="onerow">
+                   <thead>
+                       <tr>
+                           <td>ID</td>
+                           <td>Category</td>
+                           <td>Symbol</td>
+                           <td>Name</td>
+                       </tr>
+                   </thead>
+                   <tbody>
+                       {{ range $key, $value := .Categories }}
+                           <tr>
+                               <td><a href="/currencies/{{$value.ID}}">{{$value.ID}}</a></td>
+                               <td><a href="/categories/{{$value.CategoryID}}">{{$value.CategoryID}}</a></td>
+                               <td>{{$value.Symbol}}</td>
+                               <td>{{$value.Name}}</td>
+                           </tr>
+                       {{ end }}
+
+                   </tbody>
+               </table>
+           </div>
+       </div>
+       <footer>
+           <p>&copy;  XMN Blockchain Services Ltd.  The software and its blockchain is open source under the <a href="/license">MIT license</a>.</p>
+       </footer>
   </body>
 </html>
-
-<!--
-Pledge() pledge.Pledge
-Currency() currency.Currency
-Amount() int
-Price() int
--->

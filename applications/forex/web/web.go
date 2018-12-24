@@ -30,9 +30,11 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/work"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
+	active_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote"
+	active_vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote/active"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/group"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/balance"
 	"github.com/xmnservices/xmnsuite/configs"
 )
@@ -53,10 +55,10 @@ type web struct {
 	entityService          entity.Service
 	accountService         account.Service
 	requestService         request.Service
-	requestRepository      request.Repository
+	requestRepository      active_request.Repository
 	keynameRepository      keyname.Repository
 	groupRepository        group.Repository
-	voteRepository         vote.Repository
+	voteRepository         active_vote.Repository
 	voteService            vote.Service
 	userRepository         user.Repository
 	balanceRepository      balance.Repository
@@ -117,6 +119,8 @@ func createWeb(
 	app.rter.HandleFunc("/wallets", app.wallets)
 	app.rter.HandleFunc("/wallets/{id}", app.walletSingle)
 	app.rter.HandleFunc("/categories", app.categories)
+	app.rter.HandleFunc("/currencies", app.currencies)
+	app.rter.HandleFunc("/currencies/new", app.newCurrenciesForm)
 	app.rter.HandleFunc("/categories/new", app.newCategoriesForm)
 	app.rter.HandleFunc("/requests", app.requests)
 	app.rter.HandleFunc("/requests/{name}", app.requestsOfGroup)
@@ -265,7 +269,7 @@ func (app *web) middlewareVerifyConfigsInCookie(next http.Handler) http.Handler 
 			RoutePrefix: "",
 		})
 
-		app.requestRepository = request.SDKFunc.CreateRepository(request.CreateRepositoryParams{
+		app.requestRepository = active_request.SDKFunc.CreateRepository(active_request.CreateRepositoryParams{
 			EntityRepository: entityRepository,
 		})
 
@@ -277,7 +281,7 @@ func (app *web) middlewareVerifyConfigsInCookie(next http.Handler) http.Handler 
 			EntityRepository: entityRepository,
 		})
 
-		app.voteRepository = vote.SDKFunc.CreateRepository(vote.CreateRepositoryParams{
+		app.voteRepository = active_vote.SDKFunc.CreateRepository(active_vote.CreateRepositoryParams{
 			EntityRepository: entityRepository,
 		})
 
@@ -817,6 +821,82 @@ func (app *web) categories(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, templateData)
 }
 
+func (app *web) currencies(w http.ResponseWriter, r *http.Request) {
+	// retrieve the conf:
+	conf := getConfigsFromCookie(loginCookieName, r)
+	if conf == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("cookie not found!")
+		w.Write([]byte(str))
+		return
+	}
+
+	// retrieve the currencies:
+	currPS, currPSErr := app.currencyRepository.RetrieveSet(0, amountOfElementsPerList)
+	if currPSErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("there was an error while retrieving the currencies entity set: %s", currPSErr.Error())
+		w.Write([]byte(str))
+		return
+	}
+
+	currs := []*homeCurrency{}
+	currsIns := currPS.Instances()
+	for _, oneCurrIns := range currsIns {
+		if cur, ok := oneCurrIns.(currency.Currency); ok {
+			cat := cur.Category()
+			oneCur := &homeCurrency{
+				ID: cat.ID().String(),
+				Category: &homeCategory{
+					ID:          cat.ID().String(),
+					Name:        cat.Name(),
+					Description: cat.Description(),
+				},
+				Name:        cat.Name(),
+				Description: cat.Description(),
+			}
+
+			if cat.HasParent() {
+				oneCur.Category.ParentID = cat.Parent().Parent().ID().String()
+			}
+
+			currs = append(currs, oneCur)
+			continue
+		}
+
+		log.Printf("the currency (ID: %s) is not a valid Currency instance", oneCurrIns.ID().String())
+
+	}
+
+	// template structure:
+	templateData := &homeCurrencyList{
+		Index:       currPS.Index(),
+		Amount:      currPS.Amount(),
+		TotalAmount: currPS.TotalAmount(),
+		IsLast:      currPS.IsLast(),
+		Currencies:  currs,
+	}
+
+	// retrieve the html page:
+	content, contentErr := ioutil.ReadFile(filepath.Join(app.templateDir, "currencies.html"))
+	if contentErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("the template could not be rendered: %s", contentErr.Error())
+		w.Write([]byte(str))
+		return
+	}
+
+	tmpl, err := template.New("currencies").Parse(string(content))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("the template could not be rendered: %s", err.Error())
+		w.Write([]byte(str))
+	}
+
+	w.WriteHeader(http.StatusOK)
+	tmpl.Execute(w, templateData)
+}
+
 func (app *web) register(w http.ResponseWriter, r *http.Request) {
 	if parseFormErr := r.ParseForm(); parseFormErr != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -919,6 +999,148 @@ func (app *web) register(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(content)
+}
+
+func (app *web) newCurrenciesForm(w http.ResponseWriter, r *http.Request) {
+	if parseFormErr := r.ParseForm(); parseFormErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("there was an error while parsing form elements: %s", parseFormErr.Error())
+		w.Write([]byte(str))
+		return
+	}
+
+	// retrieve the conf:
+	conf := getConfigsFromCookie(loginCookieName, r)
+	if conf == nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("cookie not found!")
+		w.Write([]byte(str))
+		return
+	}
+
+	categoryName := r.FormValue("name")
+	categoryDescription := r.FormValue("description")
+	categoryReason := r.FormValue("reason")
+	fromWalletID := r.FormValue("fromwalletid")
+	if categoryName != "" && categoryDescription != "" && fromWalletID != "" {
+		// parse the walletID:
+		frmWalletID, frmWalletIDErr := uuid.FromString(fromWalletID)
+		if frmWalletIDErr != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("the given WalletID (ID: %s) is invalid: %s", frmWalletID, frmWalletIDErr.Error())
+			w.Write([]byte(str))
+			return
+		}
+
+		// retrieve the wallet:
+		wal, walErr := app.walletRepository.RetrieveByID(&frmWalletID)
+		if walErr != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("the given WalletID (ID: %s) could not be retrieved: %s", frmWalletID.String(), walErr.Error())
+			w.Write([]byte(str))
+			return
+		}
+
+		// retrieve the user:
+		usr, usrErr := app.userRepository.RetrieveByPubKeyAndWallet(conf.WalletPK().PublicKey(), wal)
+		if usrErr != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("there was an error while retrieving the user (Pubkey: %s, WalletID: %s): %s", conf.WalletPK().PublicKey().String(), wal.ID().String(), usrErr.Error())
+			w.Write([]byte(str))
+			return
+		}
+
+		// retrieve the keyname:
+		kname, knameErr := app.keynameRepository.RetrieveByName(app.categoryRepresentation.MetaData().Keyname())
+		if knameErr != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("there was an error while retrieving a keyname: %s", knameErr.Error())
+			w.Write([]byte(str))
+			return
+		}
+
+		// create the new category instance:
+		cat := category.SDKFunc.Create(category.CreateParams{
+			Name:        categoryName,
+			Description: categoryDescription,
+		})
+
+		// create the request:
+		catRequest := request.SDKFunc.Create(request.CreateParams{
+			FromUser:  usr,
+			NewEntity: cat,
+			Reason:    categoryReason,
+			Keyname:   kname,
+		})
+
+		// save the request:
+		saveErr := app.requestService.Save(catRequest, app.categoryRepresentation)
+		if saveErr != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("there was an error while saving a Request (Category instance): %s", saveErr.Error())
+			w.Write([]byte(str))
+			return
+		}
+
+		// redirect:
+		uri := fmt.Sprintf("/requests/%s/%s/%s", kname.Group().Name(), kname.Name(), catRequest.ID().String())
+		http.Redirect(w, r, uri, http.StatusPermanentRedirect)
+		return
+	}
+
+	// retrieve the users associated with our conf PK:
+	usrPS, usrPSErr := app.userRepository.RetrieveSetByPubKey(conf.WalletPK().PublicKey(), 0, amountOfElementsPerList)
+	if usrPSErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("there was an error while retrieving the users entity set from creator's public key (PubKey: %s): %s", conf.WalletPK().PublicKey().String(), usrPSErr.Error())
+		w.Write([]byte(str))
+		return
+	}
+
+	usrs := []*homeUser{}
+	usersIns := usrPS.Instances()
+	for _, oneUserIns := range usersIns {
+		if usr, ok := oneUserIns.(user.User); ok {
+			usrs = append(usrs, &homeUser{
+				ID:       usr.ID().String(),
+				Shares:   usr.Shares(),
+				WalletID: usr.Wallet().ID().String(),
+			})
+		}
+
+		log.Printf("the given entity (ID: %s) is not a valid User instance", oneUserIns.ID().String())
+		continue
+	}
+
+	// template structure:
+	templateData := &homeCategoryNew{
+		Users: &homeUserList{
+			Index:       usrPS.Index(),
+			Amount:      usrPS.Amount(),
+			TotalAmount: usrPS.TotalAmount(),
+			IsLast:      usrPS.IsLast(),
+			Users:       usrs,
+		},
+	}
+
+	// retrieve the html page:
+	content, contentErr := ioutil.ReadFile(filepath.Join(app.templateDir, "categories_new.html"))
+	if contentErr != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("the template could not be rendered: %s", contentErr.Error())
+		w.Write([]byte(str))
+		return
+	}
+
+	tmpl, err := template.New("categories_new").Parse(string(content))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		str := fmt.Sprintf("the template could not be rendered: %s", err.Error())
+		w.Write([]byte(str))
+	}
+
+	w.WriteHeader(http.StatusOK)
+	tmpl.Execute(w, templateData)
 }
 
 func (app *web) newCategoriesForm(w http.ResponseWriter, r *http.Request) {
@@ -1272,11 +1494,11 @@ func (app *web) requestsOfGroupOfKeyname(w http.ResponseWriter, r *http.Request)
 			reqs := []*homeRequest{}
 			reqsIns := reqPS.Instances()
 			for _, oneReqIns := range reqsIns {
-				if req, ok := oneReqIns.(request.Request); ok {
+				if req, ok := oneReqIns.(active_request.Request); ok {
 					reqs = append(reqs, &homeRequest{
 						ID:         req.ID().String(),
-						FromUserID: req.From().ID().String(),
-						Reason:     req.Reason(),
+						FromUserID: req.Request().From().ID().String(),
+						Reason:     req.Request().Reason(),
 					})
 				}
 
@@ -1395,9 +1617,9 @@ func (app *web) requestSingle(w http.ResponseWriter, r *http.Request) {
 				}
 
 				// make sure the keyname and the keyname in the request fits:
-				if bytes.Compare(kname.ID().Bytes(), req.Keyname().ID().Bytes()) != 0 {
+				if bytes.Compare(kname.ID().Bytes(), req.Request().Keyname().ID().Bytes()) != 0 {
 					w.WriteHeader(http.StatusNotFound)
-					str := fmt.Sprintf("the given keyname (%s) does not fit the given request (ID: %s) keyname (%s)", kname.Name(), req.ID().String(), req.Keyname().ID().String())
+					str := fmt.Sprintf("the given keyname (%s) does not fit the given request (ID: %s) keyname (%s)", kname.Name(), req.ID().String(), req.Request().Keyname().ID().String())
 					w.Write([]byte(str))
 					return
 				}
@@ -1435,18 +1657,36 @@ func (app *web) requestSingle(w http.ResponseWriter, r *http.Request) {
 					return
 				}
 
+				approvedPow := 0
+				disApprovedPow := 0
+				neutralPow := 0
 				vots := []*homeVote{}
 				votsIns := votesPS.Instances()
 				for _, oneVoteIns := range votsIns {
-					if vot, ok := oneVoteIns.(vote.Vote); ok {
+					if vot, ok := oneVoteIns.(active_vote.Vote); ok {
+						pow := vot.Power()
 						vots = append(vots, &homeVote{
-							ID:               vot.ID().String(),
-							Reason:           vot.Reason(),
-							UserVoterID:      vot.Voter().ID().String(),
-							UserAmountShares: vot.Voter().Shares(),
-							IsApproved:       vot.IsApproved(),
-							IsNeutral:        vot.IsNeutral(),
+							ID:          vot.ID().String(),
+							Pow:         pow,
+							Reason:      vot.Vote().Reason(),
+							UserVoterID: vot.Vote().Voter().ID().String(),
+							IsApproved:  vot.Vote().IsApproved(),
+							IsNeutral:   vot.Vote().IsNeutral(),
 						})
+
+						coreVote := vot.Vote()
+						if coreVote.IsApproved() {
+							approvedPow += pow
+							continue
+						}
+
+						if coreVote.IsNeutral() {
+							neutralPow += pow
+							continue
+						}
+
+						disApprovedPow += vot.Power()
+						continue
 					}
 
 					log.Printf("the given entity (ID: %s) is not a valid request Vote instance", oneVoteIns.ID().String())
@@ -1454,7 +1694,7 @@ func (app *web) requestSingle(w http.ResponseWriter, r *http.Request) {
 				}
 
 				// convert the entity to json:
-				newEntityJS, newEntityJSErr := json.MarshalIndent(req.New(), "", "\t")
+				newEntityJS, newEntityJSErr := json.MarshalIndent(req.Request().New(), "", "\t")
 				if newEntityJSErr != nil {
 					w.WriteHeader(http.StatusInternalServerError)
 					str := fmt.Sprintf("there was an error while converting a Request's entity to JSON: %s", newEntityJSErr.Error())
@@ -1465,10 +1705,14 @@ func (app *web) requestSingle(w http.ResponseWriter, r *http.Request) {
 				// template structure:
 				templateData := &homeRequestSingle{
 					ID:              req.ID().String(),
-					FromUserID:      req.From().ID().String(),
-					Reason:          req.Reason(),
+					FromUserID:      req.Request().From().ID().String(),
+					Reason:          req.Request().Reason(),
 					NewJS:           string(newEntityJS),
-					ConcensusNeeded: req.From().Wallet().ConcensusNeeded(),
+					ConcensusNeeded: req.ConcensusNeeded(),
+					ApprovedPow:     approvedPow,
+					DisapprovedPow:  disApprovedPow,
+					NeutralPow:      neutralPow,
+					TotalPow:        approvedPow + disApprovedPow + neutralPow,
 					Keyname: &homeRequestKeyname{
 						ID:   kname.ID().String(),
 						Name: kname.Name(),
@@ -1599,9 +1843,9 @@ func (app *web) requestSingleVote(w http.ResponseWriter, r *http.Request) {
 				}
 
 				// make sure the keyname and the keyname in the request fits:
-				if bytes.Compare(kname.ID().Bytes(), req.Keyname().ID().Bytes()) != 0 {
+				if bytes.Compare(kname.ID().Bytes(), req.Request().Keyname().ID().Bytes()) != 0 {
 					w.WriteHeader(http.StatusNotFound)
-					str := fmt.Sprintf("the given keyname (%s) does not fit the given request (ID: %s) keyname (%s)", kname.Name(), req.ID().String(), req.Keyname().ID().String())
+					str := fmt.Sprintf("the given keyname (%s) does not fit the given request (ID: %s) keyname (%s)", kname.Name(), req.ID().String(), req.Request().Keyname().ID().String())
 					w.Write([]byte(str))
 					return
 				}
@@ -1657,7 +1901,7 @@ func (app *web) requestSingleVote(w http.ResponseWriter, r *http.Request) {
 				}
 
 				// redirect:
-				url := fmt.Sprintf("/requests/%s/%s/%s", req.Keyname().Group().Name(), req.Keyname().Name(), req.ID().String())
+				url := fmt.Sprintf("/requests/%s/%s/%s", req.Request().Keyname().Group().Name(), req.Request().Keyname().Name(), req.ID().String())
 				http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 				return
 			}

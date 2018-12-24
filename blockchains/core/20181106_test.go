@@ -21,8 +21,9 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/work"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
+	active_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/link"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/node"
@@ -341,18 +342,15 @@ func TestSaveGenesis_addUserToWallet_addAnotherUserToWallerWithSamePublicKey_sav
 		Keyname:   kname,
 	})
 
-	// create the request vote:
-	reqVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    req,
-		Voter:      genIns.User(),
-		IsApproved: true,
-	})
-
 	// create the request service:
 	requestService := request.SDKFunc.CreateSDKService(request.CreateSDKServiceParams{
 		PK:          pk,
 		Client:      client,
 		RoutePrefix: routePrefix,
+	})
+
+	requestRepository := active_request.SDKFunc.CreateRepository(active_request.CreateRepositoryParams{
+		EntityRepository: repository,
 	})
 
 	// create the vote service:
@@ -368,6 +366,20 @@ func TestSaveGenesis_addUserToWallet_addAnotherUserToWallerWithSamePublicKey_sav
 		t.Errorf("the returned error was expected to be nil, error returned: %s", saveRequestErr.Error())
 		return
 	}
+
+	// retrieve the request:
+	retReq, retReqErr := requestRepository.RetrieveByRequest(req)
+	if retReqErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", retReqErr.Error())
+		return
+	}
+
+	// create the request vote:
+	reqVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    retReq,
+		Voter:      genIns.User(),
+		IsApproved: true,
+	})
 
 	// save the vote, returns an error:
 	savedVoteErr := voteService.Save(reqVote, user.SDKFunc.CreateRepresentation())
@@ -413,14 +425,13 @@ func TestSaveGenesis_createNewUserOnWallet_Success(t *testing.T) {
 	})
 
 	// create our genesis user vote:
-	userInWalletRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    userInWalletRequest,
+	userInWalletRequestVote := &simpleRequestVote{
 		Voter:      genIns.User(),
 		IsApproved: true,
-	})
+	}
 
 	// save the request then save votes:
-	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, user.SDKFunc.CreateRepresentation(), userInWalletRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, user.SDKFunc.CreateRepresentation(), userInWalletRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		userInWalletRequestVote,
 	}, createWalletVoteRouteFunc(routePrefix))
 }
@@ -467,14 +478,13 @@ func TestSaveGenesis_addUserToWallet_increaseTheNeededConcensus_voteUsingTwoUser
 	})
 
 	// create our genesis user vote:
-	userInWalletRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    userInWalletRequest,
+	userInWalletRequestVote := &simpleRequestVote{
 		Voter:      genIns.User(),
 		IsApproved: true,
-	})
+	}
 
 	// save the request then save votes:
-	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, userRepresentation, userInWalletRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, userRepresentation, userInWalletRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		userInWalletRequestVote,
 	}, createWalletVoteRouteFunc(routePrefix))
 
@@ -497,14 +507,13 @@ func TestSaveGenesis_addUserToWallet_increaseTheNeededConcensus_voteUsingTwoUser
 	})
 
 	// create our genesis user vote on the wallet update:
-	updateWalletRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    updateWalletRequest,
+	updateWalletRequestVote := &simpleRequestVote{
 		Voter:      genIns.User(),
 		IsApproved: true,
-	})
+	}
 
 	// save the new wallet request, then save vote:
-	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, walletRepresentation, updateWalletRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, walletRepresentation, updateWalletRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		updateWalletRequestVote,
 	}, createWalletVoteRouteFunc(routePrefix))
 
@@ -521,21 +530,19 @@ func TestSaveGenesis_addUserToWallet_increaseTheNeededConcensus_voteUsingTwoUser
 	})
 
 	// create our genesis user vote on the wallet update:
-	updateAgainWalletRequestVoteByGenUser := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    updateAgainWalletRequest,
+	updateAgainWalletRequestVoteByGenUser := &simpleRequestVote{
 		Voter:      genIns.User(),
 		IsApproved: true,
-	})
+	}
 
 	// create our newly added user vote on the wallet update:
-	updateAgainWalletRequestVoteByNewlyAddedUser := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    updateAgainWalletRequest,
+	updateAgainWalletRequestVoteByNewlyAddedUser := &simpleRequestVote{
 		Voter:      userIns,
 		IsApproved: true,
-	})
+	}
 
 	// save the new wallet request, then save vote:
-	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, walletRepresentation, updateAgainWalletRequest, []crypto.PrivateKey{pk, userPK}, []vote.Vote{
+	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, walletRepresentation, updateAgainWalletRequest, []crypto.PrivateKey{pk, userPK}, []*simpleRequestVote{
 		updateAgainWalletRequestVoteByGenUser,
 		updateAgainWalletRequestVoteByNewlyAddedUser,
 	}, createWalletVoteRouteFunc(routePrefix))
@@ -609,18 +616,16 @@ func TestSaveGenesis_createNewWallet_createPledge_transferPledgeTokens_returnsEr
 		Keyname:   kname,
 	})
 
-	// create our user vote:
-	trsfRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    trsfRequest,
-		Voter:      userIns,
-		IsApproved: true,
-	})
-
 	// create the request service:
 	requestService := request.SDKFunc.CreateSDKService(request.CreateSDKServiceParams{
 		PK:          walPK,
 		Client:      client,
 		RoutePrefix: routePrefix,
+	})
+
+	// create the request repository:
+	requestRepository := active_request.SDKFunc.CreateRepository(active_request.CreateRepositoryParams{
+		EntityRepository: repository,
 	})
 
 	// save the request:
@@ -629,6 +634,20 @@ func TestSaveGenesis_createNewWallet_createPledge_transferPledgeTokens_returnsEr
 		t.Errorf("the returned error was expected to be nil, error returned: %s", saveRequestErr.Error())
 		return
 	}
+
+	// retrieve the request:
+	retReq, retReqErr := requestRepository.RetrieveByRequest(trsfRequest)
+	if retReqErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", retReqErr.Error())
+		return
+	}
+
+	// create our user vote:
+	trsfRequestVote := vote.SDKFunc.Create(vote.CreateParams{
+		Request:    retReq,
+		Voter:      userIns,
+		IsApproved: true,
+	})
 
 	// create the vote service:
 	voteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
@@ -715,14 +734,13 @@ func TestSaveGenesis_createNewWallet_createValidator_Success(t *testing.T) {
 	})
 
 	// create our user vote:
-	validatorRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    validatorRequest,
+	validatorRequestVote := &simpleRequestVote{
 		Voter:      genIns.User(),
 		IsApproved: true,
-	})
+	}
 
 	// save the new wallet request, then save vote:
-	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, validatorRepresentation, validatorRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, validatorRepresentation, validatorRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		validatorRequestVote,
 	}, createWalletVoteRouteFunc(routePrefix))
 }
@@ -799,14 +817,13 @@ func TestSaveGenesis_createNewWallet_createTransfer_Success(t *testing.T) {
 	})
 
 	// create our user vote:
-	trsfRequestVote := vote.SDKFunc.Create(vote.CreateParams{
-		Request:    trsfRequest,
+	trsfRequestVote := &simpleRequestVote{
 		Voter:      genIns.User(),
 		IsApproved: true,
-	})
+	}
 
 	// save the new wallet request, then save vote:
-	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, transferRepresentation, trsfRequest, []crypto.PrivateKey{pk}, []vote.Vote{
+	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, transferRepresentation, trsfRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		trsfRequestVote,
 	}, createWalletVoteRouteFunc(routePrefix))
 }

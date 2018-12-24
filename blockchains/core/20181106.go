@@ -19,7 +19,10 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/validator"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/vote"
+	active_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote"
+	active_vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote/active"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 	"github.com/xmnservices/xmnsuite/crypto"
 	"github.com/xmnservices/xmnsuite/datastore"
 	"github.com/xmnservices/xmnsuite/routers"
@@ -724,18 +727,35 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 								Keyname:   kname,
 							})
 
-							// save the request:
-							representation := request.SDKFunc.CreateRepresentation()
-							saveErr := dep.entityService.Save(req, representation)
-							if saveErr != nil {
-								return nil, saveErr
+							// create the active request:
+							var activeReq active_request.Request
+							keyname := wrReq.RequestedBy().MetaData().Keyname()
+							if keyname == token.SDKFunc.CreateMetaData().Keyname() {
+								activeReq = active_request.SDKFunc.Create(active_request.CreateParams{
+									Request:         req,
+									ConcensusNeeded: gen.ConcensusNeeded(),
+								})
+							}
+
+							if keyname == wallet.SDKFunc.CreateMetaData().Keyname() {
+								activeReq = active_request.SDKFunc.Create(active_request.CreateParams{
+									Request:         req,
+									ConcensusNeeded: wal.ConcensusNeeded(),
+								})
+							}
+
+							// save the active request:
+							activeRepresentation := active_request.SDKFunc.CreateRepresentation()
+							saveActiveReqErr := dep.entityService.Save(activeReq, activeRepresentation)
+							if saveActiveReqErr != nil {
+								return nil, saveActiveReqErr
 							}
 
 							// enable the voting on the request:
-							store.Roles().EnableWriteAccess(app.routerRoleKey, fmt.Sprintf("%s/%s/requests/%s", app.routePrefix, kname.Name(), req.ID().String()))
+							store.Roles().EnableWriteAccess(app.routerRoleKey, fmt.Sprintf("%s/%s/requests/%s", app.routePrefix, kname.Name(), activeReq.ID().String()))
 
 							// convert to json:
-							storable, storableErr := representation.ToStorable()(req)
+							storable, storableErr := activeRepresentation.ToStorable()(activeReq)
 							if storableErr != nil {
 								return nil, storableErr
 							}
@@ -799,15 +819,15 @@ func (app *core20181108) saveEntityRequestVote() routers.CreateRouteParams {
 				return nil, errors.New(str)
 			}
 
-			// retrieve the request:
+			// retrieve the active request:
 			reqIns, reqInsErr := dep.entityRepository.RetrieveByID(app.meta.Request().MetaData(), &requestID)
 			if reqInsErr != nil {
 				return nil, reqInsErr
 			}
 
-			if req, ok := reqIns.(request.Request); ok {
+			if req, ok := reqIns.(active_request.Request); ok {
 				entityRequests := app.meta.WriteOnEntityRequest()
-				if entityRequest, ok := entityRequests[req.Keyname().Group().Name()]; ok {
+				if entityRequest, ok := entityRequests[req.Request().Keyname().Group().Name()]; ok {
 					if keynameName, ok := params["keyname"]; ok {
 						// convert the data to the incoming vote:
 						ptr := new(incomingVote)
@@ -845,15 +865,35 @@ func (app *core20181108) saveEntityRequestVote() routers.CreateRouteParams {
 
 						representations := entityRequest.Map()
 						if representation, ok := representations[keynameName]; ok {
-							saveErr := entityRequest.VoteService(store).Save(voteIns, representation)
-							if saveErr != nil {
-								log.Printf("\n\n5 - error: %s\n\n", saveErr.Error())
+							// create the active vote:
+							var activeVote active_vote.Vote
+							keyname := entityRequest.RequestedBy().MetaData().Keyname()
+							if keyname == token.SDKFunc.CreateMetaData().Keyname() {
+								balance, balanceErr := dep.balanceRepository.RetrieveByWalletAndToken(voter.Wallet(), gen.Deposit().Token())
+								if balanceErr != nil {
+									return nil, balanceErr
+								}
 
+								activeVote = active_vote.SDKFunc.Create(active_vote.CreateParams{
+									Vote:  voteIns,
+									Power: balance.Amount(),
+								})
+							}
+
+							if keyname == wallet.SDKFunc.CreateMetaData().Keyname() {
+								activeVote = active_vote.SDKFunc.Create(active_vote.CreateParams{
+									Vote:  voteIns,
+									Power: voter.Shares(),
+								})
+							}
+
+							saveErr := dep.voteService.Save(activeVote, representation)
+							if saveErr != nil {
 								return nil, saveErr
 							}
 
 							// convert to json:
-							storable, storableErr := app.meta.Vote().ToStorable()(voteIns)
+							storable, storableErr := app.meta.Vote().ToStorable()(activeVote)
 							if storableErr != nil {
 								return nil, storableErr
 							}
@@ -879,14 +919,14 @@ func (app *core20181108) saveEntityRequestVote() routers.CreateRouteParams {
 							return resp, nil
 						}
 
-						str := fmt.Sprintf("the keyname (name: %s) cannot be voted on by group (name: %s)", keynameName, req.Keyname().Group().Name())
+						str := fmt.Sprintf("the keyname (name: %s) cannot be voted on by group (name: %s)", keynameName, req.Request().Keyname().Group().Name())
 						return nil, errors.New(str)
 					}
 
 					return nil, errors.New("an keyname must be provided")
 				}
 
-				str := fmt.Sprintf("the group (name: %s) is not an entity that can be voted on", req.Keyname().Group().Name())
+				str := fmt.Sprintf("the group (name: %s) is not an entity that can be voted on", req.Request().Keyname().Group().Name())
 				return nil, errors.New(str)
 			}
 

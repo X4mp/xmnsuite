@@ -1,0 +1,84 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+      <title>XMN Foreign Exchange</title>
+      <link rel="stylesheet" href="/static/default.css">
+  </head>
+  <body>
+
+      <header>
+          <ul>
+              <li><a href="/genesis">Genesis</a></li>
+              <li><a href="/users">Users</a></li>
+              <li><a href="/wallets">Wallets</a></li>
+              <li id="logo"><a href="/"><span>Home</span></a></li>
+              <li><a href="/banks">Banks</a></li>
+              <li><a href="/currencies">Currencies</a></li>
+              <li><a href="/deposits">Deposits</a></li>
+          </ul>
+          <div class="clearfloat">&nbsp;</div>
+      </header>
+
+       <div id="main">
+
+           <div id="breadcrumb">
+               <ul>
+                   <li><a href="/">Home</a></li>
+                   <li><a href="/categories">Currencies</a></li>
+                   <li>New</li>
+               </ul>
+               <div class="clearfloat">&nbsp;</div>
+           </div>
+
+           <div class="block">
+               <h1>New Curren cy</h1>
+               <p>To request a new currency, simply fill in the form below.  The community will then vote on your new currency.  If the community agrees that your requested currency should be added, it will be created.</p>
+
+               <div id="newbank">
+                   <form method="post" action="/currencies/new">
+                       <fieldset>
+                           <legend>Currency</legend>
+                           <div class="block">
+                               <label for="fromwalletid" class="left">From Wallet:</label>
+                               <select name="fromwalletid" id="fromwalletid" class="right">
+                                   {{ range $key, $value := .Users.Users }}
+                                        <option value="{{$value.WalletID}}">{{$value.WalletID}} ({{$value.Shares}} shares)</option>
+                                   {{ end }}
+                               </select>
+                                <div class="clearfloat">&nbsp;</div>
+                           </div>
+                           <div class="block">
+                               <label for="name" class="left">Symbol:</label>
+                               <input type="text" id="symbol" name="symbol" value="" class="right" />
+                                <div class="clearfloat">&nbsp;</div>
+                           </div>
+                           <div class="block">
+                               <label for="name" class="left">Name:</label>
+                               <input type="text" id="name" name="name" value="" class="right" />
+                                <div class="clearfloat">&nbsp;</div>
+                           </div>
+                           <div class="block">
+                               <label for="description" class="left">Description:</label>
+                               <textarea rows="4" cols="50" id="description" name="description" class="right"></textarea>
+                                <div class="clearfloat">&nbsp;</div>
+                           </div>
+                           <div class="block">
+                               <label for="reason" class="left">Reason:</label>
+                               <textarea rows="4" cols="50" id="reason" name="reason" class="right" placeholder="Please explain why you think we need a new currency category..."></textarea>
+                                <div class="clearfloat">&nbsp;</div>
+                           </div>
+
+                           <div class="block">
+                               <input type="submit" value="Save" class="btn right" />
+                               <div class="clearfloat">&nbsp;</div>
+                           </div>
+                       </fieldset>
+                   </form>
+               </div>
+           </div>
+       </div>
+       <footer>
+           <p>&copy;  XMN Blockchain Services Ltd.  The software and its blockchain is open source under the <a href="/license">MIT license</a>.</p>
+       </footer>
+  </body>
+</html>

@@ -10,7 +10,7 @@ import (
 	core "github.com/xmnservices/xmnsuite/blockchains/core"
 	entity "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
-	vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/vote"
+	vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote"
 )
 
 var cdc = amino.NewCodec()

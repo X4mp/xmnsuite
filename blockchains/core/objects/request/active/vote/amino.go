@@ -2,8 +2,8 @@ package vote
 
 import (
 	amino "github.com/tendermint/go-amino"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
+	request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
 )
 
 const (
@@ -41,7 +41,7 @@ func Register(codec *amino.Codec) {
 		defer func() {
 			recover()
 		}()
-		codec.RegisterInterface((*NormalizedVote)(nil), nil)
+		codec.RegisterInterface((*Normalized)(nil), nil)
 		codec.RegisterConcrete(&normalizedVote{}, XMNSuiteBlockchainsFrameworkNormalizedVote, nil)
 	}()
 }
