@@ -20,7 +20,7 @@ type currency struct {
 func createCurrency(id *uuid.UUID, cat category.Category, symbol string, name string, description string) (Currency, error) {
 
 	if len(symbol) != amountOfCharactersForSymbol {
-		str := fmt.Sprintf("the symbol (%s) needs %d characters", symbol, len(symbol))
+		str := fmt.Sprintf("the symbol (%s) needs %d characters", symbol, amountOfCharactersForSymbol)
 		return nil, errors.New(str)
 	}
 

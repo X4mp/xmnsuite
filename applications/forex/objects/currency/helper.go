@@ -49,6 +49,31 @@ func createMetaData() entity.MetaData {
 	})
 }
 
+func createRepresentation() entity.Representation {
+	return entity.SDKFunc.CreateRepresentation(entity.CreateRepresentationParams{
+		Met: createMetaData(),
+		ToStorable: func(ins entity.Entity) (interface{}, error) {
+			if curr, ok := ins.(Currency); ok {
+				out := createStorableCurrency(curr)
+				return out, nil
+			}
+
+			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Currency instance", ins.ID().String())
+			return nil, errors.New(str)
+		},
+		Keynames: func(ins entity.Entity) ([]string, error) {
+			if _, ok := ins.(Currency); ok {
+				return []string{
+					retrieveAllCurrenciesKeyname(),
+				}, nil
+			}
+
+			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Currency instance", ins.ID().String())
+			return nil, errors.New(str)
+		},
+	})
+}
+
 func toData(curr Currency) *Data {
 	out := Data{
 		ID:          curr.ID().String(),

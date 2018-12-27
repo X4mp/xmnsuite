@@ -2,6 +2,7 @@ package currency
 
 import (
 	amino "github.com/tendermint/go-amino"
+	category "github.com/xmnservices/xmnsuite/applications/forex/objects/category"
 )
 
 const (
@@ -17,6 +18,9 @@ func init() {
 
 // Register registers all the interface -> struct to amino
 func Register(codec *amino.Codec) {
+	// dependencies:
+	category.Register(codec)
+
 	// Currency
 	func() {
 		defer func() {
@@ -32,6 +36,6 @@ func Register(codec *amino.Codec) {
 			recover()
 		}()
 		codec.RegisterInterface((*Normalized)(nil), nil)
-		codec.RegisterConcrete(&storableCurrency{}, xmnApplicationsForexNormalizedCurrency, nil)
+		codec.RegisterConcrete(&normalizedCurrency{}, xmnApplicationsForexNormalizedCurrency, nil)
 	}()
 }

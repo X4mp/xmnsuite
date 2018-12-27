@@ -37,7 +37,18 @@ func (app *repository) RetrieveByID(id *uuid.UUID) (Category, error) {
 	return nil, errors.New(str)
 }
 
-// RetrieveSetWithNoParent retrieves a category set
+// RetrieveSet retrieves a category set
+func (app *repository) RetrieveSet(index int, amount int) (entity.PartialSet, error) {
+	keyname := retrieveAllCategoriesKeyname()
+	catPS, catPSErr := app.entityRepository.RetrieveSetByKeyname(app.metaData, keyname, index, amount)
+	if catPSErr != nil {
+		return nil, catPSErr
+	}
+
+	return catPS, nil
+}
+
+// RetrieveSetWithNoParent retrieves a category set without parent
 func (app *repository) RetrieveSetWithNoParent(index int, amount int) (entity.PartialSet, error) {
 	keynames := []string{
 		retrieveAllCategoriesKeyname(),

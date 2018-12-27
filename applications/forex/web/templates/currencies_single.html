@@ -24,41 +24,39 @@
            <div id="breadcrumb">
                <ul>
                    <li><a href="/">Home</a></li>
-                   <li>Currencies</li>
+                   <li><a href="/currencies">Currencies</a></li>
+                   <li>{{.ID}}</li>
                </ul>
                <div class="clearfloat">&nbsp;</div>
            </div>
 
            <div class="block">
 
-               <div id="title">
-                   <h1>Currencies</h1>
-                   <a href="/currencies/new" class="btn right">Create</a>
-                   <span class="clearfloat">&nbsp;</span>
-               </div>
-
-               <p>Currencies represents a type of token that can be transacted.</p>
-               <table class="onerow">
-                   <thead>
+               <div class="block">
+                   <h1>Currency: {{.ID}}</h1>
+                   <table class="tworows">
                        <tr>
-                           <td>ID</td>
-                           <td>Category</td>
-                           <td>Symbol</td>
-                           <td>Name</td>
+                           <td class="left highlight">ID:</td>
+                           <td class="highlight">{{.ID}}</td>
                        </tr>
-                   </thead>
-                   <tbody>
-                       {{ range $key, $value := .Currencies }}
-                           <tr>
-                               <td><a href="/currencies/{{$value.ID}}">{{$value.ID}}</a></td>
-                               <td><a href="/categories/{{$value.Category.ID}}">{{$value.Category.Name}}</a></td>
-                               <td>{{$value.Symbol}}</td>
-                               <td>{{$value.Name}}</td>
-                           </tr>
-                       {{ end }}
-
-                   </tbody>
-               </table>
+                       <tr>
+                           <td class="left highlight">Category:</td>
+                           <td class="highlight"><a href="/categories/{{.Category.ID}}">{{.Category.Name}}</a></td>
+                       </tr>
+                       <tr>
+                           <td class="left">Symbol:</td>
+                           <td>{{.Symbol}}</td>
+                       </tr>
+                       <tr>
+                           <td class="left">Name:</td>
+                           <td>{{.Name}}</td>
+                       </tr>
+                       <tr>
+                           <td class="left">Description:</td>
+                           <td>{{.Description}}</td>
+                       </tr>
+                   </table>
+               </div>
            </div>
        </div>
        <footer>

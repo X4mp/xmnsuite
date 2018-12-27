@@ -38,6 +38,7 @@ type Category interface {
 // Repository represents the category repository
 type Repository interface {
 	RetrieveByID(id *uuid.UUID) (Category, error)
+	RetrieveSet(index int, amount int) (entity.PartialSet, error)
 	RetrieveSetWithNoParent(index int, amount int) (entity.PartialSet, error)
 }
 

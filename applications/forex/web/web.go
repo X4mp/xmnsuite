@@ -117,8 +117,6 @@ func createWeb(
 
 	app.rter.HandleFunc("/", app.home)
 	app.rter.HandleFunc("/register", app.register)
-	app.rter.HandleFunc("/currencies", app.currencies)
-	app.rter.HandleFunc("/currencies/new", app.newCurrenciesForm)
 	app.rter.HandleFunc("/requests", app.requests)
 	app.rter.HandleFunc("/requests/{name}", app.requestsOfGroup)
 	app.rter.HandleFunc("/requests/{groupname}/{keyname}", app.requestsOfGroupOfKeyname)
@@ -372,6 +370,25 @@ func (app *web) middlewareVerifyConfigsInCookie(next http.Handler) http.Handler 
 
 		app.rter.HandleFunc("/categories/{id}", category.SDKFunc.Route(category.RouteParams{
 			Tmpl:             app.createTemplate("categories_single.html", "categories_single"),
+			EntityRepository: entityRepository,
+		}))
+
+		app.rter.HandleFunc("/currencies", currency.SDKFunc.RouteSet(currency.RouteSetParams{
+			AmountOfElementsPerList: amountOfElementsPerList,
+			Tmpl:             app.createTemplate("currencies.html", "currencies"),
+			EntityRepository: entityRepository,
+		}))
+
+		app.rter.HandleFunc("/currencies/new", currency.SDKFunc.RouteNew(currency.RouteNewParams{
+			PK:                      conf.WalletPK(),
+			Client:                  app.client,
+			AmountOfElementsPerList: amountOfElementsPerList,
+			Tmpl:             app.createTemplate("currencies_new.html", "currencies_new"),
+			EntityRepository: entityRepository,
+		}))
+
+		app.rter.HandleFunc("/currencies/{id}", currency.SDKFunc.Route(currency.RouteParams{
+			Tmpl:             app.createTemplate("currencies_single.html", "currencies_single"),
 			EntityRepository: entityRepository,
 		}))
 

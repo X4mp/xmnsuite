@@ -9,7 +9,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 )
 
-// Deposit represents a cash deposit to a bank
+// Deposit represents a currency deposit to a bank
 type Deposit interface {
 	ID() *uuid.UUID
 	Amount() int
