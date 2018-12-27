@@ -34,7 +34,15 @@ func createMetaData() entity.MetaData {
 			return createWalletFromStorable(ptr)
 
 		},
-		Normalize: toData,
+		Normalize: func(ins entity.Entity) (interface{}, error) {
+			if wallet, ok := ins.(Wallet); ok {
+				out := createStoredWallet(wallet)
+				return out, nil
+			}
+
+			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Wallet instance", ins.ID().String())
+			return nil, errors.New(str)
+		},
 		Denormalize: func(ins interface{}) (entity.Entity, error) {
 			if storable, ok := ins.(*storableWallet); ok {
 				return createWalletFromStorable(storable)
@@ -47,12 +55,36 @@ func createMetaData() entity.MetaData {
 	})
 }
 
-func toData(ins entity.Entity) (interface{}, error) {
-	if wallet, ok := ins.(Wallet); ok {
-		out := createStoredWallet(wallet)
-		return out, nil
+func toData(wal Wallet) *Data {
+	out := Data{
+		ID:              wal.ID().String(),
+		Creator:         wal.Creator().String(),
+		ConcensusNeeded: wal.ConcensusNeeded(),
 	}
 
-	str := fmt.Sprintf("the given entity (ID: %s) is not a valid Wallet instance", ins.ID().String())
-	return nil, errors.New(str)
+	return &out
+}
+
+func toDataSet(ins entity.PartialSet) (*DataSet, error) {
+	data := []*Data{}
+	instances := ins.Instances()
+	for _, oneIns := range instances {
+		if wal, ok := oneIns.(Wallet); ok {
+			data = append(data, toData(wal))
+			continue
+		}
+
+		str := fmt.Sprintf("at least one of the elements (ID: %s) in the entity partial set is not a valid Wallet instance", oneIns.ID().String())
+		return nil, errors.New(str)
+	}
+
+	out := DataSet{
+		Index:       ins.Index(),
+		Amount:      ins.Amount(),
+		TotalAmount: ins.TotalAmount(),
+		IsLast:      ins.IsLast(),
+		Wallets:     data,
+	}
+
+	return &out, nil
 }

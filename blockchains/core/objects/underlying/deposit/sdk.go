@@ -23,6 +23,23 @@ type Deposit interface {
 type Normalized interface {
 }
 
+// Data represents human-redable data
+type Data struct {
+	ID     string
+	To     *wallet.Data
+	Token  *token.Data
+	Amount int
+}
+
+// DataSet represents human-redable data set
+type DataSet struct {
+	Index       int
+	Amount      int
+	TotalAmount int
+	IsLast      bool
+	Deposits    []*Data
+}
+
 // Repository represents the deposit Repository
 type Repository interface {
 	RetrieveSetByToWalletAndToken(wal wallet.Wallet, tok token.Token) (entity.PartialSet, error)
@@ -48,6 +65,8 @@ var SDKFunc = struct {
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 	CreateRepository     func(params CreateRepositoryParams) Repository
+	ToData               func(dep Deposit) *Data
+	ToDataSet            func(ps entity.PartialSet) *DataSet
 }{
 	Create: func(params CreateParams) Deposit {
 		if params.ID == nil {
@@ -141,6 +160,17 @@ var SDKFunc = struct {
 		}
 
 		out := createRepository(params.EntityRepository, met)
+		return out
+	},
+	ToData: func(dep Deposit) *Data {
+		return toData(dep)
+	},
+	ToDataSet: func(ps entity.PartialSet) *DataSet {
+		out, outErr := toDataSet(ps)
+		if outErr != nil {
+			panic(outErr)
+		}
+
 		return out
 	},
 }

@@ -28,24 +28,23 @@
                </ul>
                <div class="clearfloat">&nbsp;</div>
            </div>
-
            <div class="block">
                <h1>Users</h1>
-               <p>This is your users list.  Each user have voting shares in a wallet.  Here's your users list.</p>
+               <p>Users are voting members in a wallet.  They have 1 vote per share.  To see a list of users, please select a wallet below first.</p>
                <table class="onerow">
                    <thead>
                        <tr>
                            <td>ID</td>
-                           <td>Shares</td>
-                           <td>Wallet</td>
+                           <td>Creator</td>
+                           <td>Concensus Needed</td>
                        </tr>
                    </thead>
                    <tbody>
-                       {{ range $key, $value := .Users }}
+                       {{ range $key, $value := .Wallets }}
                            <tr>
-                               <td>{{$value.ID}}</td>
-                               <td>{{$value.Shares}}</td>
-                               <td>{{$value.WalletID}}</td>
+                               <td><a href="/users/{{$value.ID}}">{{$value.ID}}</a></td>
+                               <td>{{$value.Creator}}</td>
+                               <td>{{$value.ConcensusNeeded}}</td>
                            </tr>
                        {{ end }}
 

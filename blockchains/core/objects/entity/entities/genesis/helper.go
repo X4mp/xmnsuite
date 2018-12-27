@@ -183,3 +183,17 @@ func representation() entity.Representation {
 		},
 	})
 }
+
+func toData(gen Genesis) *Data {
+	out := Data{
+		ID:                     gen.ID().String(),
+		GazPricePerKb:          gen.GazPricePerKb(),
+		GazPriceInMatrixWorkKb: gen.GazPriceInMatrixWorkKb(),
+		ConcensusNeeded:        gen.ConcensusNeeded(),
+		MaxAmountOfValidators:  gen.MaxAmountOfValidators(),
+		User:    user.SDKFunc.ToData(gen.User()),
+		Deposit: deposit.SDKFunc.ToData(gen.Deposit()),
+	}
+
+	return &out
+}

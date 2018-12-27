@@ -24,30 +24,32 @@
            <div id="breadcrumb">
                <ul>
                    <li><a href="/">Home</a></li>
-                   <li><a href="/wallets">Wallets</a></li>
-                   <li>{{.On.ID}}</li>
+                   <li><a href="/transfers">Transfers</a></li>
+                   <li>{{.ID}}</li>
                </ul>
                <div class="clearfloat">&nbsp;</div>
            </div>
 
            <div class="block">
-               <h1>Wallet: {{.On.ID}}</h1>
+               <h1>Transfers</h1>
+               <p>Transfers represents tokens sent from a wallet to another.</p>
+
                <table class="tworows">
                    <tr>
                        <td class="left highlight">ID:</td>
-                       <td class="highlight">{{.On.ID}}</td>
+                       <td class="highlight">{{.ID}}</td>
                    </tr>
                    <tr>
-                       <td class="left highlight">Balance:</td>
-                       <td class="highlight">{{.Amount}}</td>
+                       <td class="left highlight">From Wallet:</td>
+                       <td class="highlight"><a href="/wallets/{{.Withdrawal.From.ID}}">{{.Withdrawal.From.ID}}</a></td>
                    </tr>
                    <tr>
-                       <td class="left">Creator:</td>
-                       <td>{{.On.Creator}}</td>
+                       <td class="left highlight">To Wallet:</td>
+                       <td class="highlight"><a href="/wallets/{{.Deposit.To.ID}}">{{.Deposit.To.ID}}</a></td>
                    </tr>
                    <tr>
-                       <td class="left">Concensus Needed:</td>
-                       <td>{{.On.ConcensusNeeded}}</td>
+                       <td class="left highlight">Amount:</td>
+                       <td class="highlight">{{.Deposit.Amount}}</td>
                    </tr>
                </table>
            </div>

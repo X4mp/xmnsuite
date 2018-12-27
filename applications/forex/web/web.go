@@ -26,6 +26,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account"
 	walletpkg "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/transfer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/work"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
@@ -66,6 +67,7 @@ type web struct {
 	walletRepository       walletpkg.Repository
 	categoryRepository     category.Repository
 	currencyRepository     currency.Repository
+	transferRepository     transfer.Repository
 	walletRepresentation   entity.Representation
 	categoryRepresentation entity.Representation
 }
@@ -101,6 +103,7 @@ func createWeb(
 		groupRepository:        nil,
 		voteRepository:         nil,
 		voteService:            nil,
+		transferRepository:     nil,
 		userRepository:         userRepository,
 		balanceRepository:      balanceRepository,
 		genesisRepository:      genesisRepository,
@@ -114,14 +117,10 @@ func createWeb(
 
 	app.rter.HandleFunc("/", app.home)
 	app.rter.HandleFunc("/register", app.register)
-	app.rter.HandleFunc("/genesis", app.genesis)
-	app.rter.HandleFunc("/users", app.users)
-	app.rter.HandleFunc("/wallets", app.wallets)
-	app.rter.HandleFunc("/wallets/{id}", app.walletSingle)
 	app.rter.HandleFunc("/categories", app.categories)
+	app.rter.HandleFunc("/categories/new", app.newCategoriesForm)
 	app.rter.HandleFunc("/currencies", app.currencies)
 	app.rter.HandleFunc("/currencies/new", app.newCurrenciesForm)
-	app.rter.HandleFunc("/categories/new", app.newCategoriesForm)
 	app.rter.HandleFunc("/requests", app.requests)
 	app.rter.HandleFunc("/requests/{name}", app.requestsOfGroup)
 	app.rter.HandleFunc("/requests/{groupname}/{keyname}", app.requestsOfGroupOfKeyname)
@@ -303,10 +302,83 @@ func (app *web) middlewareVerifyConfigsInCookie(next http.Handler) http.Handler 
 			},
 		})
 
+		app.transferRepository = transfer.SDKFunc.CreateRepository(transfer.CreateRepositoryParams{
+			EntityRepository: entityRepository,
+		})
+
+		// create the routes:
+		app.rter.HandleFunc("/genesis", genesis.SDKFunc.Route(genesis.RouteParams{
+			Tmpl:             app.createTemplate("genesis.html", "genesis"),
+			EntityRepository: entityRepository,
+		}))
+
+		app.rter.HandleFunc("/wallets", balance.SDKFunc.RouteList(balance.RouteListParams{
+			AmountOfElementsPerList: amountOfElementsPerList,
+			Tmpl:             app.createTemplate("wallets.html", "wallets"),
+			EntityRepository: entityRepository,
+		}))
+
+		app.rter.HandleFunc("/wallets/{id}", balance.SDKFunc.Route(balance.RouteParams{
+			Tmpl:             app.createTemplate("wallet_single.html", "wallet_single"),
+			EntityRepository: entityRepository,
+		}))
+
+		app.rter.HandleFunc("/users", user.SDKFunc.RouteWalletList(user.RouteWalletListParams{
+			AmountOfElementsPerList: amountOfElementsPerList,
+			Tmpl:             app.createTemplate("users.html", "users"),
+			EntityRepository: entityRepository,
+		}))
+
+		app.rter.HandleFunc("/users/{wallet_id}", user.SDKFunc.RouteUserSetInWallet(user.RouteUserSetInWalletParams{
+			AmountOfElementsPerList: amountOfElementsPerList,
+			Tmpl:             app.createTemplate("users_of_wallet.html", "users_of_wallet"),
+			EntityRepository: entityRepository,
+		}))
+
+		app.rter.HandleFunc("/users/{wallet_id}/{pubkey}", user.SDKFunc.RouteUserInWallet(user.RouteUserInWalletParams{
+			Tmpl:             app.createTemplate("user_single.html", "user_single"),
+			EntityRepository: entityRepository,
+		}))
+
+		app.rter.HandleFunc("/transfers", transfer.SDKFunc.RouteSet(transfer.RouteSetParams{
+			AmountOfElementsPerList: amountOfElementsPerList,
+			Tmpl:             app.createTemplate("transfers.html", "transfers"),
+			EntityRepository: entityRepository,
+		}))
+
+		app.rter.HandleFunc("/transfers/new", transfer.SDKFunc.RouteNew(transfer.RouteNewParams{
+			PK:               conf.WalletPK(),
+			Client:           app.client,
+			Tmpl:             app.createTemplate("transfers_new.html", "transfers_new"),
+			EntityRepository: entityRepository,
+		}))
+
+		app.rter.HandleFunc("/transfers/{id}", transfer.SDKFunc.Route(transfer.RouteParams{
+			Tmpl:             app.createTemplate("transfer_single.html", "transfer_single"),
+			EntityRepository: entityRepository,
+		}))
+
 		// call the next handler:
 		next.ServeHTTP(w, r)
 		return
 	})
+}
+
+func (app *web) createTemplate(fileName string, name string) *template.Template {
+	// retrieve the html page:
+	content, contentErr := ioutil.ReadFile(filepath.Join(app.templateDir, fileName))
+	if contentErr != nil {
+		str := fmt.Sprintf("the template could not be rendered: %s", contentErr.Error())
+		panic(errors.New(str))
+	}
+
+	tmpl, err := template.New(name).Parse(string(content))
+	if err != nil {
+		str := fmt.Sprintf("the template could not be rendered: %s", err.Error())
+		panic(errors.New(str))
+	}
+
+	return tmpl
 }
 
 func (app *web) home(w http.ResponseWriter, r *http.Request) {
@@ -449,6 +521,7 @@ func (app *web) home(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, templateData)
 }
 
+/*
 func (app *web) genesis(w http.ResponseWriter, r *http.Request) {
 	// retrieve the conf:
 	conf := getConfigsFromCookie(loginCookieName, r)
@@ -496,8 +569,9 @@ func (app *web) genesis(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	tmpl.Execute(w, templateData)
-}
+}*/
 
+/*
 func (app *web) users(w http.ResponseWriter, r *http.Request) {
 	// retrieve the conf:
 	conf := getConfigsFromCookie(loginCookieName, r)
@@ -559,8 +633,9 @@ func (app *web) users(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	tmpl.Execute(w, templateData)
-}
+}*/
 
+/*
 func (app *web) wallets(w http.ResponseWriter, r *http.Request) {
 	// retrieve the conf:
 	conf := getConfigsFromCookie(loginCookieName, r)
@@ -749,7 +824,7 @@ func (app *web) walletSingle(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusInternalServerError)
 	str := fmt.Sprintf("the ID could not be found")
 	w.Write([]byte(str))
-}
+}*/
 
 func (app *web) categories(w http.ResponseWriter, r *http.Request) {
 	// retrieve the conf:

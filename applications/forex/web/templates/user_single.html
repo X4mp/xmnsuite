@@ -24,30 +24,31 @@
            <div id="breadcrumb">
                <ul>
                    <li><a href="/">Home</a></li>
-                   <li><a href="/wallets">Wallets</a></li>
-                   <li>{{.On.ID}}</li>
+                   <li><a href="/users">Users</a></li>
+                   <li><a href="/users/{{.Wallet.ID}}">Wallet: {{.Wallet.ID}}</a></li>
+                   <li>{{.ID}}</li>
                </ul>
                <div class="clearfloat">&nbsp;</div>
            </div>
 
            <div class="block">
-               <h1>Wallet: {{.On.ID}}</h1>
+               <h1>User: {{.ID}}</h1>
                <table class="tworows">
                    <tr>
                        <td class="left highlight">ID:</td>
-                       <td class="highlight">{{.On.ID}}</td>
+                       <td class="highlight">{{.ID}}</td>
                    </tr>
                    <tr>
-                       <td class="left highlight">Balance:</td>
-                       <td class="highlight">{{.Amount}}</td>
+                       <td class="left">PubKey:</td>
+                       <td>{{.PubKey}}</td>
                    </tr>
                    <tr>
-                       <td class="left">Creator:</td>
-                       <td>{{.On.Creator}}</td>
+                       <td class="left">Shares:</td>
+                       <td>{{.Shares}}</td>
                    </tr>
                    <tr>
-                       <td class="left">Concensus Needed:</td>
-                       <td>{{.On.ConcensusNeeded}}</td>
+                       <td class="left">Wallet:</td>
+                       <td><a href="/wallets/{{.Wallet.ID}}">{{.Wallet.ID}}</a></td>
                    </tr>
                </table>
            </div>

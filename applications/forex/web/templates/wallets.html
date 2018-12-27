@@ -41,11 +41,11 @@
                        </tr>
                    </thead>
                    <tbody>
-                       {{ range $key, $value := .Wallets }}
+                       {{ range $key, $value := .Balances }}
                            <tr>
-                               <td><a href="/wallets/{{$value.ID}}">{{$value.ID}}</a></td>
-                               <td>{{$value.ConcensusNeeded}}</td>
-                               <td>{{$value.TokenAmount}}</td>
+                               <td><a href="/wallets/{{$value.On.ID}}">{{$value.On.ID}}</a></td>
+                               <td>{{$value.On.ConcensusNeeded}}</td>
+                               <td>{{$value.Amount}}</td>
                            </tr>
                        {{ end }}
 

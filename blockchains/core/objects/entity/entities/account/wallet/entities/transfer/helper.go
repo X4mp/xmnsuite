@@ -1,6 +1,7 @@
 package transfer
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 
@@ -8,10 +9,21 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/withdrawal"
+	"github.com/xmnservices/xmnsuite/datastore"
 )
 
 func retrieveAllTransfersKeyname() string {
 	return "transfers"
+}
+
+func retrieveTransfersByDepositKeyname(dep deposit.Deposit) string {
+	base := retrieveAllTransfersKeyname()
+	return fmt.Sprintf("%s:by_deposit_id:%s", base, dep.ID().String())
+}
+
+func retrieveTransfersByWithdrawalKeyname(with withdrawal.Withdrawal) string {
+	base := retrieveAllTransfersKeyname()
+	return fmt.Sprintf("%s:by_withdrawal_id:%s", base, with.ID().String())
 }
 
 func createMetaData() entity.MetaData {
@@ -93,4 +105,129 @@ func createMetaData() entity.MetaData {
 		EmptyStorable:   new(storableTransfer),
 		EmptyNormalized: new(normalizedTransfer),
 	})
+}
+
+func createRepresentation() entity.Representation {
+	return entity.SDKFunc.CreateRepresentation(entity.CreateRepresentationParams{
+		Met: createMetaData(),
+		ToStorable: func(ins entity.Entity) (interface{}, error) {
+			if trans, ok := ins.(Transfer); ok {
+				out := createStorableTransfer(trans)
+				return out, nil
+			}
+
+			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Transfer instance", ins.ID().String())
+			return nil, errors.New(str)
+		},
+		Keynames: func(ins entity.Entity) ([]string, error) {
+			if trsf, ok := ins.(Transfer); ok {
+				return []string{
+					retrieveAllTransfersKeyname(),
+					retrieveTransfersByDepositKeyname(trsf.Deposit()),
+					retrieveTransfersByWithdrawalKeyname(trsf.Withdrawal()),
+				}, nil
+			}
+
+			str := fmt.Sprintf("the entity (ID: %s) is not a valid Transfer instance", ins.ID().String())
+			return nil, errors.New(str)
+		},
+		Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+			// create the repository and service:
+			repository := entity.SDKFunc.CreateRepository(ds)
+			service := entity.SDKFunc.CreateService(ds)
+
+			// create the representations:
+			withdrawalRepresentation := withdrawal.SDKFunc.CreateRepresentation()
+			depositRepresentation := deposit.SDKFunc.CreateRepresentation()
+
+			if trsf, ok := ins.(Transfer); ok {
+				// variables:
+				with := trsf.Withdrawal()
+				dep := trsf.Deposit()
+
+				// make sure the withdrawal wallet is not the same as the deposit wallet:
+				if bytes.Compare(with.From().ID().Bytes(), dep.To().ID().Bytes()) == 0 {
+					str := fmt.Sprintf("the wallet of the from withdrawal (ID: %s) cannot be the same as the deposit wallet (ID: %s)", with.From().ID().String(), dep.To().ID().String())
+					return errors.New(str)
+				}
+
+				// make sure the token of the withdrawal matches the deposit token:
+				if bytes.Compare(with.Token().ID().Bytes(), dep.Token().ID().Bytes()) != 0 {
+					str := fmt.Sprintf("the withdrawal token (ID: %s) does not match the deposit token (ID: %s)", with.Token().ID().String(), dep.Token().ID().String())
+					return errors.New(str)
+				}
+
+				// make sure the withdrawal amount matches the deposit amount:
+				if with.Amount() != dep.Amount() {
+					str := fmt.Sprintf("the withdrawal amount (%d) does not match the deposit amount (%d)", with.Amount(), dep.Amount())
+					return errors.New(str)
+				}
+
+				// try to retrieve the withdrawal, send an error if it exists:
+				_, retWithErr := repository.RetrieveByID(withdrawalRepresentation.MetaData(), with.ID())
+				if retWithErr == nil {
+					str := fmt.Sprintf("the Transfer instance (ID: %s) contains a Withdrawal instance that already exists", with.ID().String())
+					return errors.New(str)
+				}
+
+				// save the withdrawal:
+				saveErr := service.Save(with, withdrawalRepresentation)
+				if saveErr != nil {
+					return saveErr
+				}
+
+				// try to retrieve the deposit, send an error if it exists:
+				_, retDepErr := repository.RetrieveByID(withdrawalRepresentation.MetaData(), dep.ID())
+				if retDepErr == nil {
+					str := fmt.Sprintf("the Transfer instance (ID: %s) contains a Withdrawal instance that already exists", dep.ID().String())
+					return errors.New(str)
+				}
+
+				// save the deposit:
+				saveDepErr := service.Save(dep, depositRepresentation)
+				if saveDepErr != nil {
+					return saveDepErr
+				}
+
+				return nil
+			}
+
+			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Transfer instance", ins.ID().String())
+			return errors.New(str)
+		},
+	})
+}
+
+func toData(trsf Transfer) *Data {
+	out := Data{
+		ID:         trsf.ID().String(),
+		Withdrawal: withdrawal.SDKFunc.ToData(trsf.Withdrawal()),
+		Deposit:    deposit.SDKFunc.ToData(trsf.Deposit()),
+	}
+
+	return &out
+}
+
+func toDataSet(ins entity.PartialSet) (*DataSet, error) {
+	data := []*Data{}
+	instances := ins.Instances()
+	for _, oneIns := range instances {
+		if trsf, ok := oneIns.(Transfer); ok {
+			data = append(data, toData(trsf))
+			continue
+		}
+
+		str := fmt.Sprintf("at least one of the elements (ID: %s) in the entity partial set is not a valid Transfer instance", oneIns.ID().String())
+		return nil, errors.New(str)
+	}
+
+	out := DataSet{
+		Index:       ins.Index(),
+		Amount:      ins.Amount(),
+		TotalAmount: ins.TotalAmount(),
+		IsLast:      ins.IsLast(),
+		Transfers:   data,
+	}
+
+	return &out, nil
 }

@@ -24,31 +24,39 @@
            <div id="breadcrumb">
                <ul>
                    <li><a href="/">Home</a></li>
-                   <li><a href="/wallets">Wallets</a></li>
-                   <li>{{.On.ID}}</li>
+                   <li>Transfers</li>
                </ul>
                <div class="clearfloat">&nbsp;</div>
            </div>
 
            <div class="block">
-               <h1>Wallet: {{.On.ID}}</h1>
-               <table class="tworows">
-                   <tr>
-                       <td class="left highlight">ID:</td>
-                       <td class="highlight">{{.On.ID}}</td>
-                   </tr>
-                   <tr>
-                       <td class="left highlight">Balance:</td>
-                       <td class="highlight">{{.Amount}}</td>
-                   </tr>
-                   <tr>
-                       <td class="left">Creator:</td>
-                       <td>{{.On.Creator}}</td>
-                   </tr>
-                   <tr>
-                       <td class="left">Concensus Needed:</td>
-                       <td>{{.On.ConcensusNeeded}}</td>
-                   </tr>
+               <div id="title">
+                   <h1>Transfers</h1>
+                   <a href="/transfers/new" class="btn right">Create</a>
+                   <span class="clearfloat">&nbsp;</span>
+               </div>
+
+               <p>Transfers represents tokens sent from a wallet to another.</p>
+               <table class="onerow">
+                   <thead>
+                       <tr>
+                           <td>ID</td>
+                           <td>From Wallet</td>
+                           <td>To Wallet</td>
+                           <td>Amount</td>
+                       </tr>
+                   </thead>
+                   <tbody>
+                       {{ range $key, $value := .Transfers }}
+                           <tr>
+                               <td><a href="/transfers/{{$value.ID}}">{{$value.ID}}</a></td>
+                               <td>{{$value.Withdrawal.From.ID}}</td>
+                               <td>{{$value.Deposit.To.ID}}</td>
+                               <td>{{$value.Deposit.Amount}}</td>
+                           </tr>
+                       {{ end }}
+
+                   </tbody>
                </table>
            </div>
        </div>

@@ -111,3 +111,38 @@ func createMetaData() entity.MetaData {
 		EmptyNormalized: new(normalizedDeposit),
 	})
 }
+
+func toData(dep Deposit) *Data {
+	out := Data{
+		ID:     dep.ID().String(),
+		To:     wallet.SDKFunc.ToData(dep.To()),
+		Token:  token.SDKFunc.ToData(dep.Token()),
+		Amount: dep.Amount(),
+	}
+
+	return &out
+}
+
+func toDataSet(ins entity.PartialSet) (*DataSet, error) {
+	data := []*Data{}
+	instances := ins.Instances()
+	for _, oneIns := range instances {
+		if dep, ok := oneIns.(Deposit); ok {
+			data = append(data, toData(dep))
+			continue
+		}
+
+		str := fmt.Sprintf("at least one of the elements (ID: %s) in the entity partial set is not a valid Deposit instance", oneIns.ID().String())
+		return nil, errors.New(str)
+	}
+
+	out := DataSet{
+		Index:       ins.Index(),
+		Amount:      ins.Amount(),
+		TotalAmount: ins.TotalAmount(),
+		IsLast:      ins.IsLast(),
+		Deposits:    data,
+	}
+
+	return &out, nil
+}

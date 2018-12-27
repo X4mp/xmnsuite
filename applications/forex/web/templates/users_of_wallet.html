@@ -24,31 +24,31 @@
            <div id="breadcrumb">
                <ul>
                    <li><a href="/">Home</a></li>
-                   <li><a href="/wallets">Wallets</a></li>
-                   <li>{{.On.ID}}</li>
+                   <li><a href="/users">Users</a></li>
+                   <li>Wallet: {{.Wallet.ID}}</li>
                </ul>
                <div class="clearfloat">&nbsp;</div>
            </div>
-
            <div class="block">
-               <h1>Wallet: {{.On.ID}}</h1>
-               <table class="tworows">
-                   <tr>
-                       <td class="left highlight">ID:</td>
-                       <td class="highlight">{{.On.ID}}</td>
-                   </tr>
-                   <tr>
-                       <td class="left highlight">Balance:</td>
-                       <td class="highlight">{{.Amount}}</td>
-                   </tr>
-                   <tr>
-                       <td class="left">Creator:</td>
-                       <td>{{.On.Creator}}</td>
-                   </tr>
-                   <tr>
-                       <td class="left">Concensus Needed:</td>
-                       <td>{{.On.ConcensusNeeded}}</td>
-                   </tr>
+               <h1>Users of Wallet: {{.Wallet.ID}}</h1>
+               <p>This is the users list that hold shares in the wallet (ID: {{.Wallet.ID}}).</p>
+               <table class="onerow">
+                   <thead>
+                       <tr>
+                           <td>ID</td>
+                           <td>Shares</td>
+                       </tr>
+                   </thead>
+                   <tbody>
+                       {{ $walletID := .Wallet.ID}}
+                       {{ range $key, $value := .Users.Users }}
+                           <tr>
+                               <td><a href="/users/{{$walletID}}/{{$value.PubKey}}">{{$value.ID}}</a></td>
+                               <td>{{$value.Shares}}</td>
+                           </tr>
+                       {{ end }}
+
+                   </tbody>
                </table>
            </div>
        </div>

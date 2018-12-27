@@ -1,5 +1,37 @@
 package web
 
+type homeTransfersList struct {
+	Index       int
+	Amount      int
+	TotalAmount int
+	IsLast      bool
+	Transfers   []*homeTransfer
+}
+
+type homeTransfer struct {
+	ID         string
+	Deposit    *homeDeposit
+	Withdrawal *homeWithdrawal
+}
+
+type homeDeposit struct {
+	ID     string
+	To     *homeWallet
+	Token  *homeToken
+	Amount int
+}
+
+type homeToken struct {
+	ID          string
+	Symbol      string
+	Name        string
+	Description string
+}
+
+type homeWithdrawal struct {
+	ID string
+}
+
 type homeRequestGroupList struct {
 	Index       int
 	Amount      int

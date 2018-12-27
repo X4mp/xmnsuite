@@ -1,6 +1,9 @@
 package token
 
 import (
+	"errors"
+	"fmt"
+
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 )
@@ -17,6 +20,23 @@ type Token interface {
 type Normalized interface {
 }
 
+// Data represents human-redable data
+type Data struct {
+	ID          string
+	Symbol      string
+	Name        string
+	Description string
+}
+
+// DataSet represents human-redable data set
+type DataSet struct {
+	Index       int
+	Amount      int
+	TotalAmount int
+	IsLast      bool
+	Tokens      []*Data
+}
+
 // CreateParams represents the Create params
 type CreateParams struct {
 	ID          *uuid.UUID
@@ -30,6 +50,8 @@ var SDKFunc = struct {
 	Create               func(params CreateParams) Token
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
+	ToData               func(tok Token) *Data
+	ToDataSet            func(ps entity.PartialSet) *DataSet
 }{
 	Create: func(params CreateParams) Token {
 		if params.ID == nil {
@@ -45,13 +67,32 @@ var SDKFunc = struct {
 	},
 	CreateRepresentation: func() entity.Representation {
 		return entity.SDKFunc.CreateRepresentation(entity.CreateRepresentationParams{
-			Met:        createMetaData(),
-			ToStorable: toData,
+			Met: createMetaData(),
+			ToStorable: func(ins entity.Entity) (interface{}, error) {
+				if tok, ok := ins.(Token); ok {
+					out := createStorableToken(tok)
+					return out, nil
+				}
+
+				str := fmt.Sprintf("the given entity (ID: %s) is not a valid Token instance", ins.ID().String())
+				return nil, errors.New(str)
+			},
 			Keynames: func(ins entity.Entity) ([]string, error) {
 				return []string{
 					retrieveAllTokensKeyname(),
 				}, nil
 			},
 		})
+	},
+	ToData: func(tok Token) *Data {
+		return toData(tok)
+	},
+	ToDataSet: func(ps entity.PartialSet) *DataSet {
+		out, outErr := toDataSet(ps)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
 	},
 }

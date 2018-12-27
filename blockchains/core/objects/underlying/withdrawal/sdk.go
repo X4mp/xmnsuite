@@ -29,6 +29,23 @@ type Repository interface {
 	RetrieveSetByFromWalletAndToken(wal wallet.Wallet, tok token.Token) (entity.PartialSet, error)
 }
 
+// Data represents human-redable data
+type Data struct {
+	ID     string
+	From   *wallet.Data
+	Token  *token.Data
+	Amount int
+}
+
+// DataSet represents human-redable data set
+type DataSet struct {
+	Index       int
+	Amount      int
+	TotalAmount int
+	IsLast      bool
+	Withdrawals []*Data
+}
+
 // CreateParams represents the Create params
 type CreateParams struct {
 	ID     *uuid.UUID
@@ -49,6 +66,8 @@ var SDKFunc = struct {
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 	CreateRepository     func(params CreateRepositoryParams) Repository
+	ToData               func(with Withdrawal) *Data
+	ToDataSet            func(ps entity.PartialSet) *DataSet
 }{
 	Create: func(params CreateParams) Withdrawal {
 		if params.ID == nil {
@@ -187,6 +206,17 @@ var SDKFunc = struct {
 		}
 
 		out := createRepository(params.EntityRepository, met)
+		return out
+	},
+	ToData: func(with Withdrawal) *Data {
+		return toData(with)
+	},
+	ToDataSet: func(ps entity.PartialSet) *DataSet {
+		out, outErr := toDataSet(ps)
+		if outErr != nil {
+			panic(outErr)
+		}
+
 		return out
 	},
 }
