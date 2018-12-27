@@ -51,7 +51,13 @@
                        {{ range $key, $value := .Categories }}
                            <tr>
                                <td><a href="/categories/{{$value.ID}}">{{$value.ID}}</a></td>
-                               <td>{{$value.ParentID}}</td>
+                               <td>
+                                   {{if $value.Parent}}
+                                        <a href="/categories/{{$value.Parent.ID}}">{{$value.Parent.Name}}</a>
+                                   {{else}}
+                                        None
+                                   {{end}}
+                               </td>
                                <td>{{$value.Name}}</td>
                                <td>{{$value.Description}}</td>
                            </tr>

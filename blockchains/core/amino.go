@@ -30,30 +30,32 @@ func init() {
 	Register(cdc)
 }
 
-func Register(cdc *amino.Codec) {
+func Register(codec *amino.Codec) {
 	// dependencies:
-	account.Register(cdc)
-	wallet.Register(cdc)
-	token.Register(cdc)
-	deposit.Register(cdc)
-	withdrawal.Register(cdc)
-	genesis.Register(cdc)
-	pledge.Register(cdc)
-	transfer.Register(cdc)
-	active_request.Register(cdc)
-	active_vote.Register(cdc)
-	validator.Register(cdc)
-	link.Register(cdc)
-	node.Register(cdc)
-	developer.Register(cdc)
-	project.Register(cdc)
-	milestone.Register(cdc)
-	task.Register(cdc)
+	account.Register(codec)
+	wallet.Register(codec)
+	token.Register(codec)
+	deposit.Register(codec)
+	withdrawal.Register(codec)
+	genesis.Register(codec)
+	pledge.Register(codec)
+	transfer.Register(codec)
+	active_request.Register(codec)
+	active_vote.Register(codec)
+	validator.Register(codec)
+	link.Register(codec)
+	node.Register(codec)
+	developer.Register(codec)
+	project.Register(codec)
+	milestone.Register(codec)
+	task.Register(codec)
 
 	// replace:
-	entity.Replace(cdc)
-	request.Replace(cdc)
-	active_request.Replace(cdc)
-	vote.Replace(cdc)
-	active_vote.Replace(cdc)
+	entity.Replace(codec)
+	request.Replace(codec)
+	active_request.Replace(codec)
+	vote.Replace(codec)
+	active_vote.Replace(codec)
+
+	cdc = codec
 }

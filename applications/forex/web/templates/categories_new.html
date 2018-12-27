@@ -41,8 +41,8 @@
                            <div class="block">
                                <label for="fromwalletid" class="left">From Wallet:</label>
                                <select name="fromwalletid" id="fromwalletid" class="right">
-                                   {{ range $key, $value := .Users.Users }}
-                                        <option value="{{$value.WalletID}}">{{$value.WalletID}} ({{$value.Shares}} shares)</option>
+                                   {{ range $key, $value := .Balances }}
+                                        <option value="{{$value.On.ID}}">{{$value.On.ID}} (Balance: {{$value.Amount}})</option>
                                    {{ end }}
                                </select>
                                 <div class="clearfloat">&nbsp;</div>

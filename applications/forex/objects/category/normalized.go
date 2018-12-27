@@ -1,17 +1,16 @@
 package category
 
 type normalizedCategory struct {
-	ID          string     `json:"id"`
-	Parent      Normalized `json:"parent"`
-	Name        string     `json:"name"`
-	Description string     `json:"description"`
+	ID          string              `json:"id"`
+	Parent      *normalizedCategory `json:"parent"`
+	Name        string              `json:"name"`
+	Description string              `json:"description"`
 }
 
 func createNormalizedCategory(ins Category) (*normalizedCategory, error) {
-	var normalizedPar Normalized
+	var normalizedPar *normalizedCategory
 	if ins.HasParent() {
-		metaData := createMetaData()
-		par, parErr := metaData.Normalize()(ins.Parent())
+		par, parErr := createNormalizedCategory(ins.Parent())
 		if parErr != nil {
 			return nil, parErr
 		}

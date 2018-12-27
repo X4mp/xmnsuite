@@ -32,6 +32,6 @@ func Register(codec *amino.Codec) {
 			recover()
 		}()
 		codec.RegisterInterface((*Normalized)(nil), nil)
-		codec.RegisterConcrete(&storableCategory{}, xmnApplicationsForexNormalizedCategory, nil)
+		codec.RegisterConcrete(&normalizedCategory{}, xmnApplicationsForexNormalizedCategory, nil)
 	}()
 }

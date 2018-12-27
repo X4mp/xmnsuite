@@ -117,8 +117,6 @@ func createWeb(
 
 	app.rter.HandleFunc("/", app.home)
 	app.rter.HandleFunc("/register", app.register)
-	app.rter.HandleFunc("/categories", app.categories)
-	app.rter.HandleFunc("/categories/new", app.newCategoriesForm)
 	app.rter.HandleFunc("/currencies", app.currencies)
 	app.rter.HandleFunc("/currencies/new", app.newCurrenciesForm)
 	app.rter.HandleFunc("/requests", app.requests)
@@ -355,6 +353,25 @@ func (app *web) middlewareVerifyConfigsInCookie(next http.Handler) http.Handler 
 
 		app.rter.HandleFunc("/transfers/{id}", transfer.SDKFunc.Route(transfer.RouteParams{
 			Tmpl:             app.createTemplate("transfer_single.html", "transfer_single"),
+			EntityRepository: entityRepository,
+		}))
+
+		app.rter.HandleFunc("/categories", category.SDKFunc.RouteSet(category.RouteSetParams{
+			AmountOfElementsPerList: amountOfElementsPerList,
+			Tmpl:             app.createTemplate("categories.html", "categories"),
+			EntityRepository: entityRepository,
+		}))
+
+		app.rter.HandleFunc("/categories/new", category.SDKFunc.RouteNew(category.RouteNewParams{
+			PK:                      conf.WalletPK(),
+			Client:                  app.client,
+			AmountOfElementsPerList: amountOfElementsPerList,
+			Tmpl:             app.createTemplate("categories_new.html", "categories_new"),
+			EntityRepository: entityRepository,
+		}))
+
+		app.rter.HandleFunc("/categories/{id}", category.SDKFunc.Route(category.RouteParams{
+			Tmpl:             app.createTemplate("categories_single.html", "categories_single"),
 			EntityRepository: entityRepository,
 		}))
 

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	term "github.com/nsf/termbox-go"
+	amino "github.com/tendermint/go-amino"
 	cliapp "github.com/urfave/cli"
 	forex "github.com/xmnservices/xmnsuite/applications/forex"
 	core "github.com/xmnservices/xmnsuite/blockchains/core"
@@ -15,6 +16,10 @@ func reset() {
 }
 
 func main() {
+
+	// register amino:
+	cdc := amino.NewCodec()
+	forex.Register(cdc)
 
 	// get the core commands:
 	coreCmds := core.SDKFunc.CreateCommands()
