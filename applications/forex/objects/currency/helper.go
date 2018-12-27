@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/xmnservices/xmnsuite/applications/forex/objects/category"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 )
 
@@ -46,4 +47,39 @@ func createMetaData() entity.MetaData {
 		EmptyNormalized: new(normalizedCurrency),
 		EmptyStorable:   new(storableCurrency),
 	})
+}
+
+func toData(curr Currency) *Data {
+	out := Data{
+		ID:          curr.ID().String(),
+		Category:    category.SDKFunc.ToData(curr.Category()),
+		Symbol:      curr.Symbol(),
+		Name:        curr.Name(),
+		Description: curr.Description(),
+	}
+
+	return &out
+}
+
+func toDataSet(ps entity.PartialSet) (*DataSet, error) {
+	ins := ps.Instances()
+	currencies := []*Data{}
+	for _, oneIns := range ins {
+		if curr, ok := oneIns.(Currency); ok {
+			currencies = append(currencies, toData(curr))
+			continue
+		}
+
+		return nil, errors.New("there is at least one entity that is not a valid Currency instance")
+	}
+
+	out := DataSet{
+		Index:       ps.Index(),
+		Amount:      ps.Amount(),
+		TotalAmount: ps.TotalAmount(),
+		IsLast:      ps.IsLast(),
+		Currencies:  currencies,
+	}
+
+	return &out, nil
 }
