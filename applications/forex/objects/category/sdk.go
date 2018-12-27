@@ -32,6 +32,23 @@ type Repository interface {
 type Normalized interface {
 }
 
+// Data represents the human-readable data
+type Data struct {
+	ID          string
+	Parent      *Data
+	Name        string
+	Description string
+}
+
+// DataSet represents the human-readable data set
+type DataSet struct {
+	Index       int
+	Amount      int
+	TotalAmount int
+	IsLast      bool
+	Categories  []*Data
+}
+
 // CreateParams represents the Create params
 type CreateParams struct {
 	ID          *uuid.UUID
@@ -51,6 +68,8 @@ var SDKFunc = struct {
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 	CreateRepository     func(params CreateRepositoryParams) Repository
+	ToData               func(cat Category) *Data
+	ToDataSet            func(ps entity.PartialSet) *DataSet
 }{
 	Create: func(params CreateParams) Category {
 		if params.ID == nil {
@@ -105,6 +124,17 @@ var SDKFunc = struct {
 	CreateRepository: func(params CreateRepositoryParams) Repository {
 		metaData := createMetaData()
 		out := createRepository(metaData, params.EntityRepository)
+		return out
+	},
+	ToData: func(cat Category) *Data {
+		return toData(cat)
+	},
+	ToDataSet: func(ps entity.PartialSet) *DataSet {
+		out, outErr := toDataSet(ps)
+		if outErr != nil {
+			panic(outErr)
+		}
+
 		return out
 	},
 }

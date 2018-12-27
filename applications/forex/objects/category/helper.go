@@ -58,3 +58,42 @@ func createMetaData() entity.MetaData {
 		EmptyStorable:   new(storableCategory),
 	})
 }
+
+func toData(cat Category) *Data {
+	var parent *Data
+	if cat.HasParent() {
+		parent = toData(cat.Parent())
+	}
+
+	out := Data{
+		ID:          cat.ID().String(),
+		Parent:      parent,
+		Name:        cat.Name(),
+		Description: cat.Description(),
+	}
+
+	return &out
+}
+
+func toDataSet(ps entity.PartialSet) (*DataSet, error) {
+	ins := ps.Instances()
+	categories := []*Data{}
+	for _, oneIns := range ins {
+		if cat, ok := oneIns.(Category); ok {
+			categories = append(categories, toData(cat))
+			continue
+		}
+
+		return nil, errors.New("there is at least one entity that is not a valid Category instance")
+	}
+
+	out := DataSet{
+		Index:       ps.Index(),
+		Amount:      ps.Amount(),
+		TotalAmount: ps.TotalAmount(),
+		IsLast:      ps.IsLast(),
+		Categories:  categories,
+	}
+
+	return &out, nil
+}
