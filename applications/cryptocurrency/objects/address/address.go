@@ -1,7 +1,6 @@
 package address
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
 
@@ -13,10 +12,10 @@ import (
 type address struct {
 	UUID *uuid.UUID    `json:"id"`
 	Wal  wallet.Wallet `json:"wallet"`
-	Addr []byte        `json:"address"`
+	Addr string        `json:"address"`
 }
 
-func createAddress(id *uuid.UUID, wal wallet.Wallet, addr []byte) (Address, error) {
+func createAddress(id *uuid.UUID, wal wallet.Wallet, addr string) (Address, error) {
 	out := address{
 		UUID: id,
 		Wal:  wal,
@@ -32,18 +31,13 @@ func createAddressFromNormalized(normalized *normalizedAddress) (Address, error)
 		return nil, idErr
 	}
 
-	addr, addrErr := hex.DecodeString(normalized.Address)
-	if addrErr != nil {
-		return nil, addrErr
-	}
-
 	walIns, walInsErr := wallet.SDKFunc.CreateMetaData().Denormalize()(normalized.Wallet)
 	if walInsErr != nil {
 		return nil, walInsErr
 	}
 
 	if wal, ok := walIns.(wallet.Wallet); ok {
-		return createAddress(&id, wal, addr)
+		return createAddress(&id, wal, normalized.Address)
 	}
 
 	str := fmt.Sprintf("the entity (ID: %s) is not a valid Wallet instance", walIns.ID().String())
@@ -54,11 +48,6 @@ func createAddressFromStorable(storable *storableAddress, rep entity.Repository)
 	id, idErr := uuid.FromString(storable.ID)
 	if idErr != nil {
 		return nil, idErr
-	}
-
-	addr, addrErr := hex.DecodeString(storable.Address)
-	if addrErr != nil {
-		return nil, addrErr
 	}
 
 	walletID, walletIDErr := uuid.FromString(storable.WalletID)
@@ -72,7 +61,7 @@ func createAddressFromStorable(storable *storableAddress, rep entity.Repository)
 	}
 
 	if wal, ok := walIns.(wallet.Wallet); ok {
-		return createAddress(&id, wal, addr)
+		return createAddress(&id, wal, storable.Address)
 	}
 
 	str := fmt.Sprintf("the entity (ID: %s) is not a valid Wallet instance", walIns.ID().String())
@@ -90,6 +79,6 @@ func (obj *address) Wallet() wallet.Wallet {
 }
 
 // Address returns the address
-func (obj *address) Address() []byte {
+func (obj *address) Address() string {
 	return obj.Addr
 }

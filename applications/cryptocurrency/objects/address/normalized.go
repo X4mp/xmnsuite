@@ -1,8 +1,6 @@
 package address
 
 import (
-	"encoding/hex"
-
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
 )
 
@@ -21,7 +19,7 @@ func createNormalizedAddress(ins Address) (*normalizedAddress, error) {
 	out := normalizedAddress{
 		ID:      ins.ID().String(),
 		Wallet:  wal,
-		Address: hex.EncodeToString(ins.Address()),
+		Address: ins.Address(),
 	}
 
 	return &out, nil

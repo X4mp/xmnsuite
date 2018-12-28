@@ -1,7 +1,6 @@
 package address
 
 import (
-	"encoding/hex"
 	"errors"
 	"fmt"
 
@@ -18,9 +17,9 @@ func retrieveAddressByWalletKeyname(wal wallet.Wallet) string {
 	return fmt.Sprintf("%s:by_wallet_id:%s", base, wal.ID().String())
 }
 
-func retrieveAddressByAddressKeyname(addr []byte) string {
+func retrieveAddressByAddressKeyname(addr string) string {
 	base := retrieveAllAddressKeyname()
-	return fmt.Sprintf("%s:by_address:%s", base, hex.EncodeToString(addr))
+	return fmt.Sprintf("%s:by_address:%s", base, addr)
 }
 
 func createMetaData() entity.MetaData {
@@ -96,7 +95,7 @@ func toData(addr Address) *Data {
 	out := Data{
 		ID:      addr.ID().String(),
 		Wallet:  wallet.SDKFunc.ToData(addr.Wallet()),
-		Address: hex.EncodeToString(addr.Address()),
+		Address: addr.Address(),
 	}
 
 	return &out

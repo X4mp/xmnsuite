@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	"github.com/xmnservices/xmnsuite/applications/cryptocurrency/objects/address"
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
 	"github.com/xmnservices/xmnsuite/blockchains/core/meta"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
@@ -77,6 +78,20 @@ func createWeb(
 		Codec:  cdc,
 		PK:     pk,
 		Client: client,
+	}))
+
+	app.rter.HandleFunc("/address", address.SDKFunc.RouteSet(address.RouteSetParams{
+		AmountOfElementsPerList: amountOfElementsPerList,
+		Tmpl:             app.createTemplate("specific/addresses.html", "addresses"),
+		EntityRepository: entityRepository,
+	}))
+
+	app.rter.HandleFunc("/address/new", address.SDKFunc.RouteNew(address.RouteNewParams{
+		PK:                      pk,
+		Client:                  client,
+		AmountOfElementsPerList: amountOfElementsPerList,
+		Tmpl:             app.createTemplate("specific/address_new.html", "address_new"),
+		EntityRepository: entityRepository,
 	}))
 
 	app.rter.HandleFunc("/requests", group.SDKFunc.RouteSet(group.RouteSetParams{
