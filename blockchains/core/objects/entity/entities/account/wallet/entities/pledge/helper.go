@@ -14,6 +14,16 @@ func retrieveAllPledgesKeyname() string {
 	return "pledges"
 }
 
+func retrievePledgesByFromWalletKeyname(frm wallet.Wallet) string {
+	base := retrieveAllPledgesKeyname()
+	return fmt.Sprintf("%s:by_from_wallet_id:%s", base, frm.ID().String())
+}
+
+func retrievePledgesByToWalletKeyname(to wallet.Wallet) string {
+	base := retrieveAllPledgesKeyname()
+	return fmt.Sprintf("%s:by_to_wallet_id:%s", base, to.ID().String())
+}
+
 func createMetaData() entity.MetaData {
 	return entity.SDKFunc.CreateMetaData(entity.CreateMetaDataParams{
 		Name: "Pledge",
@@ -96,4 +106,38 @@ func fromStorableToPledge(repository entity.Repository, storable *storablePledge
 
 	str := fmt.Sprintf("the entity (ID: %s) is not a valid Withdrawal instance", withdrawalID.String())
 	return nil, errors.New(str)
+}
+
+func toData(pldge Pledge) *Data {
+	out := Data{
+		ID:   pldge.ID().String(),
+		From: withdrawal.SDKFunc.ToData(pldge.From()),
+		To:   wallet.SDKFunc.ToData(pldge.To()),
+	}
+
+	return &out
+}
+
+func toDataSet(ins entity.PartialSet) (*DataSet, error) {
+	data := []*Data{}
+	instances := ins.Instances()
+	for _, oneIns := range instances {
+		if pldge, ok := oneIns.(Pledge); ok {
+			data = append(data, toData(pldge))
+			continue
+		}
+
+		str := fmt.Sprintf("at least one of the elements (ID: %s) in the entity partial set is not a valid Pledge instance", oneIns.ID().String())
+		return nil, errors.New(str)
+	}
+
+	out := DataSet{
+		Index:       ins.Index(),
+		Amount:      ins.Amount(),
+		TotalAmount: ins.TotalAmount(),
+		IsLast:      ins.IsLast(),
+		Pledges:     data,
+	}
+
+	return &out, nil
 }

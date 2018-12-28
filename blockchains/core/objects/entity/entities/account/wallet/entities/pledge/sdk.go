@@ -19,8 +19,31 @@ type Pledge interface {
 	To() wallet.Wallet
 }
 
+// Repository represents the pledge repository
+type Repository interface {
+	RetrieveByID(id *uuid.UUID) (Pledge, error)
+	RetrieveSetByFromWallet(frm wallet.Wallet, index int, amount int) (entity.PartialSet, error)
+	RetrieveSetByToWallet(to wallet.Wallet, index int, amount int) (entity.PartialSet, error)
+}
+
 // Normalized represents a normalized pledge
 type Normalized interface {
+}
+
+// Data represents the currency data
+type Data struct {
+	ID   string
+	From *withdrawal.Data
+	To   *wallet.Data
+}
+
+// DataSet represents the human-readable data set
+type DataSet struct {
+	Index       int
+	Amount      int
+	TotalAmount int
+	IsLast      bool
+	Pledges     []*Data
 }
 
 // CreateParams represents the create params
@@ -30,11 +53,19 @@ type CreateParams struct {
 	To   wallet.Wallet
 }
 
+// CreateRepositoryParams represents the CreateRepository params
+type CreateRepositoryParams struct {
+	EntityRepository entity.Repository
+}
+
 // SDKFunc represents the Pledge SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Pledge
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
+	CreateRepository     func(params CreateRepositoryParams) Repository
+	ToData               func(pldge Pledge) *Data
+	ToDataSet            func(ps entity.PartialSet) *DataSet
 }{
 	Create: func(params CreateParams) Pledge {
 		if params.ID == nil {
@@ -66,8 +97,8 @@ var SDKFunc = struct {
 					base := retrieveAllPledgesKeyname()
 					return []string{
 						base,
-						fmt.Sprintf("%s:by_from_withdrawal_id:%s", base, pledge.From().ID().String()),
-						fmt.Sprintf("%s:by_to_wallet_id:%s", base, pledge.To().ID().String()),
+						retrievePledgesByFromWalletKeyname(pledge.From().From()),
+						retrievePledgesByToWalletKeyname(pledge.To()),
 					}, nil
 				}
 
@@ -119,5 +150,20 @@ var SDKFunc = struct {
 				return errors.New(str)
 			},
 		})
+	},
+	CreateRepository: func(params CreateRepositoryParams) Repository {
+		metaData := createMetaData()
+		return createRepository(params.EntityRepository, metaData)
+	},
+	ToData: func(pldge Pledge) *Data {
+		return toData(pldge)
+	},
+	ToDataSet: func(ps entity.PartialSet) *DataSet {
+		out, outErr := toDataSet(ps)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
 	},
 }

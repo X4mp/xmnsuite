@@ -3,6 +3,8 @@ package group
 import (
 	"errors"
 	"fmt"
+	"html/template"
+	"net/http"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
@@ -36,12 +38,37 @@ type CreateRepositoryParams struct {
 	EntityRepository entity.Repository
 }
 
+// Data represents human-redable data
+type Data struct {
+	ID   string
+	Name string
+}
+
+// DataSet represents human-redable data set
+type DataSet struct {
+	Index       int
+	Amount      int
+	TotalAmount int
+	IsLast      bool
+	Groups      []*Data
+}
+
+// RouteSetParams represents the route set params
+type RouteSetParams struct {
+	AmountOfElementsPerList int
+	Tmpl                    *template.Template
+	EntityRepository        entity.Repository
+}
+
 // SDKFunc represents the vote SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Group
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 	CreateRepository     func(params CreateRepositoryParams) Repository
+	ToData               func(grp Group) *Data
+	ToDataSet            func(ps entity.PartialSet) *DataSet
+	RouteSet             func(params RouteSetParams) func(w http.ResponseWriter, r *http.Request)
 }{
 	Create: func(params CreateParams) Group {
 		if params.ID == nil {
@@ -116,5 +143,46 @@ var SDKFunc = struct {
 		metaData := createMetaData()
 		out := createRepository(params.EntityRepository, metaData)
 		return out
+	},
+	ToData: func(grp Group) *Data {
+		return toData(grp)
+	},
+	ToDataSet: func(ps entity.PartialSet) *DataSet {
+		out, outErr := toDataSet(ps)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
+	},
+	RouteSet: func(params RouteSetParams) func(w http.ResponseWriter, r *http.Request) {
+		return func(w http.ResponseWriter, r *http.Request) {
+			// create metadata:
+			metaData := createMetaData()
+
+			// create the repositories:
+			groupRepository := createRepository(params.EntityRepository, metaData)
+
+			// retrieve the groups:
+			retGroupsPS, retGroupsPSErr := groupRepository.RetrieveSet(0, params.AmountOfElementsPerList)
+			if retGroupsPSErr != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				str := fmt.Sprintf("there was an error while retireving request groups: %s", retGroupsPSErr.Error())
+				w.Write([]byte(str))
+				return
+			}
+
+			// render:
+			datSet, datSetErr := toDataSet(retGroupsPS)
+			if datSetErr != nil {
+				w.WriteHeader(http.StatusInternalServerError)
+				str := fmt.Sprintf("there was an error while converting the group entity set to data: %s", datSetErr.Error())
+				w.Write([]byte(str))
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
+			params.Tmpl.Execute(w, datSet)
+		}
 	},
 }

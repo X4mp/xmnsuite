@@ -35,7 +35,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3d9e2bd395652cd42022d3539aeeb88b408e67a2af4041333bfe76218f155763"
+  digest = "1:421824db42ed6b825dc7953acdea5d407aefee645324e724c1928f2f2b85ef2a"
   name = "github.com/dedis/kyber"
   packages = [
     ".",
@@ -46,7 +46,7 @@
     "xof/blake2xb",
   ]
   pruneopts = "UT"
-  revision = "c2403f0bc51bc3b031874fc27e1bc68255db9739"
+  revision = "2ae155cdd98ef2b5a179c0fa39b74140dae66996"
 
 [[projects]]
   digest = "1:c7644c73a3d23741fdba8a99b1464e021a224b7e205be497271a8003a15ca41b"
@@ -438,7 +438,7 @@
   name = "golang.org/x/sys"
   packages = ["cpu"]
   pruneopts = "UT"
-  revision = "074acd46bca67915925527c07849494d115e7c43"
+  revision = "b4a75ba826a64a70990f11a225237acd6ef35c9f"
 
 [[projects]]
   digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"
@@ -469,7 +469,7 @@
   name = "google.golang.org/genproto"
   packages = ["googleapis/rpc/status"]
   pruneopts = "UT"
-  revision = "5a97ab628bfb2f65f6befec18f4bc7bc7f382b77"
+  revision = "bd9b4fb69e2ffd37621a6caa54dcbead29b546f2"
 
 [[projects]]
   digest = "1:2dab32a43451e320e49608ff4542fdfc653c95dcc35d0065ec9c6c3dd540ed74"

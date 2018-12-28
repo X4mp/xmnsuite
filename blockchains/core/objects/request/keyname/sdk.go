@@ -3,7 +3,10 @@ package keyname
 import (
 	"errors"
 	"fmt"
+	"html/template"
+	"net/http"
 
+	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/group"
@@ -27,6 +30,28 @@ type Repository interface {
 	RetrieveSetByGroup(grp group.Group, index int, amount int) (entity.PartialSet, error)
 }
 
+// Data represents human-redable data
+type Data struct {
+	ID    string
+	Group *group.Data
+	Name  string
+}
+
+// DataSet represents human-redable data set
+type DataSet struct {
+	Index       int
+	Amount      int
+	TotalAmount int
+	IsLast      bool
+	Keynames    []*Data
+}
+
+// DataSetWithGroup represents human-redable data set with group
+type DataSetWithGroup struct {
+	Group    *group.Data
+	Keynames *DataSet
+}
+
 // CreateParams represents the create params
 type CreateParams struct {
 	ID    *uuid.UUID
@@ -39,12 +64,22 @@ type CreateRepositoryParams struct {
 	EntityRepository entity.Repository
 }
 
+// RouteSetOfGroupParams represents the route set of group params
+type RouteSetOfGroupParams struct {
+	AmountOfElementsPerList int
+	Tmpl                    *template.Template
+	EntityRepository        entity.Repository
+}
+
 // SDKFunc represents the vote SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Keyname
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 	CreateRepository     func(params CreateRepositoryParams) Repository
+	ToData               func(kname Keyname) *Data
+	ToDataSet            func(ps entity.PartialSet) *DataSet
+	RouteSetOfGroup      func(params RouteSetOfGroupParams) func(w http.ResponseWriter, r *http.Request)
 }{
 	Create: func(params CreateParams) Keyname {
 		if params.ID == nil {
@@ -134,5 +169,71 @@ var SDKFunc = struct {
 		metaData := createMetaData()
 		out := createRepository(params.EntityRepository, metaData)
 		return out
+	},
+	ToData: func(kname Keyname) *Data {
+		return toData(kname)
+	},
+	ToDataSet: func(ps entity.PartialSet) *DataSet {
+		out, outErr := toDataSet(ps)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
+	},
+	RouteSetOfGroup: func(params RouteSetOfGroupParams) func(w http.ResponseWriter, r *http.Request) {
+		return func(w http.ResponseWriter, r *http.Request) {
+			// retrieve the group name:
+			vars := mux.Vars(r)
+			if groupName, ok := vars["name"]; ok {
+				// create metadata:
+				metaData := createMetaData()
+
+				// create repositories:
+				groupRepository := group.SDKFunc.CreateRepository(group.CreateRepositoryParams{
+					EntityRepository: params.EntityRepository,
+				})
+
+				keynameRepository := createRepository(params.EntityRepository, metaData)
+
+				// retrieve the group:
+				grp, grpErr := groupRepository.RetrieveByName(groupName)
+				if grpErr != nil {
+					w.WriteHeader(http.StatusNotFound)
+					str := fmt.Sprintf("the given group (name: %s) could not be found: %s", groupName, grpErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				// retrieve the keynames by group:
+				knamePS, knamePSErr := keynameRepository.RetrieveSetByGroup(grp, 0, params.AmountOfElementsPerList)
+				if knamePSErr != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					str := fmt.Sprintf("there was an error while retireving request keynames by grpoup (ID: %s): %s", grp.ID().String(), knamePSErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				// render:
+				datSet, datSetErr := toDataSet(knamePS)
+				if datSetErr != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					str := fmt.Sprintf("there was an error while converting the keyname entity set to data: %s", datSetErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
+				w.WriteHeader(http.StatusOK)
+				params.Tmpl.Execute(w, &DataSetWithGroup{
+					Group:    group.SDKFunc.ToData(grp),
+					Keynames: datSet,
+				})
+				return
+			}
+
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("the group name is mandatory")
+			w.Write([]byte(str))
+		}
 	},
 }

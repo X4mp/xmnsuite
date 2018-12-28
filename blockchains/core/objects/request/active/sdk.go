@@ -1,13 +1,18 @@
 package active
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"html/template"
+	"net/http"
 
+	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
 	core_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/group"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
@@ -32,6 +37,28 @@ type Repository interface {
 	RetrieveSetByKeyname(kname keyname.Keyname, index int, amount int) (entity.PartialSet, error)
 }
 
+// Data represents human-redable data
+type Data struct {
+	ID              string
+	Request         *core_request.Data
+	ConcensusNeeded int
+}
+
+// DataSet represents human-redable data set
+type DataSet struct {
+	Index       int
+	Amount      int
+	TotalAmount int
+	IsLast      bool
+	Requests    []*Data
+}
+
+// DataSetWithKeyname represents human-redable data set with keyname
+type DataSetWithKeyname struct {
+	Keyname  *keyname.Data
+	Requests *DataSet
+}
+
 // CreateParams represents the create params
 type CreateParams struct {
 	ID              *uuid.UUID
@@ -44,12 +71,22 @@ type CreateRepositoryParams struct {
 	EntityRepository entity.Repository
 }
 
+// RouteSetOfKeynameParams represents the route set params
+type RouteSetOfKeynameParams struct {
+	AmountOfElementsPerList int
+	Tmpl                    *template.Template
+	EntityRepository        entity.Repository
+}
+
 // SDKFunc represents the request SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Request
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 	CreateRepository     func(params CreateRepositoryParams) Repository
+	ToData               func(req Request) *Data
+	ToDataSet            func(ps entity.PartialSet) *DataSet
+	RouteSetOfKeyname    func(params RouteSetOfKeynameParams) func(w http.ResponseWriter, r *http.Request)
 }{
 	Create: func(params CreateParams) Request {
 		if params.ID == nil {
@@ -133,5 +170,98 @@ var SDKFunc = struct {
 	CreateRepository: func(params CreateRepositoryParams) Repository {
 		metaData := createMetaData()
 		return createRepository(params.EntityRepository, metaData)
+	},
+	ToData: func(req Request) *Data {
+		return toData(req)
+	},
+	ToDataSet: func(ps entity.PartialSet) *DataSet {
+		out, outErr := toDataSet(ps)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
+	},
+	RouteSetOfKeyname: func(params RouteSetOfKeynameParams) func(w http.ResponseWriter, r *http.Request) {
+		return func(w http.ResponseWriter, r *http.Request) {
+			// retrieve the group name:
+			vars := mux.Vars(r)
+			if groupName, ok := vars["groupname"]; ok {
+				// retrieve the keyname:
+				if keynameAsString, ok := vars["keyname"]; ok {
+					// create the metadata:
+					metaData := createMetaData()
+
+					// create the repositories:
+					requestRepository := createRepository(params.EntityRepository, metaData)
+					groupRepository := group.SDKFunc.CreateRepository(group.CreateRepositoryParams{
+						EntityRepository: params.EntityRepository,
+					})
+
+					keynameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+						EntityRepository: params.EntityRepository,
+					})
+
+					// retrieve the group:
+					grp, grpErr := groupRepository.RetrieveByName(groupName)
+					if grpErr != nil {
+						w.WriteHeader(http.StatusNotFound)
+						str := fmt.Sprintf("the given group (name: %s) could not be found: %s", groupName, grpErr.Error())
+						w.Write([]byte(str))
+						return
+					}
+
+					// retrieve the keyname:
+					kname, knameErr := keynameRepository.RetrieveByName(keynameAsString)
+					if knameErr != nil {
+						w.WriteHeader(http.StatusNotFound)
+						str := fmt.Sprintf("the given keyname (name: %s) could not be found: %s", keynameAsString, knameErr.Error())
+						w.Write([]byte(str))
+						return
+					}
+
+					// make sure the group in the keyname fits the group:
+					if bytes.Compare(grp.ID().Bytes(), kname.Group().ID().Bytes()) != 0 {
+						w.WriteHeader(http.StatusNotFound)
+						str := fmt.Sprintf("the given group (%s) does not fit the given keyname (%s) group (%s)", grp.Name(), kname.Name(), kname.Group().Name())
+						w.Write([]byte(str))
+						return
+					}
+
+					// retrieve the request related to our keyname:
+					reqPS, reqPSErr := requestRepository.RetrieveSetByKeyname(kname, 0, params.AmountOfElementsPerList)
+					if reqPSErr != nil {
+						w.WriteHeader(http.StatusNotFound)
+						str := fmt.Sprintf("there was an error while retrieving the requests related to the given keyname (ID: %s): %s", kname.ID().String(), reqPSErr.Error())
+						w.Write([]byte(str))
+						return
+					}
+
+					// render:
+					datSet, datSetErr := toDataSet(reqPS)
+					if datSetErr != nil {
+						w.WriteHeader(http.StatusInternalServerError)
+						str := fmt.Sprintf("there was an error while converting the request entity set to data: %s", datSetErr.Error())
+						w.Write([]byte(str))
+						return
+					}
+
+					w.WriteHeader(http.StatusOK)
+					params.Tmpl.Execute(w, &DataSetWithKeyname{
+						Keyname:  keyname.SDKFunc.ToData(kname),
+						Requests: datSet,
+					})
+					return
+				}
+
+				w.WriteHeader(http.StatusInternalServerError)
+				str := fmt.Sprintf("the keyname is mandatory")
+				w.Write([]byte(str))
+			}
+
+			w.WriteHeader(http.StatusInternalServerError)
+			str := fmt.Sprintf("the group name is mandatory")
+			w.Write([]byte(str))
+		}
 	},
 }

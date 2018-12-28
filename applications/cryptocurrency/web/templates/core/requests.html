@@ -1,0 +1,64 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+      <title>XMN Foreign Exchange</title>
+      <link rel="stylesheet" href="/static/default.css">
+  </head>
+  <body>
+
+      <header>
+          <ul>
+              <li><a href="/genesis">Genesis</a></li>
+              <li><a href="/users">Users</a></li>
+              <li><a href="/wallets">Wallets</a></li>
+              <li id="logo"><a href="/"><span>Home</span></a></li>
+              <li><a href="/banks">Banks</a></li>
+              <li><a href="/currencies">Currencies</a></li>
+              <li><a href="/deposits">Deposits</a></li>
+          </ul>
+          <div class="clearfloat">&nbsp;</div>
+      </header>
+
+       <div id="main">
+
+           <div id="breadcrumb">
+               <ul>
+                   <li><a href="/">Home</a></li>
+                   <li><a href="/requests">Request Groups</a></li>
+                   <li><a href="/requests/{{.Keyname.Group.Name}}">{{.Keyname.Group.Name}}</a></li>
+                   <li>{{.Keyname.Name}}</li>
+               </ul>
+               <div class="clearfloat">&nbsp;</div>
+           </div>
+
+           <div class="block">
+               <h1>Requests of {{.Keyname.Name}} keyname</h1>
+               <p>These are the requests of the {{.Keyname.Name}} entity that can be interacted by the entity group: {{.Keyname.Group.Name}}.</p>
+               <table class="onerow">
+                   <thead>
+                       <tr>
+                           <td>ID</td>
+                           <td>From User</td>
+                           <td>Reason</td>
+                       </tr>
+                   </thead>
+                   <tbody>
+
+                       {{ $groupName := .Keyname.Group.Name }}
+                       {{ $keyname := .Keyname.Name }}
+                       {{ range $key, $value := .Requests.Requests }}
+                           <tr>
+                               <td><a href="/requests/{{$groupName}}/{{$keyname}}/{{$value.ID}}">{{$value.ID}}</a></td>
+                               <td><a href="/users/{{$value.Request.From.Wallet.ID}}">{{$value.Request.From.Wallet.ID}}</a></td>
+                               <td>{{$value.Request.Reason}}</td>
+                           </tr>
+                       {{ end }}
+                   </tbody>
+               </table>
+           </div>
+       </div>
+       <footer>
+           <p>&copy;  XMN Blockchain Services Ltd.  The software and its blockchain is open source under the <a href="/license">MIT license</a>.</p>
+       </footer>
+  </body>
+</html>
