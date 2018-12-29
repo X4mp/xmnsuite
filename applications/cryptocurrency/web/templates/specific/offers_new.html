@@ -1,0 +1,104 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+      <title>XMN Foreign Exchange</title>
+      <link rel="stylesheet" href="/static/default.css">
+  </head>
+  <body>
+
+      <header>
+          <ul>
+              <li><a href="/">Home</a></li>
+              <li><a href="/address">Address</a></li>
+              <li><a href="/offers">Offers</a></li>
+              <li id="logo"><a href="/"><span>Home</span></a></li>
+              <li><a href="/deposits">Deposits</a></li>
+              <li><a href="/chains">Chains</a></li>
+              <li><a href="/deposits">Deposits</a></li>
+
+          </ul>
+          <div class="clearfloat">&nbsp;</div>
+      </header>
+
+       <div id="main">
+
+           <div id="breadcrumb">
+               <ul>
+                   <li><a href="/">Home</a></li>
+                   <li><a href="/offers">Offers</a></li>
+                   <li>New</li>
+               </ul>
+               <div class="clearfloat">&nbsp;</div>
+           </div>
+
+           <div class="block">
+               <h1>New Offers</h1>
+               <p>To create a new offer, please fill in the form below.  The shareholders of your wallet will then vote to approve or disapprove the offer.</p>
+
+               <div id="newaddress">
+                   <form method="post" action="/offers/new">
+                       <fieldset>
+                           <legend>Offer</legend>
+                           <div class="block">
+                               <label for="fromwalletid" class="left">From Wallet:</label>
+                               <select name="fromwalletid" id="fromwalletid" class="right">
+                                   {{ range $key, $value := .Balances }}
+                                        <option value="{{$value.On.ID}}">{{$value.On.ID}} ({{$value.Amount}} tokens)</option>
+                                   {{ end }}
+                               </select>
+                                <div class="clearfloat">&nbsp;</div>
+                           </div>
+                           <div class="block">
+                               <label for="pledgeamount" class="left">Pledge Amount:</label>
+                               <input type="text" id="pledgeamount" name="pledgeamount" value="" class="right" />
+                                <div class="clearfloat">&nbsp;</div>
+                           </div>
+                           <div class="block">
+                               <label for="addressid" class="left">Bitcoin Deposit Address:</label>
+                               <select name="addressid" id="addressid" class="right">
+                                   {{ range $key, $value := .Addresses }}
+                                        <option value="{{$value.ID}}">{{$value.Address}}</option>
+                                   {{ end }}
+                               </select>
+                                <div class="clearfloat">&nbsp;</div>
+                           </div>
+                           <div class="block">
+                               <label for="satoshiamount" class="left">Satoshi Amount:</label>
+                               <input type="text" id="satoshiamount" name="satoshiamount" value="" class="right" />
+                                <div class="clearfloat">&nbsp;</div>
+                           </div>
+                           <div class="block">
+                               <label for="serviceprice" class="left">Service Price (in Satoshi):</label>
+                               <input type="text" id="serviceprice" name="serviceprice" value="" class="right" />
+                                <div class="clearfloat">&nbsp;</div>
+                           </div>
+                           <div class="block">
+                               <label for="ipaddress" class="left">IP:</label>
+                               <input type="text" id="ipaddress" name="ipaddress" value="" class="right" />
+                                <div class="clearfloat">&nbsp;</div>
+                           </div>
+                           <div class="block">
+                               <label for="port" class="left">Port:</label>
+                               <input type="text" id="port" name="port" value="" class="right" />
+                                <div class="clearfloat">&nbsp;</div>
+                           </div>
+                           <div class="block">
+                               <label for="reason" class="left">Reason:</label>
+                               <textarea rows="4" cols="50" id="reason" name="reason" class="right" placeholder="Please explain why you want to create this offer..."></textarea>
+                                <div class="clearfloat">&nbsp;</div>
+                           </div>
+
+                           <div class="block">
+                               <input type="submit" value="Send" class="btn right" />
+                               <div class="clearfloat">&nbsp;</div>
+                           </div>
+                       </fieldset>
+                   </form>
+               </div>
+           </div>
+       </div>
+       <footer>
+           <p>&copy;  XMN Blockchain Services Ltd.  The software and its blockchain is open source under the <a href="/license">MIT license</a>.</p>
+       </footer>
+  </body>
+</html>

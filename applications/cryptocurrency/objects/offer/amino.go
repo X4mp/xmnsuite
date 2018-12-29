@@ -2,6 +2,7 @@ package offer
 
 import (
 	amino "github.com/tendermint/go-amino"
+	"github.com/xmnservices/xmnsuite/applications/cryptocurrency/objects/address"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/pledge"
 )
 
@@ -20,6 +21,7 @@ func init() {
 func Register(codec *amino.Codec) {
 	// Dependencies
 	pledge.Register(codec)
+	address.Register(codec)
 
 	// Offer
 	func() {

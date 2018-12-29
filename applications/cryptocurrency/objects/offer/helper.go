@@ -7,6 +7,7 @@ import (
 	"github.com/xmnservices/xmnsuite/applications/cryptocurrency/objects/address"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/pledge"
+	"github.com/xmnservices/xmnsuite/datastore"
 )
 
 func retrieveAllOffersKeyname() string {
@@ -16,6 +17,11 @@ func retrieveAllOffersKeyname() string {
 func retrieveOfferByPledge(pldge pledge.Pledge) string {
 	base := retrieveAllOffersKeyname()
 	return fmt.Sprintf("%s:by_pledge_id:%s", base, pldge.ID().String())
+}
+
+func retrieveOfferByToAddress(toAddr address.Address) string {
+	base := retrieveAllOffersKeyname()
+	return fmt.Sprintf("%s:by_to_address_id:%s", base, toAddr.ID().String())
 }
 
 func createMetaData() entity.MetaData {
@@ -77,11 +83,54 @@ func createRepresentation() entity.Representation {
 				return []string{
 					retrieveAllOffersKeyname(),
 					retrieveOfferByPledge(off.Pledge()),
+					retrieveOfferByToAddress(off.To()),
 				}, nil
 			}
 
 			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Offer instance", ins.ID().String())
 			return nil, errors.New(str)
+		},
+		Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+
+			// create the representations:
+			pledgeRepresentation := pledge.SDKFunc.CreateRepresentation()
+
+			// create the entity repository and service:
+			entityRepository := entity.SDKFunc.CreateRepository(ds)
+			service := entity.SDKFunc.CreateService(ds)
+			addressRepository := address.SDKFunc.CreateRepository(address.CreateRepositoryParams{
+				EntityRepository: entityRepository,
+			})
+
+			pledgeRepository := pledge.SDKFunc.CreateRepository(pledge.CreateRepositoryParams{
+				EntityRepository: entityRepository,
+			})
+
+			if off, ok := ins.(Offer); ok {
+				// make sure the pledge does not already exists:
+				_, retPledgeErr := pledgeRepository.RetrieveByID(off.Pledge().ID())
+				if retPledgeErr == nil {
+					str := fmt.Sprintf("the Pledge (ID: %s) in the Offer instance already exists", off.Pledge().ID().String())
+					return errors.New(str)
+				}
+
+				// save the pledge:
+				savePldgeErr := service.Save(off.Pledge(), pledgeRepresentation)
+				if savePldgeErr != nil {
+					return savePldgeErr
+				}
+
+				// make sure the address exists:
+				_, retAddrErr := addressRepository.RetrieveByID(off.To().ID())
+				if retAddrErr != nil {
+					return retAddrErr
+				}
+
+				return nil
+			}
+
+			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Offer instance", ins.ID().String())
+			return errors.New(str)
 		},
 	})
 }

@@ -5,7 +5,6 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
@@ -59,9 +58,8 @@ type CreateParams struct {
 	Address string
 }
 
-// RouteParams represents the route params
-type RouteParams struct {
-	Tmpl             *template.Template
+// CreateRepositoryParams represents a CreateRepository params
+type CreateRepositoryParams struct {
 	EntityRepository entity.Repository
 }
 
@@ -86,9 +84,9 @@ var SDKFunc = struct {
 	Create               func(params CreateParams) Address
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
+	CreateRepository     func(params CreateRepositoryParams) Repository
 	ToData               func(addr Address) *Data
 	ToDataSet            func(ps entity.PartialSet) *DataSet
-	Route                func(params RouteParams) func(w http.ResponseWriter, r *http.Request)
 	RouteSet             func(params RouteSetParams) func(w http.ResponseWriter, r *http.Request)
 	RouteNew             func(params RouteNewParams) func(w http.ResponseWriter, r *http.Request)
 }{
@@ -122,43 +120,10 @@ var SDKFunc = struct {
 
 		return out
 	},
-	Route: func(params RouteParams) func(w http.ResponseWriter, r *http.Request) {
-		return func(w http.ResponseWriter, r *http.Request) {
-			// create the metadata:
-			metaData := createMetaData()
-
-			// create the repositories:
-			addressRepository := createRepository(metaData, params.EntityRepository)
-
-			// get the id from the uri:
-			vars := mux.Vars(r)
-			if idAsString, ok := vars["id"]; ok {
-				// convert the string to an id:
-				id, idErr := uuid.FromString(idAsString)
-				if idErr != nil {
-					w.WriteHeader(http.StatusInternalServerError)
-					str := fmt.Sprintf("the Address ID (%s) is invalid", idAsString)
-					w.Write([]byte(str))
-					return
-				}
-
-				// retrieve the address by id:
-				addr, addrErr := addressRepository.RetrieveByID(&id)
-				if idErr != nil {
-					w.WriteHeader(http.StatusNotFound)
-					w.Write([]byte(addrErr.Error()))
-					return
-				}
-
-				w.WriteHeader(http.StatusOK)
-				params.Tmpl.Execute(w, toData(addr))
-				return
-			}
-
-			w.WriteHeader(http.StatusInternalServerError)
-			str := fmt.Sprintf("the ID could not be found")
-			w.Write([]byte(str))
-		}
+	CreateRepository: func(params CreateRepositoryParams) Repository {
+		metaData := createMetaData()
+		out := createRepository(metaData, params.EntityRepository)
+		return out
 	},
 	RouteSet: func(params RouteSetParams) func(w http.ResponseWriter, r *http.Request) {
 		return func(w http.ResponseWriter, r *http.Request) {

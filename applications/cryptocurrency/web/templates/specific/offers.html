@@ -1,0 +1,72 @@
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+      <title>XMN Foreign Exchange</title>
+      <link rel="stylesheet" href="/static/default.css">
+  </head>
+  <body>
+
+      <header>
+          <ul>
+              <li><a href="/">Home</a></li>
+              <li><a href="/address">Address</a></li>
+              <li><a href="/offers">Offers</a></li>
+              <li id="logo"><a href="/"><span>Home</span></a></li>
+              <li><a href="/deposits">Deposits</a></li>
+              <li><a href="/chains">Chains</a></li>
+              <li><a href="/deposits">Deposits</a></li>
+
+          </ul>
+          <div class="clearfloat">&nbsp;</div>
+      </header>
+
+       <div id="main">
+
+           <div id="breadcrumb">
+               <ul>
+                   <li><a href="/">Home</a></li>
+                   <li>Offers</li>
+               </ul>
+               <div class="clearfloat">&nbsp;</div>
+           </div>
+           <div class="block">
+               <div id="title">
+                   <h1>Offers</h1>
+                   <a href="/offers/new" class="btn right">Create</a>
+                   <span class="clearfloat">&nbsp;</span>
+               </div>
+               <p>The offers represents contracts where people wants to manage bitcoins in their wallet and generate their representation on a blockchain.</p>
+               <table class="onerow">
+                   <thead>
+                       <tr>
+                           <td>ID</td>
+                           <td>From</td>
+                           <td>Pledged Amount</td>
+                           <td>Address</td>
+                           <td>Satoshi Amount</td>
+                           <td>Service Price</td>
+                           <td>Action</td>
+                       </tr>
+                   </thead>
+                   <tbody>
+                       {{ range $key, $value := .Offers }}
+                           <tr>
+                               <td>{{$value.ID}}</td>
+                               <td><a href="/wallets/{{$value.Pledge.From.From.ID}}">{{$value.Pledge.From.From.ID}}</a></td>
+                               <td>{{$value.Pledge.From.Amount}}</td>
+                               <td><a href="/address">{{$value.ToAddress.ID}}</a></td>
+                               <td>{{$value.Amount}}</td>
+                               <td>{{$value.Price}}</td>
+                               <td><a href="/offers/{{$value.ID}}" class="btn right">Deposit</a></td>
+                           </tr>
+                       {{ end }}
+
+                   </tbody>
+               </table>
+           </div>
+       </div>
+       <footer>
+           <p>&copy;  XMN Blockchain Services Ltd.  The software and its blockchain is open source under the <a href="/license">MIT license</a>.</p>
+       </footer>
+  </body>
+</html>
