@@ -29,6 +29,7 @@ type Offer interface {
 	ID() *uuid.UUID
 	Pledge() pledge.Pledge
 	To() address.Address
+	Confirmations() int
 	Amount() int
 	Price() int
 	IP() net.IP
@@ -49,11 +50,12 @@ type Repository interface {
 
 // Data represents human-readable data
 type Data struct {
-	ID        string
-	Pledge    *pledge.Data
-	ToAddress *address.Data
-	Amount    int
-	Price     int
+	ID            string
+	Pledge        *pledge.Data
+	ToAddress     *address.Data
+	Confirmations int
+	Amount        int
+	Price         int
 }
 
 // DataSet represents the human-readable data set
@@ -73,13 +75,14 @@ type DataNew struct {
 
 // CreateParams represents the Create params
 type CreateParams struct {
-	ID     *uuid.UUID
-	Pledge pledge.Pledge
-	To     address.Address
-	Amount int
-	Price  int
-	IP     net.IP
-	Port   int
+	ID            *uuid.UUID
+	Pledge        pledge.Pledge
+	To            address.Address
+	Confirmations int
+	Amount        int
+	Price         int
+	IP            net.IP
+	Port          int
 }
 
 // CreateRepositoryParams represents the CreateRepository params
@@ -120,7 +123,7 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out, outErr := createOffer(params.ID, params.Pledge, params.To, params.Amount, params.Price, params.IP, params.Port)
+		out, outErr := createOffer(params.ID, params.Pledge, params.To, params.Confirmations, params.Amount, params.Price, params.IP, params.Port)
 		if outErr != nil {
 			panic(outErr)
 		}
@@ -250,8 +253,9 @@ var SDKFunc = struct {
 			servicePriceAsString := r.FormValue("serviceprice")
 			ipAddressAsString := r.FormValue("ipaddress")
 			portAsString := r.FormValue("port")
+			confirmationsAsString := r.FormValue("confirmations")
 			reason := r.FormValue("reason")
-			if fromWalletIDAsString != "" && pledgeAmountAsString != "" && addressIDAsString != "" && satoshiAmountAsString != "" && servicePriceAsString != "" && ipAddressAsString != "" && portAsString != "" {
+			if fromWalletIDAsString != "" && pledgeAmountAsString != "" && addressIDAsString != "" && satoshiAmountAsString != "" && servicePriceAsString != "" && ipAddressAsString != "" && portAsString != "" && confirmationsAsString != "" {
 				fromWalletID, fromWalletIDErr := uuid.FromString(fromWalletIDAsString)
 				if fromWalletIDErr != nil {
 					w.WriteHeader(http.StatusInternalServerError)
@@ -336,6 +340,14 @@ var SDKFunc = struct {
 					return
 				}
 
+				conf, confErr := strconv.Atoi(confirmationsAsString)
+				if portErr != nil {
+					w.WriteHeader(http.StatusInternalServerError)
+					str := fmt.Sprintf("the given confirmations amount (%s) is not a valid number: %s", confirmationsAsString, confErr.Error())
+					w.Write([]byte(str))
+					return
+				}
+
 				// create the offer:
 				id := uuid.NewV4()
 				off, offErr := createOffer(&id, pledge.SDKFunc.Create(pledge.CreateParams{
@@ -345,7 +357,7 @@ var SDKFunc = struct {
 						Amount: pldge,
 					}),
 					To: gen.Deposit().To(),
-				}), addr, amount, price, net.ParseIP(ipAddressAsString), port)
+				}), addr, conf, amount, price, net.ParseIP(ipAddressAsString), port)
 
 				if offErr != nil {
 					w.WriteHeader(http.StatusInternalServerError)

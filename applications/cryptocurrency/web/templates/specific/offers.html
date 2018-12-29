@@ -43,6 +43,7 @@
                            <td>Address</td>
                            <td>Satoshi Amount</td>
                            <td>Service Price</td>
+                           <td>Confirmations</td>
                        </tr>
                    </thead>
                    <tbody>
@@ -54,6 +55,7 @@
                                <td><a href="/address/{{$value.ToAddress.ID}}">{{$value.ToAddress.ID}}</a></td>
                                <td>{{$value.Amount}}</td>
                                <td>{{$value.Price}}</td>
+                               <td>{{$value.Confirmations}}</td>
                            </tr>
                        {{ end }}
 

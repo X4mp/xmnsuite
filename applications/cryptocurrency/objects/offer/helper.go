@@ -137,11 +137,12 @@ func createRepresentation() entity.Representation {
 
 func toData(off Offer) *Data {
 	out := Data{
-		ID:        off.ID().String(),
-		Pledge:    pledge.SDKFunc.ToData(off.Pledge()),
-		ToAddress: address.SDKFunc.ToData(off.To()),
-		Amount:    off.Amount(),
-		Price:     off.Price(),
+		ID:            off.ID().String(),
+		Pledge:        pledge.SDKFunc.ToData(off.Pledge()),
+		ToAddress:     address.SDKFunc.ToData(off.To()),
+		Confirmations: off.Confirmations(),
+		Amount:        off.Amount(),
+		Price:         off.Price(),
 	}
 
 	return &out

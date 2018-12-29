@@ -15,17 +15,19 @@ type offer struct {
 	UUID   *uuid.UUID      `json:"id"`
 	Pldge  pledge.Pledge   `json:"pledge"`
 	Addr   address.Address `json:"to_address"`
+	Conf   int             `json:"confirmations"`
 	Am     int             `json:"amount"`
 	Prce   int             `json:"price"`
 	IPAddr net.IP          `json:"ip_address"`
 	Prt    int             `json:"port"`
 }
 
-func createOffer(id *uuid.UUID, pldge pledge.Pledge, to address.Address, amount int, price int, ip net.IP, port int) (Offer, error) {
+func createOffer(id *uuid.UUID, pldge pledge.Pledge, to address.Address, conf int, amount int, price int, ip net.IP, port int) (Offer, error) {
 	out := offer{
 		UUID:   id,
 		Pldge:  pldge,
 		Addr:   to,
+		Conf:   conf,
 		Am:     amount,
 		Prce:   price,
 		IPAddr: ip,
@@ -54,7 +56,7 @@ func createOfferFromNormalized(normalized *normalizedOffer) (Offer, error) {
 	if pldge, ok := pldgeIns.(pledge.Pledge); ok {
 		if toAddr, ok := toAddrIns.(address.Address); ok {
 			ip := net.ParseIP(normalized.IP)
-			return createOffer(&id, pldge, toAddr, normalized.Amount, normalized.Price, ip, normalized.Port)
+			return createOffer(&id, pldge, toAddr, normalized.Confirmations, normalized.Amount, normalized.Price, ip, normalized.Port)
 		}
 
 		str := fmt.Sprintf("the entity (ID: %s) is not a valid Address instance", toAddrIns.ID().String())
@@ -95,7 +97,7 @@ func createOfferFromStorable(storable *storableOffer, rep entity.Repository) (Of
 	if pldge, ok := pldgeIns.(pledge.Pledge); ok {
 		if toAddr, ok := toAddrIns.(address.Address); ok {
 			ip := net.ParseIP(storable.IP)
-			return createOffer(&id, pldge, toAddr, storable.Amount, storable.Price, ip, storable.Port)
+			return createOffer(&id, pldge, toAddr, storable.Confirmations, storable.Amount, storable.Price, ip, storable.Port)
 		}
 
 		str := fmt.Sprintf("the entity (ID: %s) is not a valid Address instance", toAddrIns.ID().String())
@@ -124,6 +126,11 @@ func (obj *offer) To() address.Address {
 // Amount returns the amount
 func (obj *offer) Amount() int {
 	return obj.Am
+}
+
+// Confirmations returns the amount of confirmations needed
+func (obj *offer) Confirmations() int {
+	return obj.Conf
 }
 
 // Price returns the price

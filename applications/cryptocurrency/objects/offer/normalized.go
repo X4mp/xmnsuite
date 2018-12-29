@@ -6,13 +6,14 @@ import (
 )
 
 type normalizedOffer struct {
-	ID     string             `json:"id"`
-	Pledge pledge.Normalized  `json:"pledge"`
-	To     address.Normalized `json:"to"`
-	Amount int                `json:"amount"`
-	Price  int                `json:"price"`
-	IP     string             `json:"ip_address"`
-	Port   int                `json:"port"`
+	ID            string             `json:"id"`
+	Pledge        pledge.Normalized  `json:"pledge"`
+	To            address.Normalized `json:"to"`
+	Confirmations int                `json:"confirmations"`
+	Amount        int                `json:"amount"`
+	Price         int                `json:"price"`
+	IP            string             `json:"ip_address"`
+	Port          int                `json:"port"`
 }
 
 func createNormalizedOffer(ins Offer) (*normalizedOffer, error) {
@@ -27,13 +28,14 @@ func createNormalizedOffer(ins Offer) (*normalizedOffer, error) {
 	}
 
 	out := normalizedOffer{
-		ID:     ins.ID().String(),
-		Pledge: pldge,
-		To:     addr,
-		Amount: ins.Amount(),
-		Price:  ins.Price(),
-		IP:     ins.IP().String(),
-		Port:   ins.Port(),
+		ID:            ins.ID().String(),
+		Pledge:        pldge,
+		To:            addr,
+		Confirmations: ins.Confirmations(),
+		Amount:        ins.Amount(),
+		Price:         ins.Price(),
+		IP:            ins.IP().String(),
+		Port:          ins.Port(),
 	}
 
 	return &out, nil
