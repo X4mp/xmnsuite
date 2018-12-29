@@ -82,6 +82,11 @@ type CreateParams struct {
 	Port   int
 }
 
+// CreateRepositoryParams represents the CreateRepository params
+type CreateRepositoryParams struct {
+	EntityRepository entity.Repository
+}
+
 // RouteSetParams represents the route set params
 type RouteSetParams struct {
 	AmountOfElementsPerList int
@@ -103,6 +108,7 @@ var SDKFunc = struct {
 	Create               func(params CreateParams) Offer
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
+	CreateRepository     func(params CreateRepositoryParams) Repository
 	ToData               func(off Offer) *Data
 	ToDataSet            func(ps entity.PartialSet) *DataSet
 	RouteSet             func(params RouteSetParams) func(w http.ResponseWriter, r *http.Request)
@@ -126,6 +132,11 @@ var SDKFunc = struct {
 	},
 	CreateRepresentation: func() entity.Representation {
 		return createRepresentation()
+	},
+	CreateRepository: func(params CreateRepositoryParams) Repository {
+		metaData := createMetaData()
+		out := createRepository(metaData, params.EntityRepository)
+		return out
 	},
 	ToData: func(off Offer) *Data {
 		return toData(off)

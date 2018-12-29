@@ -7,6 +7,7 @@ import (
 	"github.com/xmnservices/xmnsuite/applications/cryptocurrency/objects/address"
 	"github.com/xmnservices/xmnsuite/applications/cryptocurrency/objects/offer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/datastore"
 )
 
 func retrieveAllDepositsKeyname() string {
@@ -16,6 +17,11 @@ func retrieveAllDepositsKeyname() string {
 func retrieveDepositByOfferKeyname(off offer.Offer) string {
 	base := retrieveAllDepositsKeyname()
 	return fmt.Sprintf("%s:by_offer_id:%s", base, off.ID().String())
+}
+
+func retrieveDepositByFromAddressKeyname(frmAddress address.Address) string {
+	base := retrieveAllDepositsKeyname()
+	return fmt.Sprintf("%s:by_from_address_id:%s", base, frmAddress.ID().String())
 }
 
 func createMetaData() entity.MetaData {
@@ -77,11 +83,72 @@ func createRepresentation() entity.Representation {
 				return []string{
 					retrieveAllDepositsKeyname(),
 					retrieveDepositByOfferKeyname(dep.Offer()),
+					retrieveDepositByFromAddressKeyname(dep.From()),
 				}, nil
 			}
 
 			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Deposit instance", ins.ID().String())
 			return nil, errors.New(str)
+		},
+		Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+
+			// create the representations:
+			metaData := createMetaData()
+
+			// create the entity repository and service:
+			entityRepository := entity.SDKFunc.CreateRepository(ds)
+			depositRepository := createRepository(metaData, entityRepository)
+			addressRepository := address.SDKFunc.CreateRepository(address.CreateRepositoryParams{
+				EntityRepository: entityRepository,
+			})
+
+			offerRepository := offer.SDKFunc.CreateRepository(offer.CreateRepositoryParams{
+				EntityRepository: entityRepository,
+			})
+
+			if dep, ok := ins.(Deposit); ok {
+				// make sure the offer exists:
+				_, retOffErr := offerRepository.RetrieveByID(dep.Offer().ID())
+				if retOffErr != nil {
+					str := fmt.Sprintf("the Offer (ID: %s) in the Deposit instance does not exists", dep.Offer().ID().String())
+					return errors.New(str)
+				}
+
+				// make sure the address exists:
+				_, retAddrErr := addressRepository.RetrieveByID(dep.From().ID())
+				if retAddrErr != nil {
+					str := fmt.Sprintf("the from Address (ID: %s) in the Deposit instance does not exists", dep.From().ID().String())
+					return errors.New(str)
+				}
+
+				// retrieve all deposits of the offer:
+				depPS, depPSErr := depositRepository.RetrieveSetByOffer(dep.Offer(), 0, -1)
+				if depPSErr != nil {
+					str := fmt.Sprintf("there was an error while retrieving a Deposit partial set by Offer (ID: %s): %s", dep.Offer().ID().String(), depPSErr.Error())
+					return errors.New(str)
+				}
+
+				// retrieve the amount deposited so far:
+				amountDeposited := 0
+				depsIns := depPS.Instances()
+				for _, oneDepIns := range depsIns {
+					if oneDep, ok := oneDepIns.(Deposit); ok {
+						amountDeposited += oneDep.Amount()
+					}
+				}
+
+				// make sure the new deposit is not bigger than the remaining:
+				remainingDeposit := dep.Offer().Amount() - amountDeposited
+				if remainingDeposit < dep.Amount() {
+					str := fmt.Sprintf("the deposit (%d) is bigger than the remaining potential deposit (%d) because there is already %d deposited on a %d offer", dep.Offer().Amount(), remainingDeposit, amountDeposited, dep.Offer().Amount())
+					return errors.New(str)
+				}
+
+				return nil
+			}
+
+			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Offer instance", ins.ID().String())
+			return errors.New(str)
 		},
 	})
 }

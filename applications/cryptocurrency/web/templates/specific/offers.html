@@ -8,13 +8,11 @@
 
       <header>
           <ul>
-              <li><a href="/">Home</a></li>
               <li><a href="/address">Address</a></li>
               <li><a href="/offers">Offers</a></li>
               <li id="logo"><a href="/"><span>Home</span></a></li>
-              <li><a href="/deposits">Deposits</a></li>
               <li><a href="/chains">Chains</a></li>
-              <li><a href="/deposits">Deposits</a></li>
+              <li><a href="/more">More...</a></li>
 
           </ul>
           <div class="clearfloat">&nbsp;</div>
@@ -45,19 +43,17 @@
                            <td>Address</td>
                            <td>Satoshi Amount</td>
                            <td>Service Price</td>
-                           <td>Action</td>
                        </tr>
                    </thead>
                    <tbody>
                        {{ range $key, $value := .Offers }}
                            <tr>
-                               <td>{{$value.ID}}</td>
+                               <td><a href="/offers/{{$value.ID}}">{{$value.ID}}</a></td>
                                <td><a href="/wallets/{{$value.Pledge.From.From.ID}}">{{$value.Pledge.From.From.ID}}</a></td>
                                <td>{{$value.Pledge.From.Amount}}</td>
-                               <td><a href="/address">{{$value.ToAddress.ID}}</a></td>
+                               <td><a href="/address/{{$value.ToAddress.ID}}">{{$value.ToAddress.ID}}</a></td>
                                <td>{{$value.Amount}}</td>
                                <td>{{$value.Price}}</td>
-                               <td><a href="/offers/{{$value.ID}}" class="btn right">Deposit</a></td>
                            </tr>
                        {{ end }}
 

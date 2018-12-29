@@ -26,7 +26,7 @@ form .btn {font-size: 14px; font-family: Gabriele, Helvetica, Arial, sans-serif;
 
 header {padding: 10px;}
 header .loginregister {width: 300px;}
-header ul {list-style: none; margin: 0px auto 0px auto; padding: 0; width: 700px;}
+header ul {list-style: none; margin: 0px auto 0px auto; padding: 0; width: 470px;}
 header ul li {float: left; padding: 50px 15px 0px 15px;}
 header #logo {padding-top: 0px;}
 header #logo a {background-image: url('logo_topmenu.png'); background-repeat: no-repeat; width: 100px; height: 100px; display: block;}
@@ -46,6 +46,7 @@ footer {padding: 5px; margin: 5px auto 5px auto; width: 800px; font-size: 12px; 
 #main .block .tworows {width: 90%; }
 #main .block .tworows td {padding: 5px; border-bottom: 1px solid #000000;}
 #main .block .tworows .left {width: 90%; background-color: #0677cc; color: #ffffff;}
+#main .block .tworows .nostyle .left {width: 50%; background-color: #ffffff; color: #000000;}
 
 #main .block .tworowsclean {width: 90%; }
 #main .block .tworowsclean td {padding: 5px; border-bottom: 0px;}

@@ -12,6 +12,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/xmnservices/xmnsuite/applications/cryptocurrency/objects/address"
+	"github.com/xmnservices/xmnsuite/applications/cryptocurrency/objects/deposit"
 	"github.com/xmnservices/xmnsuite/applications/cryptocurrency/objects/offer"
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
 	"github.com/xmnservices/xmnsuite/blockchains/core/meta"
@@ -106,6 +107,13 @@ func createWeb(
 		Client:                  client,
 		AmountOfElementsPerList: amountOfElementsPerList,
 		Tmpl:             app.createTemplate("specific/offers_new.html", "offers_new"),
+		EntityRepository: entityRepository,
+	}))
+
+	app.rter.HandleFunc("/offers/{id}", deposit.SDKFunc.RouteSet(deposit.RouteSetParams{
+		PK:               pk,
+		Client:           client,
+		Tmpl:             app.createTemplate("specific/offers_single.html", "offers"),
 		EntityRepository: entityRepository,
 	}))
 

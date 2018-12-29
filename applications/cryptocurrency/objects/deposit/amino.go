@@ -2,7 +2,8 @@ package deposit
 
 import (
 	amino "github.com/tendermint/go-amino"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/pledge"
+	"github.com/xmnservices/xmnsuite/applications/cryptocurrency/objects/address"
+	"github.com/xmnservices/xmnsuite/applications/cryptocurrency/objects/offer"
 )
 
 const (
@@ -19,7 +20,8 @@ func init() {
 // Register registers all the interface -> struct to amino
 func Register(codec *amino.Codec) {
 	// Dependencies
-	pledge.Register(codec)
+	offer.Register(codec)
+	address.Register(codec)
 
 	// Deposit
 	func() {
