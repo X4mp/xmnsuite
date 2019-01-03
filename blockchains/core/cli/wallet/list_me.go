@@ -72,7 +72,7 @@ func listMe() *cliapp.Command {
 			}
 
 			// render the list:
-			helpers.SDKFunc.PrintSuccessNewInstance(helpers.PrintSuccessNewInstanceParams{
+			helpers.SDKFunc.PrintSuccessWithInstance(helpers.PrintSuccessWithInstanceParams{
 				Ins:     usrPS.Instances(),
 				Message: fmt.Sprintf("Index: %d - Amount: %d - TotalAmount: %d", usrPS.Index(), usrPS.Amount(), usrPS.TotalAmount()),
 			})

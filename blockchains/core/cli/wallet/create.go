@@ -81,7 +81,7 @@ func create() *cliapp.Command {
 				}),
 			})
 
-			helpers.SDKFunc.PrintSuccessNewInstance(helpers.PrintSuccessNewInstanceParams{
+			helpers.SDKFunc.PrintSuccessWithInstance(helpers.PrintSuccessWithInstanceParams{
 				Ins:     req,
 				Message: "Success!  The wallet request has been saved.",
 			})

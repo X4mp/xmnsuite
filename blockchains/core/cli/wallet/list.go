@@ -74,7 +74,7 @@ func list() *cliapp.Command {
 			}
 
 			// render the list:
-			helpers.SDKFunc.PrintSuccessNewInstance(helpers.PrintSuccessNewInstanceParams{
+			helpers.SDKFunc.PrintSuccessWithInstance(helpers.PrintSuccessWithInstanceParams{
 				Ins:     walPS.Instances(),
 				Message: fmt.Sprintf("Index: %d - Amount: %d - TotalAmount: %d", walPS.Index(), walPS.Amount(), walPS.TotalAmount()),
 			})
