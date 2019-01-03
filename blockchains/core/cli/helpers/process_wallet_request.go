@@ -29,7 +29,7 @@ func processWalletRequest(c *cliapp.Context, representation entity.Representatio
 	walletIDAsString := c.String("walletid")
 	walID, walIDErr := uuid.FromString(walletIDAsString)
 	if walIDErr != nil {
-		str := fmt.Sprintf("the given walletID (ID: %s) is invalid", walletIDAsString)
+		str := fmt.Sprintf("the given walletID (ID: %s) is invalid, but mandatory", walletIDAsString)
 		return nil, errors.New(str)
 	}
 

@@ -25,6 +25,7 @@ var SDKFunc = struct {
 			Usage:   "This is the group of commands to work with wallets",
 			Subcommands: []cliapp.Command{
 				*wallet.SDKFunc.Create(),
+				*wallet.SDKFunc.ListMe(),
 			},
 		}
 	},

@@ -6,33 +6,19 @@ import (
 
 	cliapp "github.com/urfave/cli"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/helpers"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/tendermint"
 	"github.com/xmnservices/xmnsuite/configs"
 	core_helpers "github.com/xmnservices/xmnsuite/helpers"
 )
 
-func create() *cliapp.Command {
+func listMe() *cliapp.Command {
 	return &cliapp.Command{
-		Name:    "create",
+		Name:    "me",
 		Aliases: []string{"c"},
-		Usage:   "Creates a new wallet and attach the current user has its first shareholder",
+		Usage:   "Show the wallets the current users have shares in.",
 		Flags: []cliapp.Flag{
-			cliapp.IntFlag{
-				Name:  "shares",
-				Value: 100,
-				Usage: "The amount of shares your current user will hold in the new wallet.",
-			},
-			cliapp.IntFlag{
-				Name:  "concensus",
-				Value: 100,
-				Usage: "This is the amount of shares that needs to vote in order to approve or disapprove a wallet request",
-			},
-			cliapp.StringFlag{
-				Name:  "walletid",
-				Value: "",
-				Usage: "This is the walletid that will receive the funds in exchange of the hosting services",
-			},
 			cliapp.StringFlag{
 				Name:  "host",
 				Value: "",
@@ -66,24 +52,29 @@ func create() *cliapp.Command {
 				panic(errors.New(str))
 			}
 
-			// process the request:
-			pubKeyAsString := conf.WalletPK().PublicKey().String()
-			req := helpers.SDKFunc.ProcessWalletRequest(helpers.ProcessWalletRequestParams{
-				CLIContext:           c,
-				EntityRepresentation: user.SDKFunc.CreateRepresentation(),
-				Storable: user.SDKFunc.CreateNormalized(user.CreateNormalizedParams{
-					PubKey: pubKeyAsString,
-					Shares: c.Int("shares"),
-					Wallet: wallet.SDKFunc.CreateNormalized(wallet.CreateNormalizedParams{
-						CreatorPubKey:   pubKeyAsString,
-						ConcensusNeeded: c.Int("concensus"),
+			// create the wallet repository:
+			userRepository := user.SDKFunc.CreateRepository(user.CreateRepositoryParams{
+				EntityRepository: entity.SDKFunc.CreateSDKRepository(entity.CreateSDKRepositoryParams{
+					PK: conf.WalletPK(),
+					Client: tendermint.SDKFunc.CreateClient(tendermint.CreateClientParams{
+						IPAsString: c.String("host"),
 					}),
+					RoutePrefix: "",
 				}),
 			})
 
+			// retrieve the wallets:
+			pubKey := conf.WalletPK().PublicKey()
+			usrPS, usrPSErr := userRepository.RetrieveSetByPubKey(pubKey, 0, -1)
+			if usrPSErr != nil {
+				str := fmt.Sprintf("there was an error while retrieving the wallet set (PubKey: %s): %s", pubKey.String(), usrPSErr.Error())
+				panic(errors.New(str))
+			}
+
+			// render the list:
 			helpers.SDKFunc.PrintSuccessNewInstance(helpers.PrintSuccessNewInstanceParams{
-				Ins:     req,
-				Message: "Success!  The wallet request has been saved.",
+				Ins:     usrPS.Instances(),
+				Message: fmt.Sprintf("Index: %d - Amount: %d - TotalAmount: %d", usrPS.Index(), usrPS.Amount(), usrPS.TotalAmount()),
 			})
 
 			// returns:
