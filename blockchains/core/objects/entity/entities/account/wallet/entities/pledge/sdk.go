@@ -30,22 +30,6 @@ type Repository interface {
 type Normalized interface {
 }
 
-// Data represents the currency data
-type Data struct {
-	ID   string
-	From *withdrawal.Data
-	To   *wallet.Data
-}
-
-// DataSet represents the human-readable data set
-type DataSet struct {
-	Index       int
-	Amount      int
-	TotalAmount int
-	IsLast      bool
-	Pledges     []*Data
-}
-
 // CreateParams represents the create params
 type CreateParams struct {
 	ID   *uuid.UUID
@@ -64,8 +48,6 @@ var SDKFunc = struct {
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 	CreateRepository     func(params CreateRepositoryParams) Repository
-	ToData               func(pldge Pledge) *Data
-	ToDataSet            func(ps entity.PartialSet) *DataSet
 }{
 	Create: func(params CreateParams) Pledge {
 		if params.ID == nil {
@@ -154,16 +136,5 @@ var SDKFunc = struct {
 	CreateRepository: func(params CreateRepositoryParams) Repository {
 		metaData := createMetaData()
 		return createRepository(params.EntityRepository, metaData)
-	},
-	ToData: func(pldge Pledge) *Data {
-		return toData(pldge)
-	},
-	ToDataSet: func(ps entity.PartialSet) *DataSet {
-		out, outErr := toDataSet(ps)
-		if outErr != nil {
-			panic(outErr)
-		}
-
-		return out
 	},
 }

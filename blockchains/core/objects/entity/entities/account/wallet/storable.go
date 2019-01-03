@@ -15,3 +15,13 @@ func createStoredWallet(wallet Wallet) *storableWallet {
 
 	return &out
 }
+
+func createStorableWalletFromParams(id string, creator string, concensusNeeded int) *storableWallet {
+	out := storableWallet{
+		ID:      id,
+		Creator: creator,
+		CNeeded: concensusNeeded,
+	}
+
+	return &out
+}

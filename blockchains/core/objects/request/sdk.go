@@ -52,24 +52,6 @@ type CreateSDKServiceParams struct {
 	RoutePrefix string
 }
 
-// Data represents human-redable data
-type Data struct {
-	ID      string
-	From    *user.Data
-	New     string
-	Reason  string
-	Keyname *keyname.Data
-}
-
-// DataSet represents human-redable data set
-type DataSet struct {
-	Index       int
-	Amount      int
-	TotalAmount int
-	IsLast      bool
-	Requests    []*Data
-}
-
 var reg = createRegistry()
 
 // SDKFunc represents the request SDK func
@@ -79,8 +61,6 @@ var SDKFunc = struct {
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 	CreateSDKService     func(params CreateSDKServiceParams) Service
-	ToData               func(req Request) *Data
-	ToDataSet            func(ps entity.PartialSet) *DataSet
 }{
 	Create: func(params CreateParams) Request {
 		if params.ID == nil {
@@ -166,22 +146,6 @@ var SDKFunc = struct {
 	},
 	CreateSDKService: func(params CreateSDKServiceParams) Service {
 		out := createSDKService(params.PK, params.Client, params.RoutePrefix)
-		return out
-	},
-	ToData: func(req Request) *Data {
-		out, outErr := toData(req)
-		if outErr != nil {
-			panic(outErr)
-		}
-
-		return out
-	},
-	ToDataSet: func(ps entity.PartialSet) *DataSet {
-		out, outErr := toDataSet(ps)
-		if outErr != nil {
-			panic(outErr)
-		}
-
 		return out
 	},
 }

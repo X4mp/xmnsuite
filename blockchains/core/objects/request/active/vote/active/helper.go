@@ -136,37 +136,3 @@ func createRepresentation() entity.Representation {
 		},
 	})
 }
-
-func toData(vot Vote) *Data {
-	out := Data{
-		ID:    vot.ID().String(),
-		Vote:  core_vote.SDKFunc.ToData(vot.Vote()),
-		Power: vot.Power(),
-	}
-
-	return &out
-}
-
-func toDataSet(ins entity.PartialSet) (*DataSet, error) {
-	data := []*Data{}
-	instances := ins.Instances()
-	for _, oneIns := range instances {
-		if vot, ok := oneIns.(Vote); ok {
-			data = append(data, toData(vot))
-			continue
-		}
-
-		str := fmt.Sprintf("at least one of the elements (ID: %s) in the entity partial set is not a valid Vote instance", oneIns.ID().String())
-		return nil, errors.New(str)
-	}
-
-	out := DataSet{
-		Index:       ins.Index(),
-		Amount:      ins.Amount(),
-		TotalAmount: ins.TotalAmount(),
-		IsLast:      ins.IsLast(),
-		Votes:       data,
-	}
-
-	return &out, nil
-}

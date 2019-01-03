@@ -26,3 +26,14 @@ func createNormalizedUser(ins User) (*normalizedUser, error) {
 
 	return &out, nil
 }
+
+func createNormalizedUserFromParams(id string, pubKey string, shares int, wal wallet.Normalized) *normalizedUser {
+	out := normalizedUser{
+		ID:     id,
+		PubKey: pubKey,
+		Shares: shares,
+		Wallet: wal,
+	}
+
+	return &out
+}

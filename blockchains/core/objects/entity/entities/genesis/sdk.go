@@ -1,10 +1,6 @@
 package genesis
 
 import (
-	"fmt"
-	"html/template"
-	"net/http"
-
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
@@ -37,17 +33,6 @@ type Repository interface {
 	Retrieve() (Genesis, error)
 }
 
-// Data represents human-redable data
-type Data struct {
-	ID                     string
-	GazPricePerKb          int
-	GazPriceInMatrixWorkKb int
-	ConcensusNeeded        int
-	MaxAmountOfValidators  int
-	User                   *user.Data
-	Deposit                *deposit.Data
-}
-
 // CreateParams represents the Create params
 type CreateParams struct {
 	ID                     *uuid.UUID
@@ -72,12 +57,6 @@ type CreateServiceParams struct {
 	EntityService    entity.Service
 }
 
-// RouteParams represents the route params
-type RouteParams struct {
-	Tmpl             *template.Template
-	EntityRepository entity.Repository
-}
-
 // SDKFunc represents the Genesis SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Genesis
@@ -85,8 +64,6 @@ var SDKFunc = struct {
 	CreateService        func(params CreateServiceParams) Service
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
-	ToData               func(gen Genesis) *Data
-	Route                func(params RouteParams) func(w http.ResponseWriter, r *http.Request)
 }{
 	Create: func(params CreateParams) Genesis {
 		if params.ID == nil {
@@ -127,28 +104,5 @@ var SDKFunc = struct {
 	},
 	CreateRepresentation: func() entity.Representation {
 		return representation()
-	},
-	ToData: func(gen Genesis) *Data {
-		return toData(gen)
-	},
-	Route: func(params RouteParams) func(w http.ResponseWriter, r *http.Request) {
-		return func(w http.ResponseWriter, r *http.Request) {
-			// create the genesis repository:
-			metaData := createMetaData()
-			genRepository := createRepository(params.EntityRepository, metaData)
-
-			// retrieve the genesis:
-			gen, genErr := genRepository.Retrieve()
-			if genErr != nil {
-				w.WriteHeader(http.StatusInternalServerError)
-				str := fmt.Sprintf("there was an error while retrieving the genesis instance: %s", genErr.Error())
-				w.Write([]byte(str))
-				return
-			}
-
-			// render:
-			w.WriteHeader(http.StatusOK)
-			params.Tmpl.Execute(w, toData(gen))
-		}
 	},
 }

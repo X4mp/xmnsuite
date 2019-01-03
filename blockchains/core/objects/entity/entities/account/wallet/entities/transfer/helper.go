@@ -197,37 +197,3 @@ func createRepresentation() entity.Representation {
 		},
 	})
 }
-
-func toData(trsf Transfer) *Data {
-	out := Data{
-		ID:         trsf.ID().String(),
-		Withdrawal: withdrawal.SDKFunc.ToData(trsf.Withdrawal()),
-		Deposit:    deposit.SDKFunc.ToData(trsf.Deposit()),
-	}
-
-	return &out
-}
-
-func toDataSet(ins entity.PartialSet) (*DataSet, error) {
-	data := []*Data{}
-	instances := ins.Instances()
-	for _, oneIns := range instances {
-		if trsf, ok := oneIns.(Transfer); ok {
-			data = append(data, toData(trsf))
-			continue
-		}
-
-		str := fmt.Sprintf("at least one of the elements (ID: %s) in the entity partial set is not a valid Transfer instance", oneIns.ID().String())
-		return nil, errors.New(str)
-	}
-
-	out := DataSet{
-		Index:       ins.Index(),
-		Amount:      ins.Amount(),
-		TotalAmount: ins.TotalAmount(),
-		IsLast:      ins.IsLast(),
-		Transfers:   data,
-	}
-
-	return &out, nil
-}

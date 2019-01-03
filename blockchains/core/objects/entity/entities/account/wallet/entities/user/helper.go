@@ -92,38 +92,3 @@ func createMetaData() entity.MetaData {
 		EmptyNormalized: new(normalizedUser),
 	})
 }
-
-func toData(usr User) *Data {
-	out := Data{
-		ID:     usr.ID().String(),
-		PubKey: usr.PubKey().String(),
-		Shares: usr.Shares(),
-		Wallet: wallet.SDKFunc.ToData(usr.Wallet()),
-	}
-
-	return &out
-}
-
-func toDataSet(ins entity.PartialSet) (*DataSet, error) {
-	data := []*Data{}
-	instances := ins.Instances()
-	for _, oneIns := range instances {
-		if usr, ok := oneIns.(User); ok {
-			data = append(data, toData(usr))
-			continue
-		}
-
-		str := fmt.Sprintf("at least one of the elements (ID: %s) in the entity partial set is not a valid User instance", oneIns.ID().String())
-		return nil, errors.New(str)
-	}
-
-	out := DataSet{
-		Index:       ins.Index(),
-		Amount:      ins.Amount(),
-		TotalAmount: ins.TotalAmount(),
-		IsLast:      ins.IsLast(),
-		Users:       data,
-	}
-
-	return &out, nil
-}

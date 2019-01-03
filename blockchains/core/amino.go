@@ -15,10 +15,6 @@ import (
 	active_vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote/active"
 	deposit "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
 	token "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
-	developer "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/developer"
-	milestone "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/developer/entities/milestone"
-	project "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/developer/entities/project"
-	task "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/developer/entities/task"
 	link "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/link"
 	node "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/node"
 	withdrawal "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/withdrawal"
@@ -45,10 +41,6 @@ func Register(codec *amino.Codec) {
 	validator.Register(codec)
 	link.Register(codec)
 	node.Register(codec)
-	developer.Register(codec)
-	project.Register(codec)
-	milestone.Register(codec)
-	task.Register(codec)
 
 	// replace:
 	entity.Replace(codec)

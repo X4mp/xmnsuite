@@ -1,7 +1,6 @@
 package request
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -98,51 +97,4 @@ func createMetaData(reg *registry) entity.MetaData {
 		EmptyStorable:   new(storableRequest),
 		EmptyNormalized: new(normalizedRequest),
 	})
-}
-
-func toData(req Request) (*Data, error) {
-	// convert the entity to json:
-	newEntityJS, newEntityJSErr := json.MarshalIndent(req.New(), "", "\t")
-	if newEntityJSErr != nil {
-		return nil, newEntityJSErr
-	}
-
-	out := Data{
-		ID:      req.ID().String(),
-		From:    user.SDKFunc.ToData(req.From()),
-		New:     string(newEntityJS),
-		Reason:  req.Reason(),
-		Keyname: keyname.SDKFunc.ToData(req.Keyname()),
-	}
-
-	return &out, nil
-}
-
-func toDataSet(ins entity.PartialSet) (*DataSet, error) {
-	data := []*Data{}
-	instances := ins.Instances()
-	for _, oneIns := range instances {
-		if req, ok := oneIns.(Request); ok {
-			toDat, toDatErr := toData(req)
-			if toDatErr != nil {
-				return nil, toDatErr
-			}
-
-			data = append(data, toDat)
-			continue
-		}
-
-		str := fmt.Sprintf("at least one of the elements (ID: %s) in the entity partial set is not a valid Request instance", oneIns.ID().String())
-		return nil, errors.New(str)
-	}
-
-	out := DataSet{
-		Index:       ins.Index(),
-		Amount:      ins.Amount(),
-		TotalAmount: ins.TotalAmount(),
-		IsLast:      ins.IsLast(),
-		Requests:    data,
-	}
-
-	return &out, nil
 }

@@ -103,38 +103,3 @@ func createMetaData() entity.MetaData {
 		EmptyNormalized: new(storableWithdrawal),
 	})
 }
-
-func toData(with Withdrawal) *Data {
-	out := Data{
-		ID:     with.ID().String(),
-		From:   wallet.SDKFunc.ToData(with.From()),
-		Token:  token.SDKFunc.ToData(with.Token()),
-		Amount: with.Amount(),
-	}
-
-	return &out
-}
-
-func toDataSet(ins entity.PartialSet) (*DataSet, error) {
-	data := []*Data{}
-	instances := ins.Instances()
-	for _, oneIns := range instances {
-		if with, ok := oneIns.(Withdrawal); ok {
-			data = append(data, toData(with))
-			continue
-		}
-
-		str := fmt.Sprintf("at least one of the elements (ID: %s) in the entity partial set is not a valid Withdrawal instance", oneIns.ID().String())
-		return nil, errors.New(str)
-	}
-
-	out := DataSet{
-		Index:       ins.Index(),
-		Amount:      ins.Amount(),
-		TotalAmount: ins.TotalAmount(),
-		IsLast:      ins.IsLast(),
-		Withdrawals: data,
-	}
-
-	return &out, nil
-}

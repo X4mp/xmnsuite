@@ -8,6 +8,7 @@ var errBlockIsMandatory = errors.New("the blocks are mandatory")
 // CreateHashTreeParams represents the CreateHashTree params
 type CreateHashTreeParams struct {
 	Blocks [][]byte
+	JS     []byte
 }
 
 // SDKFunc represents the public func of the hashtree
@@ -15,6 +16,15 @@ var SDKFunc = struct {
 	CreateHashTree func(params CreateHashTreeParams) HashTree
 }{
 	CreateHashTree: func(params CreateHashTreeParams) HashTree {
+		if params.JS != nil {
+			ptr := new(hashTree)
+			jsErr := cdc.UnmarshalJSON(params.JS, ptr)
+			if jsErr != nil {
+				panic(jsErr)
+			}
+
+			return ptr
+		}
 		if params.Blocks == nil {
 			panic(errBlockIsMandatory)
 		}

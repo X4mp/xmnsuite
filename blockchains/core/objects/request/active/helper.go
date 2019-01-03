@@ -65,37 +65,3 @@ func createMetaData() entity.MetaData {
 		EmptyNormalized: new(normalizedRequest),
 	})
 }
-
-func toData(req Request) *Data {
-	out := Data{
-		ID:              req.ID().String(),
-		Request:         core_request.SDKFunc.ToData(req.Request()),
-		ConcensusNeeded: req.ConcensusNeeded(),
-	}
-
-	return &out
-}
-
-func toDataSet(ins entity.PartialSet) (*DataSet, error) {
-	data := []*Data{}
-	instances := ins.Instances()
-	for _, oneIns := range instances {
-		if req, ok := oneIns.(Request); ok {
-			data = append(data, toData(req))
-			continue
-		}
-
-		str := fmt.Sprintf("at least one of the elements (ID: %s) in the entity partial set is not a valid Request instance", oneIns.ID().String())
-		return nil, errors.New(str)
-	}
-
-	out := DataSet{
-		Index:       ins.Index(),
-		Amount:      ins.Amount(),
-		TotalAmount: ins.TotalAmount(),
-		IsLast:      ins.IsLast(),
-		Requests:    data,
-	}
-
-	return &out, nil
-}
