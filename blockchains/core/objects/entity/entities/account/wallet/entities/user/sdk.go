@@ -71,6 +71,11 @@ var SDKFunc = struct {
 		return out
 	},
 	CreateNormalized: func(params CreateNormalizedParams) Normalized {
+		if params.ID == "" {
+			id := uuid.NewV4()
+			params.ID = id.String()
+		}
+
 		return createNormalizedUserFromParams(params.ID, params.PubKey, params.Shares, params.Wallet)
 	},
 	CreateRepository: func(params CreateRepositoryParams) Repository {

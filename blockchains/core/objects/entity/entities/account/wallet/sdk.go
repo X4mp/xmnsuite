@@ -65,6 +65,11 @@ var SDKFunc = struct {
 		return out
 	},
 	CreateNormalized: func(params CreateNormalizedParams) Normalized {
+		if params.ID == "" {
+			id := uuid.NewV4()
+			params.ID = id.String()
+		}
+
 		return createStorableWalletFromParams(params.ID, params.CreatorPubKey, params.ConcensusNeeded)
 	},
 	CreateMetaData: func() entity.MetaData {
