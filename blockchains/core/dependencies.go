@@ -2,10 +2,9 @@ package core
 
 import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	active_vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote/active"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/group"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
@@ -18,11 +17,11 @@ type dependencies struct {
 	entityService     entity.Service
 	groupRepository   group.Repository
 	keynameRepository keyname.Repository
+	walletRepository  wallet.Repository
 	userRepository    user.Repository
 	genesisRepository genesis.Repository
 	genesisService    genesis.Service
 	balanceRepository balance.Repository
-	accountService    account.Service
 	voteService       active_vote.Service
 }
 
@@ -59,12 +58,6 @@ func createDependencies(ds datastore.DataStore) *dependencies {
 		EntityRepository: entityRepository,
 	})
 
-	accountService := account.SDKFunc.CreateService(account.CreateServiceParams{
-		UserRepository:   userRepository,
-		WalletRepository: walletRepository,
-		EntityService:    entityService,
-	})
-
 	voteService := active_vote.SDKFunc.CreateService(active_vote.CreateServiceParams{
 		EntityRepository: entityRepository,
 		EntityService:    entityService,
@@ -75,11 +68,11 @@ func createDependencies(ds datastore.DataStore) *dependencies {
 		entityService:     entityService,
 		groupRepository:   groupRepository,
 		keynameRepository: keynameRepository,
+		walletRepository:  walletRepository,
 		userRepository:    userRepository,
 		genesisRepository: genesisRepository,
 		genesisService:    genesisService,
 		balanceRepository: balanceRepository,
-		accountService:    accountService,
 		voteService:       voteService,
 	}
 

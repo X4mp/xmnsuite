@@ -6,8 +6,8 @@ import (
 
 	cliapp "github.com/urfave/cli"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/helpers"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/configs"
 	core_helpers "github.com/xmnservices/xmnsuite/helpers"
 )

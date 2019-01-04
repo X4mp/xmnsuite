@@ -7,7 +7,7 @@ import (
 	cliapp "github.com/urfave/cli"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/helpers"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/tendermint"
 	"github.com/xmnservices/xmnsuite/configs"
 	core_helpers "github.com/xmnservices/xmnsuite/helpers"
@@ -63,7 +63,7 @@ func listMe() *cliapp.Command {
 				}),
 			})
 
-			// retrieve the wallets:
+			// retrieve the users:
 			pubKey := conf.WalletPK().PublicKey()
 			usrPS, usrPSErr := userRepository.RetrieveSetByPubKey(pubKey, 0, -1)
 			if usrPSErr != nil {

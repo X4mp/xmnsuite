@@ -2,7 +2,7 @@ package deposit
 
 import (
 	amino "github.com/tendermint/go-amino"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 )
 

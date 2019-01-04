@@ -2,7 +2,7 @@ package vote
 
 import (
 	amino "github.com/tendermint/go-amino"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
 )
 

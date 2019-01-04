@@ -1,24 +1,19 @@
 package core
 
 import (
-	"bytes"
 	"fmt"
 	"math/rand"
 	"net"
 	"testing"
-	"unsafe"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
 	"github.com/xmnservices/xmnsuite/blockchains/core/meta"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/pledge"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/work"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	active_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote"
@@ -45,79 +40,6 @@ func createTokenVoteRouteFunc(routePrefix string) vote.CreateRouteFn {
 	return func(ins vote.Vote, rep entity.Representation) (string, error) {
 		return fmt.Sprintf("%s/%s/requests/%s", routePrefix, rep.MetaData().Keyname(), ins.Request().ID().String()), nil
 	}
-}
-
-func saveAccountForTests(t *testing.T, usr user.User, gen genesis.Genesis, accountService account.Service, repository entity.Repository) account.Account {
-	// find the gaz price:
-	jsUserData, jsUserErr := cdc.MarshalJSON(usr)
-	if jsUserErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", jsUserErr.Error())
-		return nil
-	}
-
-	gazPrice := int(unsafe.Sizeof(jsUserData)) * gen.GazPriceInMatrixWorkKb()
-
-	ac := account.SDKFunc.Create(account.CreateAccountParams{
-		User: usr,
-		Work: work.SDKFunc.Generate(work.GenerateParams{
-			MatrixSize:   gazPrice,
-			MatrixAmount: gazPrice,
-		}),
-	})
-
-	// save the account:
-	saveErr := accountService.Save(ac, gen.GazPriceInMatrixWorkKb())
-	if saveErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", saveErr.Error())
-		return nil
-	}
-
-	// create the user repository:
-	userRepository := user.SDKFunc.CreateRepository(user.CreateRepositoryParams{
-		EntityRepository: repository,
-	})
-
-	// retrieve the user:
-	retUser, retUserErr := userRepository.RetrieveByID(usr.ID())
-	if retUserErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", retUserErr.Error())
-		return nil
-	}
-
-	// retrieve user set by pubKey:
-	retUserByPubKeyPS, retUserByPubKeyPSErr := userRepository.RetrieveSetByPubKey(usr.PubKey(), 0, -1)
-	if retUserByPubKeyPSErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", retUserByPubKeyPSErr.Error())
-		return nil
-	}
-
-	// retrieve user by pubKey and wallet:
-	retUserByPubKeyAndWalletPS, retUserByPubKeyAndWalletPSErr := userRepository.RetrieveByPubKeyAndWallet(usr.PubKey(), usr.Wallet())
-	if retUserByPubKeyAndWalletPSErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", retUserByPubKeyAndWalletPSErr.Error())
-		return nil
-	}
-
-	// compare the users:
-	contains := false
-	ins := retUserByPubKeyPS.Instances()
-	for _, oneIns := range ins {
-		if bytes.Compare(oneIns.ID().Bytes(), ac.User().ID().Bytes()) == 0 {
-			contains = true
-			break
-		}
-	}
-
-	if !contains {
-		t.Errorf("the user (ID: %s) was not in the RetrieveSetByPubKey set", ac.User().ID().String())
-		return nil
-	}
-
-	user.CompareUserForTests(t, ac.User(), retUser)
-	user.CompareUserForTests(t, ac.User(), retUserByPubKeyAndWalletPS)
-	user.CompareUserForTests(t, ac.User(), ins[0].(user.User))
-
-	return ac
 }
 
 func spawnBlockchainForTests(t *testing.T, pk crypto.PrivateKey, rootPath string, routePrefix string) (applications.Node, applications.Client, entity.Service, entity.Repository) {
@@ -416,6 +338,54 @@ func saveRequestThenSaveVotesForTests(
 	return requestService
 }
 
+func saveUserWithNewWallet(
+	t *testing.T,
+	routePrefix string,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromUser user.User,
+	newUser user.User,
+) request.Service {
+
+	// create the representations:
+	userRepresentation := user.SDKFunc.CreateRepresentation()
+	metaData := userRepresentation.MetaData()
+
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(metaData.Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
+	// create the wallet request:
+	newUserRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:  fromUser,
+		NewEntity: newUser,
+		Reason:    "TEST",
+		Keyname:   kname,
+	})
+
+	// create our user vote:
+	newUserRequestVote := &simpleRequestVote{
+		Voter:      fromUser,
+		IsApproved: true,
+	}
+
+	// save the new token request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, userRepresentation, newUserRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
+		newUserRequestVote,
+	}, createTokenVoteRouteFunc(routePrefix))
+
+	// returns:
+	return requestService
+}
+
 func saveLink(
 	t *testing.T,
 	routePrefix string,
@@ -526,27 +496,8 @@ func savePledge(
 	pldge pledge.Pledge,
 ) request.Service {
 
-	// variables:
-	toWallet := pldge.To()
-
 	// create the repreentations:
 	pldgeRepresentation := pledge.SDKFunc.CreateRepresentation()
-
-	// create the service:
-	accountService := account.SDKFunc.CreateSDKService(account.CreateSDKServiceParams{
-		PK:          pk,
-		Client:      client,
-		RoutePrefix: routePrefix,
-	})
-
-	// save the to account:
-	toAcc := saveAccountForTests(t, newUser, fromGen, accountService, repository)
-	if toAcc == nil {
-		return nil
-	}
-
-	// compare the wallets:
-	wallet.CompareWalletsForTests(t, toWallet.(wallet.Wallet), toAcc.User().Wallet())
 
 	// retrieve the keyname:
 	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{

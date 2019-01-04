@@ -2,7 +2,7 @@ package balance
 
 import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
 )
 
 type balance struct {

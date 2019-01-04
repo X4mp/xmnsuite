@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"unsafe"
@@ -13,11 +12,9 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/applications"
 	"github.com/xmnservices/xmnsuite/blockchains/core/meta"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/user"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/account/wallet/entities/validator"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/validator"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	active_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote"
@@ -147,7 +144,6 @@ func create20181106(
 			RoleKey:   routerRoleKey,
 			RtesParams: []routers.CreateRouteParams{
 				core.saveGenesis(),
-				core.saveAccount(),
 				core.saveEntity(),
 				core.retrieveEntityByID(),
 				core.retrieveByIntersectKeynames(),
@@ -220,72 +216,6 @@ func (app *core20181108) saveGenesis() routers.CreateRouteParams {
 			}
 
 			return nil, errors.New("the given data is not a normalized representation of aa Genesis instance")
-		},
-	}
-}
-
-func (app *core20181108) saveAccount() routers.CreateRouteParams {
-	return routers.CreateRouteParams{
-		Pattern: fmt.Sprintf("%s/account", app.routePrefix),
-		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
-
-			defer func() {
-				if r := recover(); r != nil {
-					log.Println("\n\n ++++ There was an error while saving an account:", r)
-				}
-			}()
-
-			// create the dependencies:
-			dep := createDependencies(store)
-
-			// converts the data to an account instance:
-			ac := account.SDKFunc.Denormalize(data)
-
-			// convert the user to json data, to calculate the work price:
-			normalizedUser, normalizedUserErr := user.SDKFunc.CreateMetaData().Normalize()(ac.User())
-			if normalizedUserErr != nil {
-				return nil, normalizedUserErr
-			}
-
-			jsUserData, jsUserDataErr := cdc.MarshalJSON(normalizedUser)
-			if jsUserDataErr != nil {
-				return nil, jsUserDataErr
-			}
-
-			// retrieve the genesis:
-			gen, genErr := dep.genesisRepository.Retrieve()
-			if genErr != nil {
-				return nil, genErr
-			}
-
-			// make sure the input has enough work:
-			amountRows := len(ac.Work().Input())
-			priceInWork := int(unsafe.Sizeof(jsUserData)) * gen.GazPriceInMatrixWorkKb()
-			if amountRows < priceInWork {
-				str := fmt.Sprintf("The input matrix is too small.  Input rows amount: %d, Requested: %d", amountRows, priceInWork)
-				return nil, errors.New(str)
-			}
-
-			// save the account:
-			saveErr := dep.accountService.Save(ac, priceInWork)
-			if saveErr != nil {
-				return nil, saveErr
-			}
-
-			// there is no gaz cost for the account:
-			gazUsed := 0
-
-			// return the response:
-			resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
-				Code:    routers.IsSuccessful,
-				Log:     "success",
-				GazUsed: int64(gazUsed),
-				Tags: map[string][]byte{
-					path: jsUserData,
-				},
-			})
-
-			return resp, nil
 		},
 	}
 }
