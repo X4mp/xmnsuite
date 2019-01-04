@@ -7,6 +7,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/information"
 )
 
 /*
@@ -14,33 +15,24 @@ import (
  */
 
 type genesis struct {
-	UUID                  *uuid.UUID      `json:"id"`
-	ConNeeded             int             `json:"concensus_needed"`
-	GzPriceInMatrixWorkKb int             `json:"gaz_price_in_matrix_work_per_kb"`
-	GzPricePerKb          int             `json:"gaz_price_per_kb"`
-	MxAmountOfValidators  int             `json:"max_amount_of_validators"`
-	Usr                   user.User       `json:"user"`
-	Dep                   deposit.Deposit `json:"deposit"`
+	UUID *uuid.UUID              `json:"id"`
+	Inf  information.Information `json:"information"`
+	Usr  user.User               `json:"user"`
+	Dep  deposit.Deposit         `json:"deposit"`
 }
 
 func createGenesis(
 	id *uuid.UUID,
-	concensusNeeded int,
-	GazPriceInMatrixWorkKb int,
-	gazPricePerKb int,
-	maxAmountOfValidators int,
+	inf information.Information,
 	dep deposit.Deposit,
 	usr user.User,
 ) (Genesis, error) {
 
 	out := genesis{
-		UUID:                  id,
-		ConNeeded:             concensusNeeded,
-		GzPriceInMatrixWorkKb: GazPriceInMatrixWorkKb,
-		GzPricePerKb:          gazPricePerKb,
-		MxAmountOfValidators:  maxAmountOfValidators,
-		Usr:                   usr,
-		Dep:                   dep,
+		UUID: id,
+		Inf:  inf,
+		Usr:  usr,
+		Dep:  dep,
 	}
 
 	return &out, nil
@@ -50,6 +42,11 @@ func createGenesisFromNormalized(ins *normalizedGenesis) (Genesis, error) {
 	id, idErr := uuid.FromString(ins.ID)
 	if idErr != nil {
 		return nil, idErr
+	}
+
+	infIns, infInsErr := information.SDKFunc.CreateMetaData().Denormalize()(ins.Info)
+	if infInsErr != nil {
+		return nil, infInsErr
 	}
 
 	depIns, depInsErr := deposit.SDKFunc.CreateMetaData().Denormalize()(ins.Deposit)
@@ -64,7 +61,12 @@ func createGenesisFromNormalized(ins *normalizedGenesis) (Genesis, error) {
 
 	if dep, ok := depIns.(deposit.Deposit); ok {
 		if usr, ok := usrIns.(user.User); ok {
-			return createGenesis(&id, ins.ConcensusNeeded, ins.GzPriceInHashPerKb, ins.GzPricePerKb, ins.MxAmountOfValidators, dep, usr)
+			if inf, ok := infIns.(information.Information); ok {
+				return createGenesis(&id, inf, dep, usr)
+			}
+
+			str := fmt.Sprintf("the entity (ID: %s) is not a valid Information instance", infIns.ID().String())
+			return nil, errors.New(str)
 		}
 
 		str := fmt.Sprintf("the entity (ID: %s) is not a valid User instance", usrIns.ID().String())
@@ -80,24 +82,9 @@ func (app *genesis) ID() *uuid.UUID {
 	return app.UUID
 }
 
-// GazPricePerKb returns the gazPricePerKb
-func (app *genesis) GazPricePerKb() int {
-	return app.GzPricePerKb
-}
-
-// GazPriceInMatrixWorkKb returns the gaz price in hash per kb
-func (app *genesis) GazPriceInMatrixWorkKb() int {
-	return app.GzPriceInMatrixWorkKb
-}
-
-// ConcensusNeeded returns the concensusNeeded
-func (app *genesis) ConcensusNeeded() int {
-	return app.ConNeeded
-}
-
-// MaxAmountOfValidators returns the maxAmountOfValidators
-func (app *genesis) MaxAmountOfValidators() int {
-	return app.MxAmountOfValidators
+// Info returns the information
+func (app *genesis) Info() information.Information {
+	return app.Inf
 }
 
 // User returns the user

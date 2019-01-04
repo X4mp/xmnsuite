@@ -1,33 +1,62 @@
 package commands
 
 import (
-	"net"
+	"math"
 
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/applications"
+	"github.com/xmnservices/xmnsuite/configs"
 )
 
-// SpawnMainParams represents the spawn main params
-type SpawnMainParams struct {
+const (
+	namespace                    = "xmn"
+	name                         = "core"
+	id                           = "5aac4a8d-7cb5-457c-b43d-ca0933c20dab"
+	databaseFilePath             = "db/blockchain/blockchain.db"
+	blockchainRootDirectory      = "db/blockchain/files"
+	routePrefix                  = ""
+	tokenSymbol                  = "XMN"
+	tokenName                    = "XMN"
+	tokenDescription             = "The XMN core is a decentralized core blockchain infrastructure."
+	totalTokenAmount             = math.MaxInt64 - 1
+	initialWalletConcensus       = 50
+	initialGazPricePerKB         = 1
+	initialTokenConcensusNeeded  = 50
+	initialMaxAmountOfValidators = 200
+	initialUserAmountOfShares    = 100
+)
+
+var peers = []string{}
+
+// GenerateConfigsParams represents the generate configs params
+type GenerateConfigsParams struct {
+	Pass        string
+	RetypedPass string
+	Filename    string
+}
+
+// SpawnParams represents the spawn params
+type SpawnParams struct {
 	Pass     string
 	Filename string
 	Dir      string
 	Port     int
 }
 
-// RetrieveGenesisParams retrieve the genesis transaction params
-type RetrieveGenesisParams struct {
-	Pass     string
-	Filename string
-	IP       net.IP
-	Port     int
-}
-
 // SDKFunc represents the commands SDK func
 var SDKFunc = struct {
-	RetrieveGenesis func(params RetrieveGenesisParams) genesis.Genesis
+	GenerateConfigs func(params GenerateConfigsParams) configs.Configs
+	Spawn           func(params SpawnParams) applications.Node
 }{
-	RetrieveGenesis: func(params RetrieveGenesisParams) genesis.Genesis {
-		out, outErr := retrieveGenesis(params.Pass, params.Filename, params.IP, params.Port)
+	GenerateConfigs: func(params GenerateConfigsParams) configs.Configs {
+		out, outErr := generateConfigs(params.Pass, params.RetypedPass, params.Filename)
+		if outErr != nil {
+			panic(outErr)
+		}
+
+		return out
+	},
+	Spawn: func(params SpawnParams) applications.Node {
+		out, outErr := spawn(params.Pass, params.Filename, params.Dir, params.Port)
 		if outErr != nil {
 			panic(outErr)
 		}

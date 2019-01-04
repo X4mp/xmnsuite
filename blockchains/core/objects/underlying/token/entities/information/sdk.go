@@ -1,42 +1,39 @@
-package genesis
+package information
 
 import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/information"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
 
-// Genesis represents the genesis instance
-type Genesis interface {
+// Information represents the information instance
+type Information interface {
 	ID() *uuid.UUID
-	Info() information.Information
-	User() user.User
-	Deposit() deposit.Deposit
+	GazPricePerKb() int
+	ConcensusNeeded() int
+	MaxAmountOfValidators() int
 }
 
-// Normalized represents the normalized Genesis instance
+// Normalized represents the normalized Information instance
 type Normalized interface {
 }
 
-// Service represents the Genesis service
+// Service represents the Information service
 type Service interface {
-	Save(ins Genesis) error
+	Save(ins Information) error
 }
 
-// Repository represents the Genesis repository
+// Repository represents the Information repository
 type Repository interface {
-	Retrieve() (Genesis, error)
+	Retrieve() (Information, error)
 }
 
 // CreateParams represents the Create params
 type CreateParams struct {
-	ID      *uuid.UUID
-	Info    information.Information
-	User    user.User
-	Deposit deposit.Deposit
+	ID                    *uuid.UUID
+	GazPricePerKb         int
+	ConcensusNeeded       int
+	MaxAmountOfValidators int
 }
 
 // CreateRepositoryParams represents the CreateRepository params
@@ -52,21 +49,21 @@ type CreateServiceParams struct {
 	EntityService    entity.Service
 }
 
-// SDKFunc represents the Genesis SDK func
+// SDKFunc represents the Information SDK func
 var SDKFunc = struct {
-	Create               func(params CreateParams) Genesis
+	Create               func(params CreateParams) Information
 	CreateRepository     func(params CreateRepositoryParams) Repository
 	CreateService        func(params CreateServiceParams) Service
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 }{
-	Create: func(params CreateParams) Genesis {
+	Create: func(params CreateParams) Information {
 		if params.ID == nil {
 			id := uuid.NewV4()
 			params.ID = &id
 		}
 
-		out, outErr := createGenesis(params.ID, params.Info, params.Deposit, params.User)
+		out, outErr := createInformation(params.ID, params.ConcensusNeeded, params.GazPricePerKb, params.MaxAmountOfValidators)
 		if outErr != nil {
 			panic(outErr)
 		}

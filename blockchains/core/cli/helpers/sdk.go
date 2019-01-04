@@ -5,8 +5,10 @@ import (
 	"fmt"
 
 	cliapp "github.com/urfave/cli"
+	"github.com/xmnservices/xmnsuite/blockchains/applications"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
+	"github.com/xmnservices/xmnsuite/configs"
 )
 
 // ProcessWalletRequestParams represents the proces wallet request params
@@ -14,6 +16,11 @@ type ProcessWalletRequestParams struct {
 	CLIContext           *cliapp.Context
 	EntityRepresentation entity.Representation
 	Storable             interface{}
+}
+
+// RetrieveConfWithClientParams represents the retrieveConfWithClient params
+type RetrieveConfWithClientParams struct {
+	CLIContext *cliapp.Context
 }
 
 // PrintSuccessWithInstanceParams represents the print success new instance params
@@ -30,6 +37,7 @@ type PrintErrorParams struct {
 // SDKFunc represents the helpers SDK func
 var SDKFunc = struct {
 	ProcessWalletRequest     func(params ProcessWalletRequestParams) request.Normalized
+	RetrieveConfWithClient   func(params RetrieveConfWithClientParams) (configs.Configs, applications.Client)
 	PrintSuccessWithInstance func(params PrintSuccessWithInstanceParams)
 	PrintError               func(params PrintErrorParams)
 }{
@@ -40,6 +48,14 @@ var SDKFunc = struct {
 		}
 
 		return req
+	},
+	RetrieveConfWithClient: func(params RetrieveConfWithClientParams) (configs.Configs, applications.Client) {
+		conf, client, err := retrieveConfWithClient(params.CLIContext)
+		if err != nil {
+			panic(err)
+		}
+
+		return conf, client
 	},
 	PrintSuccessWithInstance: func(params PrintSuccessWithInstanceParams) {
 		js, jsErr := json.MarshalIndent(params.Ins, "", "    ")

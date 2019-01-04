@@ -120,7 +120,7 @@ func create20181106(
 
 			// retrieve the validators:
 			validatorRepository := validator.SDKFunc.CreateRepository(ds)
-			valPS, valPSErr := validatorRepository.RetrieveSet(0, gen.MaxAmountOfValidators())
+			valPS, valPSErr := validatorRepository.RetrieveSet(0, gen.Info().MaxAmountOfValidators())
 			if valPSErr != nil {
 				return nil, valPSErr
 			}
@@ -274,7 +274,7 @@ func (app *core20181108) saveEntity() routers.CreateRouteParams {
 					}
 
 					// create the gaz price:
-					gazUsed := int(unsafe.Sizeof(jsData)) * gen.GazPricePerKb()
+					gazUsed := int(unsafe.Sizeof(jsData)) * gen.Info().GazPricePerKb()
 
 					// return the response:
 					resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
@@ -555,7 +555,7 @@ func (app *core20181108) deleteEntityByID() routers.CreateRouteParams {
 					}
 
 					// calculate the gaz used:
-					gazUsed := int(unsafe.Sizeof(js)) * gen.GazPricePerKb()
+					gazUsed := int(unsafe.Sizeof(js)) * gen.Info().GazPricePerKb()
 
 					// return the response:
 					resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
@@ -663,7 +663,7 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 							if keyname == token.SDKFunc.CreateMetaData().Keyname() {
 								activeReq = active_request.SDKFunc.Create(active_request.CreateParams{
 									Request:         req,
-									ConcensusNeeded: gen.ConcensusNeeded(),
+									ConcensusNeeded: gen.Info().ConcensusNeeded(),
 								})
 							}
 
@@ -696,7 +696,7 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 							}
 
 							// create the gaz price:
-							gazUsed := int(unsafe.Sizeof(jsData)) * gen.GazPricePerKb()
+							gazUsed := int(unsafe.Sizeof(jsData)) * gen.Info().GazPricePerKb()
 
 							// return the response:
 							resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
@@ -834,7 +834,7 @@ func (app *core20181108) saveEntityRequestVote() routers.CreateRouteParams {
 							}
 
 							// create the gaz price:
-							gazUsed := int(unsafe.Sizeof(jsData)) * gen.GazPricePerKb()
+							gazUsed := int(unsafe.Sizeof(jsData)) * gen.Info().GazPricePerKb()
 
 							// return the response:
 							resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{

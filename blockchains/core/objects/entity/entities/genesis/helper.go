@@ -8,6 +8,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/information"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
 
@@ -35,6 +36,11 @@ func createMetaData() entity.MetaData {
 					return nil, userIDErr
 				}
 
+				infID, infIDErr := uuid.FromString(storable.InfoID)
+				if infIDErr != nil {
+					return nil, infIDErr
+				}
+
 				// retrieve the initial deposit:
 				depositMet := deposit.SDKFunc.CreateMetaData()
 				depIns, depInsErr := rep.RetrieveByID(depositMet, &initialDepID)
@@ -49,9 +55,21 @@ func createMetaData() entity.MetaData {
 					return nil, usrInsErr
 				}
 
+				// retrieve the information:
+				infMet := information.SDKFunc.CreateMetaData()
+				infIns, infInsErr := rep.RetrieveByID(infMet, &infID)
+				if infInsErr != nil {
+					return nil, infInsErr
+				}
+
 				if deposit, ok := depIns.(deposit.Deposit); ok {
 					if usr, ok := usrIns.(user.User); ok {
-						return createGenesis(&id, storable.ConcensusNeeded, storable.GzPriceInMatrixWorkKb, storable.GzPricePerKb, storable.MxAmountOfValidators, deposit, usr)
+						if inf, ok := infIns.(information.Information); ok {
+							return createGenesis(&id, inf, deposit, usr)
+						}
+
+						str := fmt.Sprintf("the entity (ID: %s) is not a valid Information instance", infID.String())
+						return nil, errors.New(str)
 					}
 
 					str := fmt.Sprintf("the entity (ID: %s) is not a valid User instance", userID.String())
@@ -173,6 +191,20 @@ func representation() entity.Representation {
 				usrSaveErr := service.Save(usr, usrRepresentation)
 				if usrSaveErr != nil {
 					return usrSaveErr
+				}
+
+				// information:
+				inf := gen.Info()
+				infoRepresentation := information.SDKFunc.CreateRepresentation()
+				_, retInfErr := repository.RetrieveByID(infoRepresentation.MetaData(), inf.ID())
+				if retInfErr == nil {
+					str := fmt.Sprintf("the Genesis instance contains an Information instance (ID: %s) that is already saved", inf.ID().String())
+					return errors.New(str)
+				}
+
+				infSaveErr := service.Save(inf, infoRepresentation)
+				if infSaveErr != nil {
+					return infSaveErr
 				}
 
 				return nil
