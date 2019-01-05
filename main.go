@@ -33,6 +33,7 @@ func main() {
 		*cli.SDKFunc.Spawn(),
 		*cli.SDKFunc.Wallet(),
 		*cli.SDKFunc.Genesis(),
+		*cli.SDKFunc.Information(),
 	}
 
 	err := app.Run(os.Args)

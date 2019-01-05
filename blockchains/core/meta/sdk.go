@@ -5,18 +5,19 @@ import (
 	"fmt"
 
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/transfer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/validator"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	active_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
 	active_vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote/active"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/group"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/information"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/link"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/node"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/withdrawal"
@@ -82,6 +83,7 @@ var SDKFunc = struct {
 
 		// create the representations:
 		genesisRepresentation := genesis.SDKFunc.CreateRepresentation()
+		informationRepresentation := information.SDKFunc.CreateRepresentation()
 		walletRepresentation := wallet.SDKFunc.CreateRepresentation()
 		validatorRepresentation := validator.SDKFunc.CreateRepresentation()
 		pledgeRepresentation := pledge.SDKFunc.CreateRepresentation()
@@ -115,6 +117,7 @@ var SDKFunc = struct {
 		// create the read:
 		additionalReads := map[string]entity.MetaData{
 			genesisRepresentation.MetaData().Keyname():       genesisRepresentation.MetaData(),
+			informationRepresentation.MetaData().Keyname():   informationRepresentation.MetaData(),
 			walletRepresentation.MetaData().Keyname():        walletRepresentation.MetaData(),
 			validatorRepresentation.MetaData().Keyname():     validatorRepresentation.MetaData(),
 			userRepresentation.MetaData().Keyname():          userRepresentation.MetaData(),
@@ -152,11 +155,12 @@ var SDKFunc = struct {
 		// create the additional writes for tokens:
 		tokenRepresentation := token.SDKFunc.CreateRepresentation()
 		additionalWriteForToken := createEntityRequest(tokenRepresentation, map[string]entity.Representation{
-			linkRepresentation.MetaData().Keyname(): linkRepresentation,
-			nodeRepresentation.MetaData().Keyname(): nodeRepresentation,
+			informationRepresentation.MetaData().Keyname(): informationRepresentation,
+			linkRepresentation.MetaData().Keyname():        linkRepresentation,
+			nodeRepresentation.MetaData().Keyname():        nodeRepresentation,
 		})
 
-		// add the additional writes for wallet:
+		// verify the additional writes for wallet:
 		walKeyname := additionalWriteForWallet.RequestedBy().MetaData().Keyname()
 		tokKeyname := additionalWriteForToken.RequestedBy().MetaData().Keyname()
 		for _, oneWriteOnEntityReq := range writeOnEntityRequest {

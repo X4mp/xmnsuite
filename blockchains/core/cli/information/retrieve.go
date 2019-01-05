@@ -1,4 +1,4 @@
-package genesis
+package information
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	cliapp "github.com/urfave/cli"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/helpers"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/information"
 	core_helpers "github.com/xmnservices/xmnsuite/helpers"
 )
 
@@ -45,22 +45,22 @@ func retrieve() *cliapp.Command {
 				CLIContext: c,
 			})
 
-			// create the genesis repository:
-			genRepository := genesis.SDKFunc.CreateRepository(genesis.CreateRepositoryParams{
+			// create the information repository:
+			infRepository := information.SDKFunc.CreateRepository(information.CreateRepositoryParams{
 				EntityRepository: entity.SDKFunc.CreateSDKRepository(entity.CreateSDKRepositoryParams{
 					PK:     conf.WalletPK(),
 					Client: client,
 				}),
 			})
 
-			// retrieve the genesis:
-			gen, genErr := genRepository.Retrieve()
-			if genErr != nil {
-				panic(genErr)
+			// retrieve the information:
+			inf, infErr := infRepository.Retrieve()
+			if infErr != nil {
+				panic(infErr)
 			}
 
 			helpers.SDKFunc.PrintSuccessWithInstance(helpers.PrintSuccessWithInstanceParams{
-				Ins: gen,
+				Ins: inf,
 			})
 
 			// returns:

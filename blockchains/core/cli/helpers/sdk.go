@@ -23,6 +23,13 @@ type RetrieveConfWithClientParams struct {
 	CLIContext *cliapp.Context
 }
 
+// SaveRequestParams represents the SaveRequest params
+type SaveRequestParams struct {
+	CLIContext           *cliapp.Context
+	EntityRepresentation entity.Representation
+	Ins                  entity.Entity
+}
+
 // PrintSuccessWithInstanceParams represents the print success new instance params
 type PrintSuccessWithInstanceParams struct {
 	Ins     interface{}
@@ -38,6 +45,7 @@ type PrintErrorParams struct {
 var SDKFunc = struct {
 	ProcessWalletRequest     func(params ProcessWalletRequestParams) request.Normalized
 	RetrieveConfWithClient   func(params RetrieveConfWithClientParams) (configs.Configs, applications.Client)
+	SaveRequest              func(params SaveRequestParams) request.Request
 	PrintSuccessWithInstance func(params PrintSuccessWithInstanceParams)
 	PrintError               func(params PrintErrorParams)
 }{
@@ -57,22 +65,27 @@ var SDKFunc = struct {
 
 		return conf, client
 	},
+	SaveRequest: func(params SaveRequestParams) request.Request {
+		req, reqErr := saveRequest(params.CLIContext, params.EntityRepresentation, params.Ins)
+		if reqErr != nil {
+			panic(reqErr)
+		}
+
+		return req
+	},
 	PrintSuccessWithInstance: func(params PrintSuccessWithInstanceParams) {
 		js, jsErr := json.MarshalIndent(params.Ins, "", "    ")
 		if jsErr != nil {
 			panic(jsErr)
 		}
 
-		out := fmt.Sprintf("\n************ XMN - SUCCESS ************\n")
-		out = fmt.Sprintf("%s%s", out, params.Message)
-		out = fmt.Sprintf("%s\n-------------------------------------\n%s\n", out, string(js))
-		out = fmt.Sprintf("%s\n********** END XMN - SUCCESS **********\n", out)
+		out := fmt.Sprintf("\n%s\n", js)
 		fmt.Printf(out)
 	},
 	PrintError: func(params PrintErrorParams) {
-		out := fmt.Sprintf("\n************ XMN - ERROR ************\n")
+		out := fmt.Sprintf("\n************ ERROR ************\n")
 		out = fmt.Sprintf("%s%s", out, params.Message)
-		out = fmt.Sprintf("%s\n********** END XMN - ERROR **********\n", out)
+		out = fmt.Sprintf("%s\n********** END ERROR **********\n", out)
 		fmt.Printf(out)
 	},
 }
