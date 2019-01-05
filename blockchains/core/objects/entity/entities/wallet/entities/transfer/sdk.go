@@ -21,9 +21,9 @@ type Normalized interface {
 // Repository represents the transfer reposiotry
 type Repository interface {
 	RetrieveByID(id *uuid.UUID) (Transfer, error)
+	RetrieveByDeposit(dep deposit.Deposit) (Transfer, error)
+	RetrieveByWithdrawal(with withdrawal.Withdrawal) (Transfer, error)
 	RetrieveSet(index int, amount int) (entity.PartialSet, error)
-	RetrieveSetByDeposit(dep deposit.Deposit, index int, amount int) (entity.PartialSet, error)
-	RetrieveSetByWithdrawal(with withdrawal.Withdrawal, index int, amount int) (entity.PartialSet, error)
 }
 
 // CreateParams represents the Create params

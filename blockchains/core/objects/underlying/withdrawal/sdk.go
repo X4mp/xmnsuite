@@ -26,7 +26,7 @@ type Normalized interface {
 
 // Repository represents the withdrawal repository
 type Repository interface {
-	RetrieveSetByFromWalletAndToken(wal wallet.Wallet, tok token.Token) (entity.PartialSet, error)
+	RetrieveSetByFromWalletAndToken(wal wallet.Wallet, tok token.Token) ([]Withdrawal, error)
 }
 
 // CreateParams represents the Create params
@@ -79,12 +79,12 @@ var SDKFunc = struct {
 				return nil, errors.New(str)
 			},
 			Keynames: func(ins entity.Entity) ([]string, error) {
-				if withdrawal, ok := ins.(Withdrawal); ok {
+				if with, ok := ins.(Withdrawal); ok {
 					base := retrieveAllWithdrawalsKeyname()
 					return []string{
 						base,
-						retrieveWithdrawalsByTokenIDKeyname(withdrawal.Token().ID()),
-						retrieveWithdrawalsByFromWalletIDKeyname(withdrawal.From().ID()),
+						retrieveWithdrawalsByTokenIDKeyname(with.Token().ID()),
+						retrieveWithdrawalsByFromWalletIDKeyname(with.From().ID()),
 					}, nil
 				}
 
@@ -94,17 +94,15 @@ var SDKFunc = struct {
 			},
 			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
 
-				calculate := func(withsPS entity.PartialSet, depsPS entity.PartialSet) (int, error) {
+				calculate := func(withs []Withdrawal, deps []deposit.Deposit) (int, error) {
 					// calculate the withdrawals amount:
 					withAmount := 0
-					withs := withsPS.Instances()
 					for _, oneWithdrawalIns := range withs {
 						withAmount += oneWithdrawalIns.(Withdrawal).Amount()
 					}
 
 					// calculate the deposits amount:
 					depAmount := 0
-					deps := depsPS.Instances()
 					for _, oneDepIns := range deps {
 						depAmount += oneDepIns.(deposit.Deposit).Amount()
 					}
@@ -146,19 +144,19 @@ var SDKFunc = struct {
 					}
 
 					// retrieve all the withdrawals related to our wallet and token:
-					withsPS, withsPSErr := withdrawalRepository.RetrieveSetByFromWalletAndToken(wal, tok)
-					if withsPSErr != nil {
-						return withsPSErr
+					withs, withsErr := withdrawalRepository.RetrieveSetByFromWalletAndToken(wal, tok)
+					if withsErr != nil {
+						return withsErr
 					}
 
 					// retrieve all the deposits related to our wallet and token:
-					depsPS, depsPSErr := depositRepository.RetrieveSetByToWalletAndToken(wal, tok)
-					if depsPSErr != nil {
-						return depsPSErr
+					deps, depsErr := depositRepository.RetrieveSetByToWalletAndToken(wal, tok)
+					if depsErr != nil {
+						return depsErr
 					}
 
 					// retrieve the balance:
-					balance, balanceErr := calculate(withsPS, depsPS)
+					balance, balanceErr := calculate(withs, deps)
 					if balanceErr != nil {
 						str := fmt.Sprintf("there was an error while retrieving the balance of the Wallet (ID: %s), for the Token (ID: %s): %s", with.From().ID().String(), with.Token().ID().String(), balanceErr.Error())
 						return errors.New(str)

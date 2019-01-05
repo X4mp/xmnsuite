@@ -39,40 +39,50 @@ func (app *repository) RetrieveByID(id *uuid.UUID) (Transfer, error) {
 	return nil, errors.New(str)
 }
 
-// RetrieveSet retrieves a transfer set
-func (app *repository) RetrieveSet(index int, amount int) (entity.PartialSet, error) {
-	keyname := retrieveAllTransfersKeyname()
-	trsfPS, trsfPSErr := app.entityRepository.RetrieveSetByKeyname(app.metaData, keyname, index, amount)
-	if trsfPSErr != nil {
-		return nil, trsfPSErr
-	}
-
-	return trsfPS, nil
-}
-
-// RetrieveSetByDeposit retrieves a transfer set by deposit
-func (app *repository) RetrieveSetByDeposit(dep deposit.Deposit, index int, amount int) (entity.PartialSet, error) {
+// RetrieveByDeposit retrieves a transfer by deposit
+func (app *repository) RetrieveByDeposit(dep deposit.Deposit) (Transfer, error) {
 	keynames := []string{
 		retrieveAllTransfersKeyname(),
 		retrieveTransfersByDepositKeyname(dep),
 	}
 
-	trsfPS, trsfPSErr := app.entityRepository.RetrieveSetByIntersectKeynames(app.metaData, keynames, index, amount)
-	if trsfPSErr != nil {
-		return nil, trsfPSErr
+	trsfIns, trsfInsErr := app.entityRepository.RetrieveByIntersectKeynames(app.metaData, keynames)
+	if trsfInsErr != nil {
+		return nil, trsfInsErr
 	}
 
-	return trsfPS, nil
+	if trsf, ok := trsfIns.(Transfer); ok {
+		return trsf, nil
+	}
+
+	str := fmt.Sprintf("the entity (ID: %s) is not a valid Transfer instance", trsfIns.ID().String())
+	return nil, errors.New(str)
 }
 
-// RetrieveSetByWithdrawal retrieves a transfer set by withdrawal
-func (app *repository) RetrieveSetByWithdrawal(with withdrawal.Withdrawal, index int, amount int) (entity.PartialSet, error) {
+// RetrieveByWithdrawal retrieves a transfer by withdrawal
+func (app *repository) RetrieveByWithdrawal(with withdrawal.Withdrawal) (Transfer, error) {
 	keynames := []string{
 		retrieveAllTransfersKeyname(),
 		retrieveTransfersByWithdrawalKeyname(with),
 	}
 
-	trsfPS, trsfPSErr := app.entityRepository.RetrieveSetByIntersectKeynames(app.metaData, keynames, index, amount)
+	trsfIns, trsfInsErr := app.entityRepository.RetrieveByIntersectKeynames(app.metaData, keynames)
+	if trsfInsErr != nil {
+		return nil, trsfInsErr
+	}
+
+	if trsf, ok := trsfIns.(Transfer); ok {
+		return trsf, nil
+	}
+
+	str := fmt.Sprintf("the entity (ID: %s) is not a valid Transfer instance", trsfIns.ID().String())
+	return nil, errors.New(str)
+}
+
+// RetrieveSet retrieves a transfer set
+func (app *repository) RetrieveSet(index int, amount int) (entity.PartialSet, error) {
+	keyname := retrieveAllTransfersKeyname()
+	trsfPS, trsfPSErr := app.entityRepository.RetrieveSetByKeyname(app.metaData, keyname, index, amount)
 	if trsfPSErr != nil {
 		return nil, trsfPSErr
 	}

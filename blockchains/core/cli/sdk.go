@@ -6,6 +6,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/balance"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/information"
+	"github.com/xmnservices/xmnsuite/blockchains/core/cli/transfer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/wallet"
 )
@@ -21,6 +22,7 @@ var SDKFunc = struct {
 	Information func() *cliapp.Command
 	Balance     func() *cliapp.Command
 	User        func() *cliapp.Command
+	Transfer    func() *cliapp.Command
 	Wallet      func() *cliapp.Command
 }{
 	Spawn: func() *cliapp.Command {
@@ -67,6 +69,18 @@ var SDKFunc = struct {
 				*user.SDKFunc.RetrieveList(),
 				*user.SDKFunc.Save(),
 				*user.SDKFunc.Delete(),
+			},
+		}
+	},
+	Transfer: func() *cliapp.Command {
+		return &cliapp.Command{
+			Name:    "transfer",
+			Aliases: []string{"u"},
+			Usage:   "This is the group of commands to work with transfers",
+			Subcommands: []cliapp.Command{
+				*transfer.SDKFunc.Retrieve(),
+				*transfer.SDKFunc.RetrieveList(),
+				*transfer.SDKFunc.Save(),
 			},
 		}
 	},

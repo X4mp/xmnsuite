@@ -25,7 +25,7 @@ type Normalized interface {
 
 // Repository represents the deposit Repository
 type Repository interface {
-	RetrieveSetByToWalletAndToken(wal wallet.Wallet, tok token.Token) (entity.PartialSet, error)
+	RetrieveSetByToWalletAndToken(wal wallet.Wallet, tok token.Token) ([]Deposit, error)
 }
 
 // CreateParams represents the Create params
