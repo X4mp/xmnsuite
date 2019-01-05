@@ -46,7 +46,7 @@ func saveRequest(c *cliapp.Context, entityRepresentation entity.Representation, 
 		EntityRepository: entityRepository,
 	})
 
-	// retrieve the walletID:
+	// parse the walletID:
 	walletIDAsString := c.String("walletid")
 	walletID, walletIDErr := uuid.FromString(walletIDAsString)
 	if walletIDErr != nil {

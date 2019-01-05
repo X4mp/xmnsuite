@@ -34,6 +34,7 @@ func main() {
 		*cli.SDKFunc.Wallet(),
 		*cli.SDKFunc.Genesis(),
 		*cli.SDKFunc.Information(),
+		*cli.SDKFunc.Balance(),
 	}
 
 	err := app.Run(os.Args)

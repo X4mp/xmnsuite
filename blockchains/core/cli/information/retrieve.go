@@ -14,7 +14,7 @@ func retrieve() *cliapp.Command {
 	return &cliapp.Command{
 		Name:    "retrieve",
 		Aliases: []string{"r"},
-		Usage:   "Retrieve the genesis instance",
+		Usage:   "Retrieve the information instance",
 		Flags: []cliapp.Flag{
 			cliapp.StringFlag{
 				Name:  "host",
