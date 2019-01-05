@@ -103,7 +103,7 @@ func update() *cliapp.Command {
 			req := helpers.SDKFunc.SaveRequest(helpers.SaveRequestParams{
 				CLIContext:           c,
 				EntityRepresentation: information.SDKFunc.CreateRepresentation(),
-				Ins: information.SDKFunc.Create(information.CreateParams{
+				SaveEntity: information.SDKFunc.Create(information.CreateParams{
 					ID:                    inf.ID(),
 					GazPricePerKb:         newGazPrice,
 					ConcensusNeeded:       newConcensusNeeded,

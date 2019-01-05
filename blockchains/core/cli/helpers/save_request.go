@@ -13,7 +13,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 )
 
-func saveRequest(c *cliapp.Context, entityRepresentation entity.Representation, ins entity.Entity) (request.Request, error) {
+func saveRequest(c *cliapp.Context, entityRepresentation entity.Representation, saveIns entity.Entity, delIns entity.Entity) (request.Request, error) {
 	// retrieve conf with client:
 	conf, client, confErr := retrieveConfWithClient(c)
 	if confErr != nil {
@@ -77,10 +77,11 @@ func saveRequest(c *cliapp.Context, entityRepresentation entity.Representation, 
 
 	// create the new request:
 	newReq := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  fromUser,
-		NewEntity: ins,
-		Reason:    c.String("reason"),
-		Keyname:   kname,
+		FromUser:     fromUser,
+		SaveEntity:   saveIns,
+		DeleteEntity: delIns,
+		Reason:       c.String("reason"),
+		Keyname:      kname,
 	})
 
 	saveErr := reqService.Save(newReq, entityRepresentation)

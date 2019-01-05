@@ -15,8 +15,8 @@ func CompareRequestForTests(t *testing.T, first Request, second Request) {
 	}
 
 	// compare the new entity ids:
-	if !reflect.DeepEqual(first.New().ID(), second.New().ID()) {
-		t.Errorf("the new entity ID is invalid, expected: %s, returned: %s", first.New().ID().String(), second.New().ID().String())
+	if !reflect.DeepEqual(first.Save().ID(), second.Save().ID()) {
+		t.Errorf("the new entity ID is invalid, expected: %s, returned: %s", first.Save().ID().String(), second.Save().ID().String())
 		return
 	}
 

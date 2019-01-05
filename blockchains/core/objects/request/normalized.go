@@ -6,17 +6,35 @@ import (
 )
 
 type normalizedRequest struct {
-	ID          string             `json:"id"`
-	From        user.Normalized    `json:"from"`
-	NewEntityJS []byte             `json:"new_entity_js"`
-	Reason      string             `json:"reason"`
-	Keyname     keyname.Normalized `json:"keyname"`
+	ID               string             `json:"id"`
+	From             user.Normalized    `json:"from"`
+	SaveEntityJSON   []byte             `json:"save_entity_json"`
+	DeleteEntityJSON []byte             `json:"delete_entity_json"`
+	Reason           string             `json:"reason"`
+	Keyname          keyname.Normalized `json:"keyname"`
 }
 
 func createNormalizedRequest(req Request) (*normalizedRequest, error) {
-	js, jsErr := reg.fromEntityToJSON(req.New(), req.Keyname().Name())
-	if jsErr != nil {
-		return nil, jsErr
+
+	var toSaveEntity []byte
+	var toDeleteEntity []byte
+
+	if req.HasSave() {
+		saveJSON, saveJSONErr := reg.fromEntityToJSON(req.Save(), req.Keyname().Name())
+		if saveJSONErr != nil {
+			return nil, saveJSONErr
+		}
+
+		toSaveEntity = saveJSON
+	}
+
+	if req.HasDelete() {
+		deleteJSON, deleteJSONErr := reg.fromEntityToJSON(req.Delete(), req.Keyname().Name())
+		if deleteJSONErr != nil {
+			return nil, deleteJSONErr
+		}
+
+		toDeleteEntity = deleteJSON
 	}
 
 	from, fromErr := user.SDKFunc.CreateMetaData().Normalize()(req.From())
@@ -30,11 +48,12 @@ func createNormalizedRequest(req Request) (*normalizedRequest, error) {
 	}
 
 	out := normalizedRequest{
-		ID:          req.ID().String(),
-		From:        from,
-		NewEntityJS: js,
-		Reason:      req.Reason(),
-		Keyname:     kname,
+		ID:               req.ID().String(),
+		From:             from,
+		SaveEntityJSON:   toSaveEntity,
+		DeleteEntityJSON: toDeleteEntity,
+		Reason:           req.Reason(),
+		Keyname:          kname,
 	}
 
 	return &out, nil

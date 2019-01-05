@@ -99,10 +99,10 @@ func processWalletRequest(c *cliapp.Context, representation entity.Representatio
 
 	// create the request:
 	req := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  fromUser,
-		NewEntity: ent,
-		Reason:    c.String("reason"),
-		Keyname:   kname,
+		FromUser:   fromUser,
+		SaveEntity: ent,
+		Reason:     c.String("reason"),
+		Keyname:    kname,
 	})
 
 	// save the request:

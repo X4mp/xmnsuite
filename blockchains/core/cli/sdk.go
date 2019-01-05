@@ -6,6 +6,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/balance"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/information"
+	"github.com/xmnservices/xmnsuite/blockchains/core/cli/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/wallet"
 )
 
@@ -19,6 +20,7 @@ var SDKFunc = struct {
 	Genesis     func() *cliapp.Command
 	Information func() *cliapp.Command
 	Balance     func() *cliapp.Command
+	User        func() *cliapp.Command
 	Wallet      func() *cliapp.Command
 }{
 	Spawn: func() *cliapp.Command {
@@ -52,6 +54,19 @@ var SDKFunc = struct {
 			Usage:   "This is the group of commands to work with the balance of wallets",
 			Subcommands: []cliapp.Command{
 				*balance.SDKFunc.Retrieve(),
+			},
+		}
+	},
+	User: func() *cliapp.Command {
+		return &cliapp.Command{
+			Name:    "user",
+			Aliases: []string{"u"},
+			Usage:   "This is the group of commands to work with users",
+			Subcommands: []cliapp.Command{
+				*user.SDKFunc.Retrieve(),
+				*user.SDKFunc.RetrieveList(),
+				*user.SDKFunc.Save(),
+				*user.SDKFunc.Delete(),
 			},
 		}
 	},

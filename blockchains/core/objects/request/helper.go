@@ -49,12 +49,23 @@ func createMetaData(reg *registry) entity.MetaData {
 
 				if fromUser, ok := fromIns.(user.User); ok {
 					if kname, ok := knameIns.(keyname.Keyname); ok {
-						newIns, newInsErr := reg.fromJSONToEntity(storable.NewEntityJS, kname.Name())
-						if newInsErr != nil {
-							return nil, newInsErr
+
+						if storable.SaveEntityJSON != nil {
+							saveIns, saveInsErr := reg.fromJSONToEntity(storable.SaveEntityJSON, kname.Name())
+							if saveInsErr != nil {
+								return nil, saveInsErr
+							}
+
+							out := createRequestWithSaveEntity(&id, fromUser, saveIns, storable.Reason, kname)
+							return out, nil
 						}
 
-						out := createRequest(&id, fromUser, newIns, storable.Reason, kname)
+						delIns, delInsErr := reg.fromJSONToEntity(storable.DeleteEntityJSON, kname.Name())
+						if delInsErr != nil {
+							return nil, delInsErr
+						}
+
+						out := createRequestWithDeleteEntity(&id, fromUser, delIns, storable.Reason, kname)
 						return out, nil
 					}
 

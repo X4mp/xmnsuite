@@ -89,12 +89,30 @@ func (app *voteService) Save(vote Vote, rep entity.Representation) error {
 		if concensusReached {
 			// if vote is approved, insert the new entity:
 			if isApproved {
-				// insert the new entity:
-				newEntity := req.Request().New()
-				saveNewErr := app.service.Save(newEntity, rep)
-				if saveNewErr != nil {
-					str := fmt.Sprintf("there was an error while saving the new Entity instance (ID: %s): %s", newEntity.ID().String(), saveNewErr.Error())
-					return errors.New(str)
+
+				// get the request:
+				reqReq := req.Request()
+
+				// if we must save the entity:
+				if reqReq.HasSave() {
+					// save the entity:
+					toSaveEntity := reqReq.Save()
+					saveErr := app.service.Save(toSaveEntity, rep)
+					if saveErr != nil {
+						str := fmt.Sprintf("there was an error while saving the Entity instance (ID: %s): %s", toSaveEntity.ID().String(), saveErr.Error())
+						return errors.New(str)
+					}
+				}
+
+				// if we must delete the entity:
+				if reqReq.HasDelete() {
+					//delete the entity:
+					toDeleteEntity := reqReq.Delete()
+					delErr := app.service.Delete(toDeleteEntity, rep)
+					if delErr != nil {
+						str := fmt.Sprintf("there was an error while deleting the Entity instance (ID: %s): %s", toDeleteEntity.ID().String(), delErr.Error())
+						return errors.New(str)
+					}
 				}
 			}
 

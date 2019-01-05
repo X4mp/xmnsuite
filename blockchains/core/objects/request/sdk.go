@@ -17,7 +17,10 @@ import (
 type Request interface {
 	ID() *uuid.UUID
 	From() user.User
-	New() entity.Entity
+	HasSave() bool
+	Save() entity.Entity
+	HasDelete() bool
+	Delete() entity.Entity
 	Reason() string
 	Keyname() keyname.Keyname
 }
@@ -33,11 +36,12 @@ type Normalized interface {
 
 // CreateParams represents the create params
 type CreateParams struct {
-	ID        *uuid.UUID
-	FromUser  user.User
-	NewEntity entity.Entity
-	Reason    string
-	Keyname   keyname.Keyname
+	ID           *uuid.UUID
+	FromUser     user.User
+	SaveEntity   entity.Entity
+	DeleteEntity entity.Entity
+	Reason       string
+	Keyname      keyname.Keyname
 }
 
 // RegisterParams represents the register params
@@ -68,9 +72,17 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		// get the keyname:
-		out := createRequest(params.ID, params.FromUser, params.NewEntity, params.Reason, params.Keyname)
-		return out
+		if params.SaveEntity != nil {
+			out := createRequestWithSaveEntity(params.ID, params.FromUser, params.SaveEntity, params.Reason, params.Keyname)
+			return out
+		}
+
+		if params.DeleteEntity != nil {
+			out := createRequestWithDeleteEntity(params.ID, params.FromUser, params.DeleteEntity, params.Reason, params.Keyname)
+			return out
+		}
+
+		panic(errors.New("there is no Save or Delete entity in the request instance"))
 	},
 	Register: func(params RegisterParams) {
 		regErr := reg.register(params.EntityMetaData)
@@ -111,11 +123,9 @@ var SDKFunc = struct {
 				if req, ok := ins.(Request); ok {
 					// metadata:
 					metaData := createMetaData(reg)
-					keynameRepresentation := keyname.SDKFunc.CreateRepresentation()
 
 					// create the repository and service:
 					repository := entity.SDKFunc.CreateRepository(ds)
-					service := entity.SDKFunc.CreateService(ds)
 					keynameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
 						EntityRepository: repository,
 					})
@@ -127,13 +137,10 @@ var SDKFunc = struct {
 						return errors.New(str)
 					}
 
-					// if the keyname does not exists, create it:
+					// if the keyname does not exists, return an error:
 					_, retKeynameErr := keynameRepository.RetrieveByName(req.Keyname().Name())
 					if retKeynameErr != nil {
-						saveErr := service.Save(req.Keyname(), keynameRepresentation)
-						if saveErr != nil {
-							return saveErr
-						}
+						return retKeynameErr
 					}
 
 					return nil

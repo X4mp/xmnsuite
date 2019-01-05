@@ -329,7 +329,7 @@ func saveRequestThenSaveVotesForTests(
 	}
 
 	// the new entity should now be an entity:
-	_, retInsErr := repository.RetrieveByID(representation.MetaData(), req.New().ID())
+	_, retInsErr := repository.RetrieveByID(representation.MetaData(), req.Save().ID())
 	if retInsErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", retInsErr.Error())
 		return nil
@@ -365,10 +365,10 @@ func saveUserWithNewWallet(
 
 	// create the wallet request:
 	newUserRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  fromUser,
-		NewEntity: newUser,
-		Reason:    "TEST",
-		Keyname:   kname,
+		FromUser:   fromUser,
+		SaveEntity: newUser,
+		Reason:     "TEST",
+		Keyname:    kname,
 	})
 
 	// create our user vote:
@@ -412,10 +412,10 @@ func saveLink(
 
 	// create the link request:
 	newLinkRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  fromUser,
-		NewEntity: lnk,
-		Reason:    "TEST",
-		Keyname:   kname,
+		FromUser:   fromUser,
+		SaveEntity: lnk,
+		Reason:     "TEST",
+		Keyname:    kname,
 	})
 
 	// create our user vote:
@@ -463,10 +463,10 @@ func saveNode(
 
 	// create the node request:
 	newNodeRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  fromUser,
-		NewEntity: nod,
-		Reason:    "TEST",
-		Keyname:   kname,
+		FromUser:   fromUser,
+		SaveEntity: nod,
+		Reason:     "TEST",
+		Keyname:    kname,
 	})
 
 	// create our user vote:
@@ -511,10 +511,10 @@ func savePledge(
 
 	// create the user in wallet request:
 	pldgeRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  fromGen.User(),
-		NewEntity: pldge,
-		Reason:    "TEST",
-		Keyname:   kname,
+		FromUser:   fromGen.User(),
+		SaveEntity: pldge,
+		Reason:     "TEST",
+		Keyname:    kname,
 	})
 
 	// create our user vote:

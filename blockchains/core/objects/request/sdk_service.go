@@ -11,10 +11,11 @@ import (
 )
 
 type outgoingRequest struct {
-	ID         string `json:"id"`
-	Reason     string `json:"reason"`
-	WalletID   string `json:"wallet_id"`
-	EntityJSON []byte `json:"entity"`
+	ID               string `json:"id"`
+	Reason           string `json:"reason"`
+	WalletID         string `json:"wallet_id"`
+	SaveEntityJSON   []byte `json:"save_entity_json"`
+	DeleteEntityJSON []byte `json:"delete_entity_json"`
 }
 
 type sdkService struct {
@@ -34,21 +35,44 @@ func createSDKService(pk crypto.PrivateKey, client applications.Client, routePre
 
 // Save saves a request instance to the service
 func (app *sdkService) Save(req Request, rep entity.Representation) error {
-	normalized, normalizedErr := rep.MetaData().Normalize()(req.New())
-	if normalizedErr != nil {
-		return normalizedErr
+
+	var toSaveEntity []byte
+	var toDeleteEntity []byte
+
+	if req.HasSave() {
+		normalized, normalizedErr := rep.MetaData().Normalize()(req.Save())
+		if normalizedErr != nil {
+			return normalizedErr
+		}
+
+		insJS, insJSErr := cdc.MarshalJSON(normalized)
+		if insJSErr != nil {
+			return insJSErr
+		}
+
+		toSaveEntity = insJS
 	}
 
-	insJS, insJSErr := cdc.MarshalJSON(normalized)
-	if insJSErr != nil {
-		return insJSErr
+	if req.HasDelete() {
+		normalized, normalizedErr := rep.MetaData().Normalize()(req.Delete())
+		if normalizedErr != nil {
+			return normalizedErr
+		}
+
+		insJS, insJSErr := cdc.MarshalJSON(normalized)
+		if insJSErr != nil {
+			return insJSErr
+		}
+
+		toDeleteEntity = insJS
 	}
 
 	outReq := outgoingRequest{
-		ID:         req.ID().String(),
-		Reason:     req.Reason(),
-		WalletID:   req.From().Wallet().ID().String(),
-		EntityJSON: insJS,
+		ID:               req.ID().String(),
+		Reason:           req.Reason(),
+		WalletID:         req.From().Wallet().ID().String(),
+		SaveEntityJSON:   toSaveEntity,
+		DeleteEntityJSON: toDeleteEntity,
 	}
 
 	js, jsErr := cdc.MarshalJSON(&outReq)

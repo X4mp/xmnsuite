@@ -11,20 +11,35 @@ import (
 )
 
 type request struct {
-	UUID  *uuid.UUID      `json:"id"`
-	Frm   user.User       `json:"from"`
-	Nw    entity.Entity   `json:"new_entity"`
-	Rson  string          `json:"reason"`
-	Kname keyname.Keyname `json:"keyname"`
+	UUID         *uuid.UUID      `json:"id"`
+	Frm          user.User       `json:"from"`
+	SaveEntity   entity.Entity   `json:"new_entity"`
+	DeleteEntity entity.Entity   `json:"delete_entity"`
+	Rson         string          `json:"reason"`
+	Kname        keyname.Keyname `json:"keyname"`
 }
 
-func createRequest(id *uuid.UUID, frm user.User, nw entity.Entity, reason string, kname keyname.Keyname) Request {
+func createRequestWithSaveEntity(id *uuid.UUID, frm user.User, saveEntity entity.Entity, reason string, kname keyname.Keyname) Request {
 	out := request{
-		UUID:  id,
-		Frm:   frm,
-		Nw:    nw,
-		Rson:  reason,
-		Kname: kname,
+		UUID:         id,
+		Frm:          frm,
+		SaveEntity:   saveEntity,
+		DeleteEntity: nil,
+		Rson:         reason,
+		Kname:        kname,
+	}
+
+	return &out
+}
+
+func createRequestWithDeleteEntity(id *uuid.UUID, frm user.User, deleteEntity entity.Entity, reason string, kname keyname.Keyname) Request {
+	out := request{
+		UUID:         id,
+		Frm:          frm,
+		SaveEntity:   nil,
+		DeleteEntity: deleteEntity,
+		Rson:         reason,
+		Kname:        kname,
 	}
 
 	return &out
@@ -49,12 +64,23 @@ func createRequestFromNormalized(normalized *normalizedRequest) (Request, error)
 
 	if from, ok := fromIns.(user.User); ok {
 		if kname, ok := knameIns.(keyname.Keyname); ok {
-			ins, insErr := reg.fromJSONToEntity(normalized.NewEntityJS, kname.Name())
-			if insErr != nil {
-				return nil, insErr
+
+			if normalized.SaveEntityJSON != nil {
+				saveIns, saveInsErr := reg.fromJSONToEntity(normalized.SaveEntityJSON, kname.Name())
+				if saveInsErr != nil {
+					return nil, saveInsErr
+				}
+
+				out := createRequestWithSaveEntity(&id, from, saveIns, normalized.Reason, kname)
+				return out, nil
 			}
 
-			out := createRequest(&id, from, ins, normalized.Reason, kname)
+			delIns, delInsErr := reg.fromJSONToEntity(normalized.DeleteEntityJSON, kname.Name())
+			if delInsErr != nil {
+				return nil, delInsErr
+			}
+
+			out := createRequestWithDeleteEntity(&id, from, delIns, normalized.Reason, kname)
 			return out, nil
 		}
 
@@ -76,9 +102,24 @@ func (req *request) From() user.User {
 	return req.Frm
 }
 
-// New returns the new entity to be created
-func (req *request) New() entity.Entity {
-	return req.Nw
+// HasSave returns true if there is a save entity instance
+func (req *request) HasSave() bool {
+	return req.SaveEntity != nil
+}
+
+// Save returns the save entity instance
+func (req *request) Save() entity.Entity {
+	return req.SaveEntity
+}
+
+// HasDelete returns true if there is a delete entity instance
+func (req *request) HasDelete() bool {
+	return req.DeleteEntity != nil
+}
+
+// Delete returns the delete entity instance
+func (req *request) Delete() entity.Entity {
+	return req.DeleteEntity
 }
 
 // Reason returns the reason

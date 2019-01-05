@@ -27,7 +27,8 @@ type RetrieveConfWithClientParams struct {
 type SaveRequestParams struct {
 	CLIContext           *cliapp.Context
 	EntityRepresentation entity.Representation
-	Ins                  entity.Entity
+	SaveEntity           entity.Entity
+	DeleteEntity         entity.Entity
 }
 
 // PrintSuccessWithInstanceParams represents the print success new instance params
@@ -66,7 +67,16 @@ var SDKFunc = struct {
 		return conf, client
 	},
 	SaveRequest: func(params SaveRequestParams) request.Request {
-		req, reqErr := saveRequest(params.CLIContext, params.EntityRepresentation, params.Ins)
+		if params.SaveEntity != nil {
+			req, reqErr := saveRequest(params.CLIContext, params.EntityRepresentation, params.SaveEntity, nil)
+			if reqErr != nil {
+				panic(reqErr)
+			}
+
+			return req
+		}
+
+		req, reqErr := saveRequest(params.CLIContext, params.EntityRepresentation, nil, params.DeleteEntity)
 		if reqErr != nil {
 			panic(reqErr)
 		}

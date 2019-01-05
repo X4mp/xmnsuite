@@ -86,3 +86,14 @@ func (app *repository) RetrieveSetByWallet(wal wallet.Wallet, index int, amount 
 
 	return insPS, nil
 }
+
+// RetrieveSet retrieves a list of users
+func (app *repository) RetrieveSet(index int, amount int) (entity.PartialSet, error) {
+	keyname := retrieveAllUserKeyname()
+	insPS, insPSErr := app.entityRepository.RetrieveSetByKeyname(app.userMetaData, keyname, index, amount)
+	if insPSErr != nil {
+		return nil, insPSErr
+	}
+
+	return insPS, nil
+}

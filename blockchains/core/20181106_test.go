@@ -252,10 +252,10 @@ func TestSaveGenesis_addUserToWallet_addAnotherUserToWallerWithSamePublicKey_sav
 
 	// create the user in wallet request:
 	req := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  genIns.User(),
-		NewEntity: userIns,
-		Reason:    "TEST",
-		Keyname:   kname,
+		FromUser:   genIns.User(),
+		SaveEntity: userIns,
+		Reason:     "TEST",
+		Keyname:    kname,
 	})
 
 	// create the request service:
@@ -334,10 +334,10 @@ func TestSaveGenesis_createNewUserOnWallet_Success(t *testing.T) {
 
 	// create the user in wallet request:
 	userInWalletRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  genIns.User(),
-		NewEntity: userIns,
-		Reason:    "TEST",
-		Keyname:   kname,
+		FromUser:   genIns.User(),
+		SaveEntity: userIns,
+		Reason:     "TEST",
+		Keyname:    kname,
 	})
 
 	// create our genesis user vote:
@@ -387,10 +387,10 @@ func TestSaveGenesis_addUserToWallet_increaseTheNeededConcensus_voteUsingTwoUser
 
 	// create the user in wallet request:
 	userInWalletRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  genIns.User(),
-		NewEntity: userIns,
-		Reason:    "TEST",
-		Keyname:   kname,
+		FromUser:   genIns.User(),
+		SaveEntity: userIns,
+		Reason:     "TEST",
+		Keyname:    kname,
 	})
 
 	// create our genesis user vote:
@@ -413,7 +413,7 @@ func TestSaveGenesis_addUserToWallet_increaseTheNeededConcensus_voteUsingTwoUser
 	// update the wallet to increase concensus:
 	updateWalletRequest := request.SDKFunc.Create(request.CreateParams{
 		FromUser: genIns.User(),
-		NewEntity: wallet.SDKFunc.Create(wallet.CreateParams{
+		SaveEntity: wallet.SDKFunc.Create(wallet.CreateParams{
 			ID:              wal.ID(),
 			Creator:         wal.Creator(),
 			ConcensusNeeded: genIns.User().Shares() + userIns.Shares(),
@@ -436,7 +436,7 @@ func TestSaveGenesis_addUserToWallet_increaseTheNeededConcensus_voteUsingTwoUser
 	// update the wallet to decrease concensus:
 	updateAgainWalletRequest := request.SDKFunc.Create(request.CreateParams{
 		FromUser: genIns.User(),
-		NewEntity: wallet.SDKFunc.Create(wallet.CreateParams{
+		SaveEntity: wallet.SDKFunc.Create(wallet.CreateParams{
 			ID:              wal.ID(),
 			Creator:         wal.Creator(),
 			ConcensusNeeded: genIns.User().Shares(),
@@ -532,10 +532,10 @@ func TestSaveGenesis_createNewWallet_createPledge_transferPledgeTokens_returnsEr
 
 	// create the user in wallet request:
 	trsfRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  userIns,
-		NewEntity: trsf,
-		Reason:    "TEST",
-		Keyname:   kname,
+		FromUser:   userIns,
+		SaveEntity: trsf,
+		Reason:     "TEST",
+		Keyname:    kname,
 	})
 
 	// create the request service:
@@ -639,10 +639,10 @@ func TestSaveGenesis_createNewWallet_createValidator_Success(t *testing.T) {
 
 	// create the user in validator request:
 	validatorRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  genIns.User(),
-		NewEntity: vldator,
-		Reason:    "TEST",
-		Keyname:   kname,
+		FromUser:   genIns.User(),
+		SaveEntity: vldator,
+		Reason:     "TEST",
+		Keyname:    kname,
 	})
 
 	// create our user vote:
@@ -712,10 +712,10 @@ func TestSaveGenesis_createNewWallet_createTransfer_Success(t *testing.T) {
 
 	// create the user in wallet request:
 	trsfRequest := request.SDKFunc.Create(request.CreateParams{
-		FromUser:  genIns.User(),
-		NewEntity: trsf,
-		Reason:    "TEST",
-		Keyname:   kname,
+		FromUser:   genIns.User(),
+		SaveEntity: trsf,
+		Reason:     "TEST",
+		Keyname:    kname,
 	})
 
 	// create our user vote:

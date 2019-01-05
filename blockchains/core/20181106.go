@@ -36,10 +36,11 @@ type incomingVote struct {
 }
 
 type incomingRequest struct {
-	ID         string `json:"id"`
-	Reason     string `json:"reason"`
-	WalletID   string `json:"wallet_id"`
-	EntityJSON []byte `json:"entity"`
+	ID               string `json:"id"`
+	Reason           string `json:"reason"`
+	WalletID         string `json:"wallet_id"`
+	SaveEntityJSON   []byte `json:"save_entity_json"`
+	DeleteEntityJSON []byte `json:"delete_entity_json"`
 }
 
 type core20181108 struct {
@@ -642,19 +643,39 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 					if wrReq, ok := wrOnEntityReq[kname.Group().Name()]; ok {
 						mp := wrReq.Map()
 						if representation, ok := mp[kname.Name()]; ok {
-							// converts the data to an entity:
-							ins, insErr := representation.MetaData().ToEntity()(dep.entityRepository, ptr.EntityJSON)
-							if insErr != nil {
-								return nil, insErr
+
+							// instances:
+							var toSaveIns entity.Entity
+							var toDelIns entity.Entity
+
+							// if the request is a save entity:
+							if ptr.SaveEntityJSON != nil {
+								saveIns, saveInsErr := representation.MetaData().ToEntity()(dep.entityRepository, ptr.SaveEntityJSON)
+								if saveInsErr != nil {
+									return nil, saveInsErr
+								}
+
+								toSaveIns = saveIns
+							}
+
+							// if the request is a delete entity:
+							if ptr.DeleteEntityJSON != nil {
+								delIns, delInsErr := representation.MetaData().ToEntity()(dep.entityRepository, ptr.DeleteEntityJSON)
+								if delInsErr != nil {
+									return nil, delInsErr
+								}
+
+								toDelIns = delIns
 							}
 
 							// create the request:
 							req := request.SDKFunc.Create(request.CreateParams{
-								ID:        &reqID,
-								FromUser:  usr,
-								NewEntity: ins,
-								Reason:    ptr.Reason,
-								Keyname:   kname,
+								ID:           &reqID,
+								FromUser:     usr,
+								SaveEntity:   toSaveIns,
+								DeleteEntity: toDelIns,
+								Reason:       ptr.Reason,
+								Keyname:      kname,
 							})
 
 							// create the active request:
