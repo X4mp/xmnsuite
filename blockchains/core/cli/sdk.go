@@ -6,6 +6,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/balance"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/information"
+	"github.com/xmnservices/xmnsuite/blockchains/core/cli/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/transfer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/wallet"
@@ -23,6 +24,7 @@ var SDKFunc = struct {
 	Balance     func() *cliapp.Command
 	User        func() *cliapp.Command
 	Transfer    func() *cliapp.Command
+	Pledge      func() *cliapp.Command
 	Wallet      func() *cliapp.Command
 }{
 	Spawn: func() *cliapp.Command {
@@ -75,12 +77,26 @@ var SDKFunc = struct {
 	Transfer: func() *cliapp.Command {
 		return &cliapp.Command{
 			Name:    "transfer",
-			Aliases: []string{"u"},
+			Aliases: []string{"t"},
 			Usage:   "This is the group of commands to work with transfers",
 			Subcommands: []cliapp.Command{
 				*transfer.SDKFunc.Retrieve(),
 				*transfer.SDKFunc.RetrieveList(),
 				*transfer.SDKFunc.Save(),
+			},
+		}
+	},
+	Pledge: func() *cliapp.Command {
+		return &cliapp.Command{
+			Name:    "pledge",
+			Aliases: []string{"p"},
+			Usage:   "This is the group of commands to work with pledges",
+			Subcommands: []cliapp.Command{
+				*pledge.SDKFunc.Retrieve(),
+				*pledge.SDKFunc.RetrieveFrom(),
+				*pledge.SDKFunc.RetrieveTo(),
+				*pledge.SDKFunc.Create(),
+				*pledge.SDKFunc.Delete(),
 			},
 		}
 	},

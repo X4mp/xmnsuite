@@ -1,4 +1,4 @@
-package transfer
+package pledge
 
 import (
 	"errors"
@@ -10,18 +10,17 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/transfer"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/information"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/withdrawal"
 	core_helpers "github.com/xmnservices/xmnsuite/helpers"
 )
 
-func save() *cliapp.Command {
+func create() *cliapp.Command {
 	return &cliapp.Command{
-		Name:    "save",
+		Name:    "create",
 		Aliases: []string{"s"},
-		Usage:   "Save creates a request to the wallet shareholders in order to transfer tokens",
+		Usage:   "Create creates a request to the wallet shareholders in order to create a tokens pledge to another wallet",
 		Flags: []cliapp.Flag{
 			cliapp.StringFlag{
 				Name:  "host",
@@ -51,7 +50,7 @@ func save() *cliapp.Command {
 			cliapp.IntFlag{
 				Name:  "amount",
 				Value: 0,
-				Usage: "This is the amount of tokens to transfer",
+				Usage: "This is the amount of tokens to pledge",
 			},
 		},
 		Action: func(c *cliapp.Context) error {
@@ -124,17 +123,13 @@ func save() *cliapp.Command {
 			req := helpers.SDKFunc.SaveRequest(helpers.SaveRequestParams{
 				CLIContext:           c,
 				EntityRepresentation: information.SDKFunc.CreateRepresentation(),
-				SaveEntity: transfer.SDKFunc.Create(transfer.CreateParams{
-					Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+				SaveEntity: pledge.SDKFunc.Create(pledge.CreateParams{
+					From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 						From:   fromWallet,
 						Token:  tok,
 						Amount: amount,
 					}),
-					Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
-						To:     toWallet,
-						Token:  tok,
-						Amount: amount,
-					}),
+					To: toWallet,
 				}),
 			})
 

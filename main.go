@@ -37,6 +37,7 @@ func main() {
 		*cli.SDKFunc.Balance(),
 		*cli.SDKFunc.User(),
 		*cli.SDKFunc.Transfer(),
+		*cli.SDKFunc.Pledge(),
 	}
 
 	err := app.Run(os.Args)
