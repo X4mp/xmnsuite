@@ -123,8 +123,8 @@ var SDKFunc = struct {
 			Aliases: []string{"w"},
 			Usage:   "This is the group of commands to work with wallets",
 			Subcommands: []cliapp.Command{
-				*wallet.SDKFunc.Create(),
-				*wallet.SDKFunc.ListMe(),
+				*wallet.SDKFunc.Retrieve(),
+				*wallet.SDKFunc.RetrieveList(),
 			},
 		}
 	},

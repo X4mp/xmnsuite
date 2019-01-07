@@ -6,13 +6,13 @@ import (
 
 // SDKFunc represents the wallet SDK func
 var SDKFunc = struct {
-	Create func() *cliapp.Command
-	ListMe func() *cliapp.Command
+	Retrieve     func() *cliapp.Command
+	RetrieveList func() *cliapp.Command
 }{
-	Create: func() *cliapp.Command {
-		return create()
+	Retrieve: func() *cliapp.Command {
+		return retrieve()
 	},
-	ListMe: func() *cliapp.Command {
-		return listMe()
+	RetrieveList: func() *cliapp.Command {
+		return retrieveList()
 	},
 }
