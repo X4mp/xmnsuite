@@ -22,8 +22,8 @@ func main() {
 	cdc := amino.NewCodec()
 	core.Register(cdc)
 
-	// create the meta to generate the request registry:
-	meta.SDKFunc.Create(meta.CreateParams{})
+	// create the meta:
+	met := meta.SDKFunc.Create(meta.CreateParams{})
 
 	app := cliapp.NewApp()
 	app.Version = "2019.01.01"
@@ -39,6 +39,7 @@ func main() {
 		*cli.SDKFunc.Transfer(),
 		*cli.SDKFunc.Pledge(),
 		*cli.SDKFunc.Validator(),
+		*cli.SDKFunc.Request(met),
 	}
 
 	err := app.Run(os.Args)

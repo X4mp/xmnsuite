@@ -58,37 +58,3 @@ func createMetaData() entity.MetaData {
 		EmptyNormalized: new(normalizedKeyname),
 	})
 }
-
-func toData(kname Keyname) *Data {
-	out := Data{
-		ID:    kname.ID().String(),
-		Group: group.SDKFunc.ToData(kname.Group()),
-		Name:  kname.Name(),
-	}
-
-	return &out
-}
-
-func toDataSet(ins entity.PartialSet) (*DataSet, error) {
-	data := []*Data{}
-	instances := ins.Instances()
-	for _, oneIns := range instances {
-		if kname, ok := oneIns.(Keyname); ok {
-			data = append(data, toData(kname))
-			continue
-		}
-
-		str := fmt.Sprintf("at least one of the elements (ID: %s) in the entity partial set is not a valid Keyname instance", oneIns.ID().String())
-		return nil, errors.New(str)
-	}
-
-	out := DataSet{
-		Index:       ins.Index(),
-		Amount:      ins.Amount(),
-		TotalAmount: ins.TotalAmount(),
-		IsLast:      ins.IsLast(),
-		Keynames:    data,
-	}
-
-	return &out, nil
-}

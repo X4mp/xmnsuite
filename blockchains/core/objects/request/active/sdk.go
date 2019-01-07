@@ -6,6 +6,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	core_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
@@ -29,6 +30,7 @@ type Repository interface {
 	RetrieveByRequest(req core_request.Request) (Request, error)
 	RetrieveSet(index int, amount int) (entity.PartialSet, error)
 	RetrieveSetByFromUser(usr user.User, index int, amount int) (entity.PartialSet, error)
+	RetrieveSetByWallet(wal wallet.Wallet, index int, amount int) (entity.PartialSet, error)
 	RetrieveSetByKeyname(kname keyname.Keyname, index int, amount int) (entity.PartialSet, error)
 }
 
@@ -84,9 +86,10 @@ var SDKFunc = struct {
 				if req, ok := ins.(Request); ok {
 					return []string{
 						retrieveAllRequestsKeyname(),
-						retrieveAllRequestsByRequestKeyname(req.Request()),
-						retrieveAllRequestsFromUserKeyname(req.Request().From()),
-						retrieveAllRequestsByKeynameKeyname(req.Request().Keyname()),
+						retrieveRequestsByRequestKeyname(req.Request()),
+						retrieveRequestsFromUserKeyname(req.Request().From()),
+						retrieveRequestsByKeynameKeyname(req.Request().Keyname()),
+						retrieveRequestsByWalletKeyname(req.Request().From().Wallet()),
 					}, nil
 				}
 

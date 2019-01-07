@@ -7,10 +7,12 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/information"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/cli/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/transfer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/validator"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/meta"
 )
 
 func reset() {
@@ -28,6 +30,7 @@ var SDKFunc = struct {
 	Pledge      func() *cliapp.Command
 	Validator   func() *cliapp.Command
 	Wallet      func() *cliapp.Command
+	Request     func(met meta.Meta) *cliapp.Command
 }{
 	Spawn: func() *cliapp.Command {
 		return spawn()
@@ -125,6 +128,18 @@ var SDKFunc = struct {
 			Subcommands: []cliapp.Command{
 				*wallet.SDKFunc.Retrieve(),
 				*wallet.SDKFunc.RetrieveList(),
+			},
+		}
+	},
+	Request: func(met meta.Meta) *cliapp.Command {
+		return &cliapp.Command{
+			Name:    "request",
+			Aliases: []string{"r"},
+			Usage:   "This is the group of commands to work with requests",
+			Subcommands: []cliapp.Command{
+				*request.SDKFunc.Active(met),
+				*request.SDKFunc.Group(),
+				*request.SDKFunc.Keyname(),
 			},
 		}
 	},

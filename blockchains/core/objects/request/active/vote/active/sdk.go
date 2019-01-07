@@ -26,6 +26,7 @@ type Repository interface {
 	RetrieveByVote(vot core_vote.Vote) (Vote, error)
 	RetrieveByRequestVoter(voter user.User, req active_request.Request) (Vote, error)
 	RetrieveSetByRequest(req active_request.Request, index int, amount int) (entity.PartialSet, error)
+	RetrieveSetByRequestWithDirection(req active_request.Request, index int, amount int, isApproved bool, isNeutral bool) (entity.PartialSet, error)
 }
 
 // Service represents the vote service

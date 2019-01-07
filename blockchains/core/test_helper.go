@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"math/rand"
 	"net"
 	"testing"
@@ -28,18 +27,6 @@ import (
 type simpleRequestVote struct {
 	Voter      user.User
 	IsApproved bool
-}
-
-func createWalletVoteRouteFunc(routePrefix string) vote.CreateRouteFn {
-	return func(ins vote.Vote, rep entity.Representation) (string, error) {
-		return fmt.Sprintf("%s/%s/requests/%s", routePrefix, rep.MetaData().Keyname(), ins.Request().ID().String()), nil
-	}
-}
-
-func createTokenVoteRouteFunc(routePrefix string) vote.CreateRouteFn {
-	return func(ins vote.Vote, rep entity.Representation) (string, error) {
-		return fmt.Sprintf("%s/%s/requests/%s", routePrefix, rep.MetaData().Keyname(), ins.Request().ID().String()), nil
-	}
 }
 
 func spawnBlockchainForTests(t *testing.T, pk crypto.PrivateKey, rootPath string, routePrefix string) (applications.Node, applications.Client, entity.Service, entity.Repository) {
@@ -234,7 +221,6 @@ func saveRequestThenSaveVotesForTests(
 	req request.Request,
 	votesPK []crypto.PrivateKey,
 	reqVotes []*simpleRequestVote,
-	createRouteFunc vote.CreateRouteFn,
 ) request.Service {
 	// create the metadata:
 	requestMetaData := active_request.SDKFunc.CreateMetaData()
@@ -277,9 +263,9 @@ func saveRequestThenSaveVotesForTests(
 	for index, oneVote := range reqVotes {
 		// create the vote service:
 		oneVoteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
-			PK:              votesPK[index],
-			Client:          client,
-			CreateRouteFunc: createRouteFunc,
+			PK:          votesPK[index],
+			Client:      client,
+			RoutePrefix: routePrefix,
 		})
 
 		// create the vote:
@@ -380,7 +366,7 @@ func saveUserWithNewWallet(
 	// save the new token request, then save vote:
 	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, userRepresentation, newUserRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		newUserRequestVote,
-	}, createTokenVoteRouteFunc(routePrefix))
+	})
 
 	// returns:
 	return requestService
@@ -427,7 +413,7 @@ func saveLink(
 	// save the new token request, then save vote:
 	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, linkRepresentation, newLinkRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		newLinkRequestVote,
-	}, createTokenVoteRouteFunc(routePrefix))
+	})
 
 	// returns:
 	return requestService
@@ -478,7 +464,7 @@ func saveNode(
 	// save the new token request, then save vote:
 	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, nodeRepresentation, newNodeRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		newNodeRequestVote,
-	}, createTokenVoteRouteFunc(routePrefix))
+	})
 
 	// returns:
 	return requestService
@@ -526,7 +512,7 @@ func savePledge(
 	// save the new wallet request, then save vote:
 	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, pldgeRepresentation, pldgeRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		pldgeRequestVote,
-	}, createWalletVoteRouteFunc(routePrefix))
+	})
 
 	// returns:
 	return requestService

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	core_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
@@ -14,19 +15,24 @@ func retrieveAllRequestsKeyname() string {
 	return "active_requests"
 }
 
-func retrieveAllRequestsByRequestKeyname(req core_request.Request) string {
+func retrieveRequestsByRequestKeyname(req core_request.Request) string {
 	base := retrieveAllRequestsKeyname()
 	return fmt.Sprintf("%s:by_request_id:%s", base, req.ID().String())
 }
 
-func retrieveAllRequestsFromUserKeyname(usr user.User) string {
+func retrieveRequestsFromUserKeyname(usr user.User) string {
 	base := retrieveAllRequestsKeyname()
 	return fmt.Sprintf("%s:by_from_id:%s", base, usr.ID().String())
 }
 
-func retrieveAllRequestsByKeynameKeyname(kname keyname.Keyname) string {
+func retrieveRequestsByKeynameKeyname(kname keyname.Keyname) string {
 	base := retrieveAllRequestsKeyname()
 	return fmt.Sprintf("%s:by_keyname_id:%s", base, kname.ID().String())
+}
+
+func retrieveRequestsByWalletKeyname(wal wallet.Wallet) string {
+	base := retrieveAllRequestsKeyname()
+	return fmt.Sprintf("%s:by_wallet_id:%s", base, wal.ID().String())
 }
 
 func createMetaData() entity.MetaData {

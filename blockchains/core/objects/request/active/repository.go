@@ -6,6 +6,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	core_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
@@ -44,7 +45,7 @@ func (app *repository) RetrieveByID(id *uuid.UUID) (Request, error) {
 func (app *repository) RetrieveByRequest(req core_request.Request) (Request, error) {
 	keynames := []string{
 		retrieveAllRequestsKeyname(),
-		retrieveAllRequestsByRequestKeyname(req),
+		retrieveRequestsByRequestKeyname(req),
 	}
 
 	ins, insErr := app.entityRepository.RetrieveByIntersectKeynames(app.metaData, keynames)
@@ -77,7 +78,7 @@ func (app *repository) RetrieveSet(index int, amount int) (entity.PartialSet, er
 func (app *repository) RetrieveSetByFromUser(usr user.User, index int, amount int) (entity.PartialSet, error) {
 	keynames := []string{
 		retrieveAllRequestsKeyname(),
-		retrieveAllRequestsFromUserKeyname(usr),
+		retrieveRequestsFromUserKeyname(usr),
 	}
 	reqPS, reqPSErr := app.entityRepository.RetrieveSetByIntersectKeynames(app.metaData, keynames, index, amount)
 	if reqPSErr != nil {
@@ -91,7 +92,21 @@ func (app *repository) RetrieveSetByFromUser(usr user.User, index int, amount in
 func (app *repository) RetrieveSetByKeyname(kname keyname.Keyname, index int, amount int) (entity.PartialSet, error) {
 	keynames := []string{
 		retrieveAllRequestsKeyname(),
-		retrieveAllRequestsByKeynameKeyname(kname),
+		retrieveRequestsByKeynameKeyname(kname),
+	}
+	reqPS, reqPSErr := app.entityRepository.RetrieveSetByIntersectKeynames(app.metaData, keynames, index, amount)
+	if reqPSErr != nil {
+		return nil, reqPSErr
+	}
+
+	return reqPS, nil
+}
+
+// RetrieveSetByWallet retrieves a request set by wallet
+func (app *repository) RetrieveSetByWallet(wal wallet.Wallet, index int, amount int) (entity.PartialSet, error) {
+	keynames := []string{
+		retrieveAllRequestsKeyname(),
+		retrieveRequestsByWalletKeyname(wal),
 	}
 	reqPS, reqPSErr := app.entityRepository.RetrieveSetByIntersectKeynames(app.metaData, keynames, index, amount)
 	if reqPSErr != nil {

@@ -29,6 +29,16 @@ func retrieveVotesByVoterIDKeyname(voterID *uuid.UUID) string {
 	return fmt.Sprintf("%s:by_voter_id:%s", base, voterID.String())
 }
 
+func retrieveVotesIsApprovedKeyname(isApproved bool) string {
+	base := retrieveAllVotesKeyname()
+	return fmt.Sprintf("%s:is_approved:%t", base, isApproved)
+}
+
+func retrieveVotesIsNeutralKeyname(isNeutral bool) string {
+	base := retrieveAllVotesKeyname()
+	return fmt.Sprintf("%s:is_neutral:%t", base, isNeutral)
+}
+
 func createMetaData() entity.MetaData {
 	return entity.SDKFunc.CreateMetaData(entity.CreateMetaDataParams{
 		Name: "ActiveVote",
@@ -85,6 +95,8 @@ func createRepresentation() entity.Representation {
 					retrieveVotesByVoteIDKeyname(vot.Vote().ID()),
 					retrieveVotesByRequestIDKeyname(vot.Vote().Request().ID()),
 					retrieveVotesByVoterIDKeyname(vot.Vote().Voter().ID()),
+					retrieveVotesIsApprovedKeyname(vot.Vote().IsApproved()),
+					retrieveVotesIsNeutralKeyname(vot.Vote().IsNeutral()),
 				}, nil
 			}
 

@@ -84,7 +84,25 @@ func (app *repository) RetrieveByRequestVoter(voter user.User, req active_reques
 // RetrieveSetByRequest retrieves a vote set by request
 func (app *repository) RetrieveSetByRequest(req active_request.Request, index int, amount int) (entity.PartialSet, error) {
 	keynames := []string{
+		retrieveAllVotesKeyname(),
 		retrieveVotesByRequestIDKeyname(req.ID()),
+	}
+
+	votePS, votePSErr := app.entityRepository.RetrieveSetByIntersectKeynames(app.metaData, keynames, index, amount)
+	if votePSErr != nil {
+		return nil, votePSErr
+	}
+
+	return votePS, nil
+}
+
+// RetrieveSetByRequestWithDirection retrieves a vote set by request and direction
+func (app *repository) RetrieveSetByRequestWithDirection(req active_request.Request, index int, amount int, isApproved bool, isNeutral bool) (entity.PartialSet, error) {
+	keynames := []string{
+		retrieveAllVotesKeyname(),
+		retrieveVotesByRequestIDKeyname(req.ID()),
+		retrieveVotesIsApprovedKeyname(isApproved),
+		retrieveVotesIsNeutralKeyname(isNeutral),
 	}
 
 	votePS, votePSErr := app.entityRepository.RetrieveSetByIntersectKeynames(app.metaData, keynames, index, amount)

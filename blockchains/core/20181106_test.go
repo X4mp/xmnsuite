@@ -271,9 +271,9 @@ func TestSaveGenesis_addUserToWallet_addAnotherUserToWallerWithSamePublicKey_sav
 
 	// create the vote service:
 	voteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
-		PK:              pk,
-		Client:          client,
-		CreateRouteFunc: createWalletVoteRouteFunc(routePrefix),
+		PK:          pk,
+		Client:      client,
+		RoutePrefix: "",
 	})
 
 	// save the request, returns an error due to the duplicate pubKey on user, of same wallet:
@@ -349,7 +349,7 @@ func TestSaveGenesis_createNewUserOnWallet_Success(t *testing.T) {
 	// save the request then save votes:
 	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, user.SDKFunc.CreateRepresentation(), userInWalletRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		userInWalletRequestVote,
-	}, createWalletVoteRouteFunc(routePrefix))
+	})
 }
 
 func TestSaveGenesis_addUserToWallet_increaseTheNeededConcensus_voteUsingTwoUsers_Success(t *testing.T) {
@@ -402,7 +402,7 @@ func TestSaveGenesis_addUserToWallet_increaseTheNeededConcensus_voteUsingTwoUser
 	// save the request then save votes:
 	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, userRepresentation, userInWalletRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		userInWalletRequestVote,
-	}, createWalletVoteRouteFunc(routePrefix))
+	})
 
 	// retrieve the keyname:
 	walletKanme, walletKanmeErr := knameRepository.RetrieveByName(wallet.SDKFunc.CreateMetaData().Keyname())
@@ -431,7 +431,7 @@ func TestSaveGenesis_addUserToWallet_increaseTheNeededConcensus_voteUsingTwoUser
 	// save the new wallet request, then save vote:
 	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, walletRepresentation, updateWalletRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		updateWalletRequestVote,
-	}, createWalletVoteRouteFunc(routePrefix))
+	})
 
 	// update the wallet to decrease concensus:
 	updateAgainWalletRequest := request.SDKFunc.Create(request.CreateParams{
@@ -461,7 +461,7 @@ func TestSaveGenesis_addUserToWallet_increaseTheNeededConcensus_voteUsingTwoUser
 	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, walletRepresentation, updateAgainWalletRequest, []crypto.PrivateKey{pk, userPK}, []*simpleRequestVote{
 		updateAgainWalletRequestVoteByGenUser,
 		updateAgainWalletRequestVoteByNewlyAddedUser,
-	}, createWalletVoteRouteFunc(routePrefix))
+	})
 }
 
 func TestSaveGenesis_createNewWallet_createPledge_transferPledgeTokens_returnsError(t *testing.T) {
@@ -573,9 +573,9 @@ func TestSaveGenesis_createNewWallet_createPledge_transferPledgeTokens_returnsEr
 
 	// create the vote service:
 	voteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
-		PK:              walPK,
-		Client:          client,
-		CreateRouteFunc: createWalletVoteRouteFunc(routePrefix),
+		PK:          walPK,
+		Client:      client,
+		RoutePrefix: "",
 	})
 
 	// save the vote, it should returns an error:
@@ -654,7 +654,7 @@ func TestSaveGenesis_createNewWallet_createValidator_Success(t *testing.T) {
 	// save the new wallet request, then save vote:
 	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, validatorRepresentation, validatorRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		validatorRequestVote,
-	}, createWalletVoteRouteFunc(routePrefix))
+	})
 }
 
 func TestSaveGenesis_createNewWallet_createTransfer_Success(t *testing.T) {
@@ -727,7 +727,7 @@ func TestSaveGenesis_createNewWallet_createTransfer_Success(t *testing.T) {
 	// save the new wallet request, then save vote:
 	saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, transferRepresentation, trsfRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		trsfRequestVote,
-	}, createWalletVoteRouteFunc(routePrefix))
+	})
 }
 
 func TestSaveGenesis_CreateLink_voteOnLink_Success(t *testing.T) {

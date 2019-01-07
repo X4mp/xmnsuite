@@ -53,36 +53,3 @@ func createMetaData() entity.MetaData {
 		EmptyNormalized: new(storableGroup),
 	})
 }
-
-func toData(grp Group) *Data {
-	out := Data{
-		ID:   grp.ID().String(),
-		Name: grp.Name(),
-	}
-
-	return &out
-}
-
-func toDataSet(ins entity.PartialSet) (*DataSet, error) {
-	data := []*Data{}
-	instances := ins.Instances()
-	for _, oneIns := range instances {
-		if grp, ok := oneIns.(Group); ok {
-			data = append(data, toData(grp))
-			continue
-		}
-
-		str := fmt.Sprintf("at least one of the elements (ID: %s) in the entity partial set is not a valid Group instance", oneIns.ID().String())
-		return nil, errors.New(str)
-	}
-
-	out := DataSet{
-		Index:       ins.Index(),
-		Amount:      ins.Amount(),
-		TotalAmount: ins.TotalAmount(),
-		IsLast:      ins.IsLast(),
-		Groups:      data,
-	}
-
-	return &out, nil
-}
