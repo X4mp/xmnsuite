@@ -3,6 +3,7 @@ package cli
 import (
 	term "github.com/nsf/termbox-go"
 	cliapp "github.com/urfave/cli"
+	"github.com/xmnservices/xmnsuite/blockchains/core/cli/affiliates"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/balance"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/information"
@@ -30,6 +31,7 @@ var SDKFunc = struct {
 	Pledge      func() *cliapp.Command
 	Validator   func() *cliapp.Command
 	Wallet      func() *cliapp.Command
+	Affiliates  func() *cliapp.Command
 	Request     func(met meta.Meta) *cliapp.Command
 }{
 	Spawn: func() *cliapp.Command {
@@ -128,6 +130,19 @@ var SDKFunc = struct {
 			Subcommands: []cliapp.Command{
 				*wallet.SDKFunc.Retrieve(),
 				*wallet.SDKFunc.RetrieveList(),
+			},
+		}
+	},
+	Affiliates: func() *cliapp.Command {
+		return &cliapp.Command{
+			Name:    "affiliates",
+			Aliases: []string{"w"},
+			Usage:   "This is the group of commands to work with affiliates",
+			Subcommands: []cliapp.Command{
+				*affiliates.SDKFunc.Retrieve(),
+				*affiliates.SDKFunc.RetrieveByWallet(),
+				*affiliates.SDKFunc.RetrieveList(),
+				*affiliates.SDKFunc.Save(),
 			},
 		}
 	},

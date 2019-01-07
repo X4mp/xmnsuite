@@ -7,6 +7,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/affiliates"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/transfer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
@@ -87,6 +88,7 @@ var SDKFunc = struct {
 		walletRepresentation := wallet.SDKFunc.CreateRepresentation()
 		validatorRepresentation := validator.SDKFunc.CreateRepresentation()
 		pledgeRepresentation := pledge.SDKFunc.CreateRepresentation()
+		affiliatesRepresentation := affiliates.SDKFunc.CreateRepresentation()
 		transferRepresentation := transfer.SDKFunc.CreateRepresentation()
 		userRepresentation := user.SDKFunc.CreateRepresentation()
 		linkRepresentation := link.SDKFunc.CreateRepresentation()
@@ -131,6 +133,7 @@ var SDKFunc = struct {
 			depositRepresentation.MetaData().Keyname():       depositRepresentation.MetaData(),
 			keynameRepresentation.MetaData().Keyname():       keynameRepresentation.MetaData(),
 			groupRepresentation.MetaData().Keyname():         groupRepresentation.MetaData(),
+			affiliatesRepresentation.MetaData().Keyname():    affiliatesRepresentation.MetaData(),
 		}
 
 		// add the additional reads to the map:
@@ -145,11 +148,12 @@ var SDKFunc = struct {
 
 		// create the additional writes for wallets:
 		additionalWriteForWallet := createEntityRequest(walletRepresentation, map[string]entity.Representation{
-			pledgeRepresentation.MetaData().Keyname():    pledgeRepresentation,
-			transferRepresentation.MetaData().Keyname():  transferRepresentation,
-			userRepresentation.MetaData().Keyname():      userRepresentation,
-			validatorRepresentation.MetaData().Keyname(): validatorRepresentation,
-			walletRepresentation.MetaData().Keyname():    walletRepresentation, // for updates
+			pledgeRepresentation.MetaData().Keyname():     pledgeRepresentation,
+			transferRepresentation.MetaData().Keyname():   transferRepresentation,
+			userRepresentation.MetaData().Keyname():       userRepresentation,
+			validatorRepresentation.MetaData().Keyname():  validatorRepresentation,
+			walletRepresentation.MetaData().Keyname():     walletRepresentation, // for updates
+			affiliatesRepresentation.MetaData().Keyname(): affiliatesRepresentation,
 		})
 
 		// create the additional writes for tokens:

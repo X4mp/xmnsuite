@@ -46,7 +46,7 @@
     "xof/blake2xb",
   ]
   pruneopts = "UT"
-  revision = "2ae155cdd98ef2b5a179c0fa39b74140dae66996"
+  revision = "c4616f8c5ed63cc65099360e2e6cf79085c707fa"
 
 [[projects]]
   digest = "1:c7644c73a3d23741fdba8a99b1464e021a224b7e205be497271a8003a15ca41b"
@@ -125,22 +125,6 @@
   revision = "2e65f85255dbc3072edf28d6b5b8efc472979f5a"
 
 [[projects]]
-  digest = "1:c79fb010be38a59d657c48c6ba1d003a8aa651fa56b579d959d74573b7dff8e1"
-  name = "github.com/gorilla/context"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
-  version = "v1.1.1"
-
-[[projects]]
-  digest = "1:e73f5b0152105f18bc131fba127d9949305c8693f8a762588a82a48f61756f5f"
-  name = "github.com/gorilla/mux"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "e3702bed27f0d39777b0b37b664b6280e8ef8fbf"
-  version = "v1.6.2"
-
-[[projects]]
   digest = "1:43dd08a10854b2056e615d1b1d22ac94559d822e1f8b6fcc92c1a1057e85188e"
   name = "github.com/gorilla/websocket"
   packages = ["."]
@@ -190,19 +174,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:01d9e47830ef6077fb6f91033b0e83f324ad5966d11ed3daa4a5822ace876dab"
+  digest = "1:f3fc7efada7606d5abc88372e1f838ed897fa522077957070fbc2207a50d6faa"
   name = "github.com/nsf/termbox-go"
   packages = ["."]
   pruneopts = "UT"
-  revision = "60ab7e3d12ed91bc1b2486559c4b3a6b62297577"
-
-[[projects]]
-  branch = "master"
-  digest = "1:245217ad0ca92a80bbd6df8ba800a6a046a188102dbe6ec792e171fd315dd4b4"
-  name = "github.com/oelmekki/matrix"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "068382df9967c331988b86ec6c287fb8c85270b1"
+  revision = "0938b5187e61bb8c4dcac2b0a9cf4047d83784fc"
 
 [[projects]]
   digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"
@@ -232,7 +208,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:33c81bf709f084827a560e14415b1d7001a6d1d6fa4bec2cc2e60b84ecbc0e0a"
+  digest = "1:ce62b400185bf6b16ef6088011b719e449f5c15c4adb6821589679f752c2788e"
   name = "github.com/prometheus/common"
   packages = [
     "expfmt",
@@ -240,11 +216,11 @@
     "model",
   ]
   pruneopts = "UT"
-  revision = "67670fe90761d7ff18ec1d640135e53b9198328f"
+  revision = "2998b132700a7d019ff618c06a234b47c1f3f681"
 
 [[projects]]
   branch = "master"
-  digest = "1:d39e7c7677b161c2dd4c635a2ac196460608c7d8ba5337cc8cae5825a2681f8f"
+  digest = "1:08eb8b60450efe841e37512d66ce366a87d187505d7c67b99307a6c1803483a2"
   name = "github.com/prometheus/procfs"
   packages = [
     ".",
@@ -253,7 +229,7 @@
     "xfs",
   ]
   pruneopts = "UT"
-  revision = "1dc9a6cbc91aacc3e8b2d63db4d2e957a5394ac4"
+  revision = "b1a0a9a36d7453ba0f62578b99712f3a6c5f82d1"
 
 [[projects]]
   digest = "1:c4556a44e350b50a490544d9b06e9fba9c286c21d6c0e47f54f3a9214597298c"
@@ -385,7 +361,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:1f59e07ebd63d76709c49e000d0f2bf7c19594b3fbace9c16f74962371205197"
+  digest = "1:7d2aad811396da92f23df2890ed55cd8b5ccd2ecfd77ea34fc9e9f9c3a207d22"
   name = "github.com/yuin/gopher-lua"
   packages = [
     ".",
@@ -394,7 +370,7 @@
     "pm",
   ]
   pruneopts = "UT"
-  revision = "db9ae37725ec65ae634769088627d2d118faf06a"
+  revision = "1e6e6e1918e02ddf02e667e88e8aa756942448c5"
 
 [[projects]]
   branch = "master"
@@ -414,7 +390,7 @@
     "salsa20/salsa",
   ]
   pruneopts = "UT"
-  revision = "505ab145d0a99da450461ae2c1a9f6cd10d1f447"
+  revision = "ff983b9c42bc9fbf91556e191cc8efb585c16908"
 
 [[projects]]
   digest = "1:d36f55a999540d29b6ea3c2ea29d71c76b1d9853fdcd3e5c5cb4836f2ba118f1"
@@ -434,11 +410,11 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:c19ae27d30b61c60cd23366dd6fd0ae953026ac5e71976ff4870af6b6f58b832"
+  digest = "1:d64643374306ef30390ca9ddebc920b87ff1d8044f14eea405a2f060131d20f4"
   name = "golang.org/x/sys"
   packages = ["cpu"]
   pruneopts = "UT"
-  revision = "b4a75ba826a64a70990f11a225237acd6ef35c9f"
+  revision = "20be8e55dc7b4b7a1b1660728164a8509d8c9209"
 
 [[projects]]
   digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"
@@ -519,10 +495,8 @@
   input-imports = [
     "github.com/dedis/kyber",
     "github.com/dedis/kyber/group/edwards25519",
-    "github.com/gorilla/mux",
     "github.com/montanaflynn/stats",
     "github.com/nsf/termbox-go",
-    "github.com/oelmekki/matrix",
     "github.com/satori/go.uuid",
     "github.com/tendermint/go-amino",
     "github.com/tendermint/tendermint/abci/types",

@@ -39,6 +39,7 @@ func main() {
 		*cli.SDKFunc.Transfer(),
 		*cli.SDKFunc.Pledge(),
 		*cli.SDKFunc.Validator(),
+		*cli.SDKFunc.Affiliates(),
 		*cli.SDKFunc.Request(met),
 	}
 

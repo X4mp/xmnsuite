@@ -5,6 +5,7 @@ import (
 	entity "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	genesis "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	wallet "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
+	affiliates "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/affiliates"
 	pledge "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/pledge"
 	transfer "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/transfer"
 	validator "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/validator"
@@ -29,6 +30,7 @@ func init() {
 func Register(codec *amino.Codec) {
 	// dependencies:
 	wallet.Register(codec)
+	affiliates.Register(codec)
 	token.Register(codec)
 	deposit.Register(codec)
 	withdrawal.Register(codec)
