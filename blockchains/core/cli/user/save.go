@@ -39,6 +39,11 @@ func save() *cliapp.Command {
 				Value: 100,
 				Usage: "This is the amount of shares",
 			},
+			cliapp.StringFlag{
+				Name:  "name",
+				Value: "",
+				Usage: "The name of the user.  Accepted characters are letters, numbers and underscores (_).  Minimum length: 3 characters.",
+			},
 			cliapp.IntFlag{
 				Name:  "cneeded",
 				Value: 100,
@@ -80,6 +85,7 @@ func save() *cliapp.Command {
 				CLIContext:           c,
 				EntityRepresentation: information.SDKFunc.CreateRepresentation(),
 				SaveEntity: user.SDKFunc.Create(user.CreateParams{
+					Name:   c.String("name"),
 					PubKey: pubKey,
 					Shares: shares,
 					Wallet: wallet.SDKFunc.Create(wallet.CreateParams{

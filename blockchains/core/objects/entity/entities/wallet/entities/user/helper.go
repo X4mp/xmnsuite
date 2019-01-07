@@ -24,6 +24,11 @@ func retrieveUserByWalletIDKeyname(walletID *uuid.UUID) string {
 	return fmt.Sprintf("%s:by_wallet_id:%s", base, walletID.String())
 }
 
+func retrieveUserByNameKeyname(name string) string {
+	base := retrieveAllUserKeyname()
+	return fmt.Sprintf("%s:by_name:%s", base, name)
+}
+
 func createMetaData() entity.MetaData {
 	return entity.SDKFunc.CreateMetaData(entity.CreateMetaDataParams{
 		Name: "User",
@@ -52,8 +57,7 @@ func createMetaData() entity.MetaData {
 				}
 
 				if wal, ok := ins.(wallet.Wallet); ok {
-					out := createUser(&id, pubKey, storable.Shares, wal)
-					return out, nil
+					return createUser(&id, storable.Name, pubKey, storable.Shares, wal)
 				}
 
 				str := fmt.Sprintf("the entity (ID: %s) is not a valid Wallet instance and thererfore the given data cannot be transformed to a User instance", walletID.String())

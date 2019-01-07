@@ -15,6 +15,7 @@ import (
 type User interface {
 	ID() *uuid.UUID
 	PubKey() crypto.PublicKey
+	Name() string
 	Shares() int
 	Wallet() wallet.Wallet
 }
@@ -26,6 +27,7 @@ type Normalized interface {
 // Repository represents the user repository
 type Repository interface {
 	RetrieveByID(id *uuid.UUID) (User, error)
+	RetrieveByName(name string) (User, error)
 	RetrieveByPubKeyAndWallet(pubKey crypto.PublicKey, wal wallet.Wallet) (User, error)
 	RetrieveSetByPubKey(pubKey crypto.PublicKey, index int, amount int) (entity.PartialSet, error)
 	RetrieveSetByWallet(wal wallet.Wallet, index int, amount int) (entity.PartialSet, error)
@@ -35,17 +37,10 @@ type Repository interface {
 // CreateParams represents the Create params
 type CreateParams struct {
 	ID     *uuid.UUID
+	Name   string
 	PubKey crypto.PublicKey
 	Shares int
 	Wallet wallet.Wallet
-}
-
-// CreateNormalizedParams represents the CreateNormalized params
-type CreateNormalizedParams struct {
-	ID     string
-	PubKey string
-	Shares int
-	Wallet wallet.Normalized
 }
 
 // CreateRepositoryParams represents the CreateRepository params
@@ -57,7 +52,6 @@ type CreateRepositoryParams struct {
 // SDKFunc represents the User SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) User
-	CreateNormalized     func(params CreateNormalizedParams) Normalized
 	CreateRepository     func(params CreateRepositoryParams) Repository
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
@@ -68,16 +62,12 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out := createUser(params.ID, params.PubKey, params.Shares, params.Wallet)
-		return out
-	},
-	CreateNormalized: func(params CreateNormalizedParams) Normalized {
-		if params.ID == "" {
-			id := uuid.NewV4()
-			params.ID = id.String()
+		out, outErr := createUser(params.ID, params.Name, params.PubKey, params.Shares, params.Wallet)
+		if outErr != nil {
+			panic(outErr)
 		}
 
-		return createNormalizedUserFromParams(params.ID, params.PubKey, params.Shares, params.Wallet)
+		return out
 	},
 	CreateRepository: func(params CreateRepositoryParams) Repository {
 		if params.Store != nil {
@@ -109,6 +99,7 @@ var SDKFunc = struct {
 						retrieveAllUserKeyname(),
 						retrieveUserByPubKeyKeyname(usr.PubKey()),
 						retrieveUserByWalletIDKeyname(usr.Wallet().ID()),
+						retrieveUserByNameKeyname(usr.Name()),
 					}, nil
 				}
 
@@ -133,6 +124,13 @@ var SDKFunc = struct {
 					_, retUserErr := repository.RetrieveByPubKeyAndWallet(usr.PubKey(), usr.Wallet())
 					if retUserErr == nil {
 						str := fmt.Sprintf("the User instance (PubKey: %s, WalletID: %s) already exists", usr.PubKey().String(), usr.Wallet().ID().String())
+						return errors.New(str)
+					}
+
+					// make sure there is no other user with the same name:
+					_, retUserByNameErr := repository.RetrieveByName(usr.Name())
+					if retUserByNameErr == nil {
+						str := fmt.Sprintf("the User instance (Name: %s) already exists", usr.Name())
 						return errors.New(str)
 					}
 

@@ -3,6 +3,7 @@ package user
 import (
 	"errors"
 	"fmt"
+	"regexp"
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
@@ -11,20 +12,34 @@ import (
 
 type user struct {
 	UUID  *uuid.UUID       `json:"id"`
+	Nme   string           `json:"name"`
 	PKey  crypto.PublicKey `json:"pubkey"`
 	Shres int              `json:"shares"`
 	Wal   wallet.Wallet    `json:"wallet"`
 }
 
-func createUser(id *uuid.UUID, pubKey crypto.PublicKey, shares int, wallet wallet.Wallet) User {
+func createUser(id *uuid.UUID, nme string, pubKey crypto.PublicKey, shares int, wallet wallet.Wallet) (User, error) {
+
+	pattern, patternErr := regexp.Compile("[a-zA-Z0-9_]{3,}")
+	if patternErr != nil {
+		return nil, patternErr
+	}
+
+	found := pattern.FindString(nme)
+	if found != nme {
+		str := fmt.Sprintf("the name (%s) must only contain letters, numbers and underscores (_) with at least 3 characters", nme)
+		return nil, errors.New(str)
+	}
+
 	out := user{
 		UUID:  id,
+		Nme:   nme,
 		PKey:  pubKey,
 		Shres: shares,
 		Wal:   wallet,
 	}
 
-	return &out
+	return &out, nil
 }
 
 func createUserFromNormalizedUser(ins *normalizedUser) (User, error) {
@@ -43,8 +58,7 @@ func createUserFromNormalizedUser(ins *normalizedUser) (User, error) {
 	}
 
 	if wal, ok := walIns.(wallet.Wallet); ok {
-		out := createUser(&id, pubKey, ins.Shares, wal)
-		return out, nil
+		return createUser(&id, ins.Name, pubKey, ins.Shares, wal)
 	}
 
 	str := fmt.Sprintf("the entity (ID: %s) is not a valid Wallet instance", walIns.ID().String())
@@ -54,6 +68,11 @@ func createUserFromNormalizedUser(ins *normalizedUser) (User, error) {
 // ID returns the ID
 func (app *user) ID() *uuid.UUID {
 	return app.UUID
+}
+
+// Name returns the name of the user
+func (app *user) Name() string {
+	return app.Nme
 }
 
 // PubKey returns the PublicKey

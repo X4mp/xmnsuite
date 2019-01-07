@@ -39,6 +39,26 @@ func (app *repository) RetrieveByID(id *uuid.UUID) (User, error) {
 	return nil, errors.New(str)
 }
 
+// RetrieveByName retrieves a User instance by its name
+func (app *repository) RetrieveByName(name string) (User, error) {
+	keynames := []string{
+		retrieveAllUserKeyname(),
+		retrieveUserByNameKeyname(name),
+	}
+
+	ins, insErr := app.entityRepository.RetrieveByIntersectKeynames(app.userMetaData, keynames)
+	if insErr != nil {
+		return nil, insErr
+	}
+
+	if usr, ok := ins.(User); ok {
+		return usr, nil
+	}
+
+	str := fmt.Sprintf("the entity (ID: %s) is not a valid User instance", ins.ID().String())
+	return nil, errors.New(str)
+}
+
 // RetrieveByPubKeyAndWallet retrieves a User instance by its publicKey and wallet
 func (app *repository) RetrieveByPubKeyAndWallet(pubKey crypto.PublicKey, wal wallet.Wallet) (User, error) {
 	ins, insErr := app.entityRepository.RetrieveByIntersectKeynames(app.userMetaData, []string{

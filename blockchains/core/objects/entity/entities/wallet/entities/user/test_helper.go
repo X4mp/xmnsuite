@@ -10,13 +10,23 @@ import (
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func randStringBytes(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
+}
+
 // CreateUserForTests creates a User for tests
 func CreateUserForTests() User {
 	id := uuid.NewV4()
 	pubKey := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{}).PublicKey()
 	shares := rand.Int() % 100
 	wal := wallet.CreateWalletWithPublicKeyForTests(pubKey)
-	out := createUser(&id, pubKey, shares, wal)
+	out, _ := createUser(&id, randStringBytes(10), pubKey, shares, wal)
 	return out
 }
 
@@ -25,7 +35,7 @@ func CreateUserWithSharesAndConcensusNeededForTests(concensusNeeded int, shares 
 	id := uuid.NewV4()
 	pubKey := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{}).PublicKey()
 	wal := wallet.CreateWalletWithPubKeyAndConcensusNeededForTests(pubKey, concensusNeeded)
-	out := createUser(&id, pubKey, shares, wal)
+	out, _ := createUser(&id, randStringBytes(10), pubKey, shares, wal)
 	return out
 }
 
@@ -34,7 +44,7 @@ func createUserWithSharesForTests(shares int) User {
 	id := uuid.NewV4()
 	pubKey := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{}).PublicKey()
 	wal := wallet.CreateWalletWithPublicKeyForTests(pubKey)
-	out := createUser(&id, pubKey, shares, wal)
+	out, _ := createUser(&id, randStringBytes(10), pubKey, shares, wal)
 	return out
 }
 
@@ -43,7 +53,7 @@ func CreateUserWithWalletForTests(wal wallet.Wallet) User {
 	id := uuid.NewV4()
 	pubKey := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{}).PublicKey()
 	shares := rand.Int() % 100
-	out := createUser(&id, pubKey, shares, wal)
+	out, _ := createUser(&id, randStringBytes(10), pubKey, shares, wal)
 	return out
 }
 
@@ -52,7 +62,7 @@ func CreateUserWithPublicKeyForTests(pubKey crypto.PublicKey) User {
 	id := uuid.NewV4()
 	shares := rand.Int() % 100
 	wal := wallet.CreateWalletWithPublicKeyForTests(pubKey)
-	out := createUser(&id, pubKey, shares, wal)
+	out, _ := createUser(&id, randStringBytes(10), pubKey, shares, wal)
 	return out
 }
 
@@ -60,14 +70,14 @@ func CreateUserWithPublicKeyForTests(pubKey crypto.PublicKey) User {
 func CreateUserWithWalletAndPublicKeyForTests(wal wallet.Wallet, pubKey crypto.PublicKey) User {
 	id := uuid.NewV4()
 	shares := rand.Int() % 100
-	out := createUser(&id, pubKey, shares, wal)
+	out, _ := createUser(&id, randStringBytes(10), pubKey, shares, wal)
 	return out
 }
 
 // CreateUserWithWalletAndPublicKeyAndSharesForTests creates a User with Wallet and PubKey and shares for tests
 func CreateUserWithWalletAndPublicKeyAndSharesForTests(wal wallet.Wallet, pubKey crypto.PublicKey, shares int) User {
 	id := uuid.NewV4()
-	out := createUser(&id, pubKey, shares, wal)
+	out, _ := createUser(&id, randStringBytes(10), pubKey, shares, wal)
 	return out
 }
 
