@@ -9,6 +9,7 @@ var SDKFunc = struct {
 	Retrieve     func() *cliapp.Command
 	RetrieveList func() *cliapp.Command
 	Save         func() *cliapp.Command
+	SaveToWallet func() *cliapp.Command
 	Delete       func() *cliapp.Command
 }{
 	Retrieve: func() *cliapp.Command {
@@ -19,6 +20,9 @@ var SDKFunc = struct {
 	},
 	Save: func() *cliapp.Command {
 		return save()
+	},
+	SaveToWallet: func() *cliapp.Command {
+		return saveToWallet()
 	},
 	Delete: func() *cliapp.Command {
 		return delete()

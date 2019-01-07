@@ -72,6 +72,7 @@ var SDKFunc = struct {
 				*user.SDKFunc.Retrieve(),
 				*user.SDKFunc.RetrieveList(),
 				*user.SDKFunc.Save(),
+				*user.SDKFunc.SaveToWallet(),
 				*user.SDKFunc.Delete(),
 			},
 		}
