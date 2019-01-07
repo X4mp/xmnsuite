@@ -21,6 +21,17 @@ func CreatePledgeForTests() Pledge {
 	return out
 }
 
+// CreatePledgeWithAmountForTests creates a pledge instance with amount for tests
+func CreatePledgeWithAmountForTests(amount int) Pledge {
+	id := uuid.NewV4()
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	from := withdrawal.CreateWithdrawalWithPublicKeyAndAmountForTests(pubKey, amount)
+	to := wallet.CreateWalletWithPublicKeyForTests(pubKey)
+	out := createPledge(&id, from, to)
+	return out
+}
+
 // ComparePledgesForTests compares 2 Pledge instances for tests
 func ComparePledgesForTests(t *testing.T, first Pledge, second Pledge) {
 	if !reflect.DeepEqual(first.ID(), second.ID()) {

@@ -21,6 +21,15 @@ func CreateWithdrawalWithPublicKeyForTests(pubKey crypto.PublicKey) Withdrawal {
 	return out
 }
 
+// CreateWithdrawalWithPublicKeyAndAmountForTests creates a withdrawal instance for tests
+func CreateWithdrawalWithPublicKeyAndAmountForTests(pubKey crypto.PublicKey, amount int) Withdrawal {
+	id := uuid.NewV4()
+	fromWallet := wallet.CreateWalletWithPublicKeyForTests(pubKey)
+	tok := token.CreateTokenForTests()
+	out, _ := createWithdrawal(&id, fromWallet, tok, amount)
+	return out
+}
+
 // CompareWithdrawalsForTests compares 2 Withdrawals instances for tests
 func CompareWithdrawalsForTests(t *testing.T, first Withdrawal, second Withdrawal) {
 	if !reflect.DeepEqual(first.ID(), second.ID()) {

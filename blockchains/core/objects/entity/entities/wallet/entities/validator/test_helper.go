@@ -24,6 +24,17 @@ func CreateValidatorForTests() Validator {
 	return out
 }
 
+// CreateValidatorWithPledgeAmountForTests creates a Validator with pledge amount instance for tests
+func CreateValidatorWithPledgeAmountForTests(amount int) Validator {
+	id := uuid.NewV4()
+	pkey := ed25519.GenPrivKey().PubKey()
+	pldge := pledge.CreatePledgeWithAmountForTests(amount)
+	ip := net.ParseIP("127.0.0.1")
+	port := rand.Int()%9000 + 1000
+	out := createValidator(&id, ip, port, pkey, pldge)
+	return out
+}
+
 // CompareValidatorsForTests compares 2 Validator instances for tests
 func CompareValidatorsForTests(t *testing.T, first Validator, second Validator) {
 	if !reflect.DeepEqual(first.ID(), second.ID()) {

@@ -27,7 +27,10 @@ type Normalized interface {
 
 // Repository represents the validator repository
 type Repository interface {
+	RetrieveByID(id *uuid.UUID) (Validator, error)
+	RetrieveByPledge(pldge pledge.Pledge) (Validator, error)
 	RetrieveSet(index int, amount int) (entity.PartialSet, error)
+	RetrieveSetOrderedByPledgeAmount(index int, amount int) ([]Validator, error)
 }
 
 // CreateParams represents the Create params
@@ -39,11 +42,16 @@ type CreateParams struct {
 	Pledge pledge.Pledge
 }
 
+// CreateRepositoryParams represents the CreateRepository params
+type CreateRepositoryParams struct {
+	Store            datastore.DataStore
+	EntityRepository entity.Repository
+}
+
 // SDKFunc represents the Validator SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Validator
-	CreateRepository     func(ds datastore.DataStore) Repository
-	CreateSDKRepository  func(entityRepository entity.Repository) Repository
+	CreateRepository     func(params CreateRepositoryParams) Repository
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 }{
@@ -56,15 +64,13 @@ var SDKFunc = struct {
 		out := createValidator(params.ID, params.IP, params.Port, params.PubKey, params.Pledge)
 		return out
 	},
-	CreateRepository: func(ds datastore.DataStore) Repository {
+	CreateRepository: func(params CreateRepositoryParams) Repository {
 		met := createMetaData()
-		entityRepository := entity.SDKFunc.CreateRepository(ds)
-		out := createRepository(entityRepository, met)
-		return out
-	},
-	CreateSDKRepository: func(entityRepository entity.Repository) Repository {
-		met := createMetaData()
-		out := createRepository(entityRepository, met)
+		if params.Store != nil {
+			params.EntityRepository = entity.SDKFunc.CreateRepository(params.Store)
+		}
+
+		out := createRepository(params.EntityRepository, met)
 		return out
 	},
 	CreateMetaData: func() entity.MetaData {
@@ -84,9 +90,15 @@ var SDKFunc = struct {
 				return nil, errors.New(str)
 			},
 			Keynames: func(ins entity.Entity) ([]string, error) {
-				return []string{
-					retrieveAllValidatorsKeyname(),
-				}, nil
+				if val, ok := ins.(Validator); ok {
+					return []string{
+						retrieveAllValidatorsKeyname(),
+						retrieveValidatorsByPledgeKeyname(val.Pledge()),
+					}, nil
+				}
+
+				str := fmt.Sprintf("the entity (ID: %s) is not a valid Validator instance", ins.ID().String())
+				return nil, errors.New(str)
 			},
 			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
 				// create the repository and service:
@@ -105,15 +117,18 @@ var SDKFunc = struct {
 						return errors.New(str)
 					}
 
-					// try to retrieve the pledge, save it if it doesnt exists:
+					// try to retrieve the pledge, return an error if it exists:
 					pldge := val.Pledge()
 					_, retPledgeErr := repository.RetrieveByID(pledgeRepresentation.MetaData(), pldge.ID())
-					if retPledgeErr != nil {
-						// save the pledge:
-						saveErr := service.Save(pldge, pledgeRepresentation)
-						if saveErr != nil {
-							return saveErr
-						}
+					if retPledgeErr == nil {
+						str := fmt.Sprintf("the validator (ID: %s) contains a pledge (ID: %s) that already exists", val.ID().String(), pldge.ID().String())
+						return errors.New(str)
+					}
+
+					// save the pledge:
+					saveErr := service.Save(pldge, pledgeRepresentation)
+					if saveErr != nil {
+						return saveErr
 					}
 
 					return nil

@@ -4,6 +4,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"math"
 	"net"
 
 	uuid "github.com/satori/go.uuid"
@@ -15,6 +16,11 @@ import (
 
 func retrieveAllValidatorsKeyname() string {
 	return "validators"
+}
+
+func retrieveValidatorsByPledgeKeyname(pldge pledge.Pledge) string {
+	base := retrieveAllValidatorsKeyname()
+	return fmt.Sprintf("%s:by_pledge_id:%s", base, pldge.ID().String())
 }
 
 func createMetaData() entity.MetaData {
@@ -102,4 +108,70 @@ func fromEncodedStringToPubKey(str string) (crypto.PubKey, error) {
 	}
 
 	return pubKey, nil
+}
+
+func orderValPSByPledge(valIns []Validator, index int, amount int) ([]Validator, error) {
+
+	getSmallestValidator := func(combinedVals map[int][]Validator) (int, []Validator) {
+		smallest := math.MaxInt64 - 1
+		for amount := range combinedVals {
+			if smallest >= amount {
+				smallest = amount
+			}
+		}
+
+		return smallest, combinedVals[smallest]
+	}
+
+	combinedVals := map[int][]Validator{}
+	for _, val := range valIns {
+		isIn := false
+		pldgeAmount := val.Pledge().From().Amount()
+		for am := range combinedVals {
+			if am == pldgeAmount {
+				combinedVals[am] = append(combinedVals[am], val)
+				isIn = true
+				break
+			}
+		}
+
+		if !isIn {
+			combinedVals[pldgeAmount] = []Validator{
+				val,
+			}
+		}
+	}
+
+	length := len(combinedVals)
+	orderedCombinedVals := [][]Validator{}
+	for i := 0; i < length; i++ {
+		idx, vals := getSmallestValidator(combinedVals)
+		orderedCombinedVals = append(orderedCombinedVals, vals)
+		delete(combinedVals, idx)
+	}
+
+	if index < 0 {
+		index = 0
+	}
+
+	if amount < 0 {
+		amount = 0
+	}
+
+	valLength := len(valIns)
+	if index >= valLength {
+		index = valLength
+	}
+
+	reqLength := index + amount
+	if reqLength >= valLength {
+		amount = valLength - index
+	}
+
+	out := []Validator{}
+	for _, vals := range orderedCombinedVals {
+		out = append(out, vals...)
+	}
+
+	return out[index : index+amount], nil
 }

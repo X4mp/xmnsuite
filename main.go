@@ -38,6 +38,7 @@ func main() {
 		*cli.SDKFunc.User(),
 		*cli.SDKFunc.Transfer(),
 		*cli.SDKFunc.Pledge(),
+		*cli.SDKFunc.Validator(),
 	}
 
 	err := app.Run(os.Args)

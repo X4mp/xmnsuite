@@ -9,6 +9,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/transfer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/cli/validator"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/wallet"
 )
 
@@ -25,6 +26,7 @@ var SDKFunc = struct {
 	User        func() *cliapp.Command
 	Transfer    func() *cliapp.Command
 	Pledge      func() *cliapp.Command
+	Validator   func() *cliapp.Command
 	Wallet      func() *cliapp.Command
 }{
 	Spawn: func() *cliapp.Command {
@@ -97,6 +99,20 @@ var SDKFunc = struct {
 				*pledge.SDKFunc.RetrieveTo(),
 				*pledge.SDKFunc.Create(),
 				*pledge.SDKFunc.Delete(),
+			},
+		}
+	},
+	Validator: func() *cliapp.Command {
+		return &cliapp.Command{
+			Name:    "validator",
+			Aliases: []string{"v"},
+			Usage:   "This is the group of commands to work with validators",
+			Subcommands: []cliapp.Command{
+				*validator.SDKFunc.Retrieve(),
+				*validator.SDKFunc.RetrieveByPledge(),
+				*validator.SDKFunc.RetrieveList(),
+				*validator.SDKFunc.Create(),
+				*validator.SDKFunc.Delete(),
 			},
 		}
 	},

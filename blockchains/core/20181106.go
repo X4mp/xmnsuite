@@ -120,16 +120,18 @@ func create20181106(
 			}
 
 			// retrieve the validators:
-			validatorRepository := validator.SDKFunc.CreateRepository(ds)
-			valPS, valPSErr := validatorRepository.RetrieveSet(0, gen.Info().MaxAmountOfValidators())
-			if valPSErr != nil {
-				return nil, valPSErr
+			validatorRepository := validator.SDKFunc.CreateRepository(validator.CreateRepositoryParams{
+				Store: ds,
+			})
+
+			vals, valsErr := validatorRepository.RetrieveSetOrderedByPledgeAmount(0, gen.Info().MaxAmountOfValidators())
+			if valsErr != nil {
+				return nil, valsErr
 			}
 
 			// create the application validators:
-			valsIns := valPS.Instances()
 			appVals := []applications.Validator{}
-			for _, oneValIns := range valsIns {
+			for _, oneValIns := range vals {
 				oneVal := oneValIns.(validator.Validator)
 				appVals = append(appVals, applications.SDKFunc.CreateValidator(applications.CreateValidatorParams{
 					IP:     oneVal.IP(),
