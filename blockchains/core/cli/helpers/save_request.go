@@ -4,10 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	uuid "github.com/satori/go.uuid"
 	cliapp "github.com/urfave/cli"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
@@ -34,10 +32,6 @@ func saveRequest(c *cliapp.Context, entityRepresentation entity.Representation, 
 		Client: client,
 	})
 
-	walletRepository := wallet.SDKFunc.CreateRepository(wallet.CreateRepositoryParams{
-		EntityRepository: entityRepository,
-	})
-
 	userRepository := user.SDKFunc.CreateRepository(user.CreateRepositoryParams{
 		EntityRepository: entityRepository,
 	})
@@ -46,25 +40,10 @@ func saveRequest(c *cliapp.Context, entityRepresentation entity.Representation, 
 		EntityRepository: entityRepository,
 	})
 
-	// parse the walletID:
-	walletIDAsString := c.String("walletid")
-	walletID, walletIDErr := uuid.FromString(walletIDAsString)
-	if walletIDErr != nil {
-		str := fmt.Sprintf("the given walletid (ID: %s) is not a valid id", walletIDAsString)
-		return nil, errors.New(str)
-	}
-
-	// retrieve the wallet:
-	fromWallet, fromWalletErr := walletRepository.RetrieveByID(&walletID)
-	if fromWalletErr != nil {
-		str := fmt.Sprintf("there was an error while retrieving the wallet (ID: %s): %s", walletID.String(), fromWalletErr)
-		return nil, errors.New(str)
-	}
-
 	// retrieve my user:
-	fromUser, fromUSerErr := userRepository.RetrieveByPubKeyAndWallet(conf.WalletPK().PublicKey(), fromWallet)
-	if fromUSerErr != nil {
-		str := fmt.Sprintf("there was an error while retrieving the user (PubKey: %s, WalletID): %s", conf.WalletPK().PublicKey(), fromWallet.ID().String())
+	fromUser, fromUserErr := userRepository.RetrieveByPubKey(conf.WalletPK().PublicKey())
+	if fromUserErr != nil {
+		str := fmt.Sprintf("there was an error while retrieving the user (PubKey: %s): %s", conf.WalletPK().PublicKey(), fromUserErr.Error())
 		return nil, errors.New(str)
 	}
 

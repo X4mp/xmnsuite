@@ -59,12 +59,11 @@ func (app *repository) RetrieveByName(name string) (User, error) {
 	return nil, errors.New(str)
 }
 
-// RetrieveByPubKeyAndWallet retrieves a User instance by its publicKey and wallet
-func (app *repository) RetrieveByPubKeyAndWallet(pubKey crypto.PublicKey, wal wallet.Wallet) (User, error) {
+// RetrieveByPubKey retrieves a User instance by its publicKey
+func (app *repository) RetrieveByPubKey(pubKey crypto.PublicKey) (User, error) {
 	ins, insErr := app.entityRepository.RetrieveByIntersectKeynames(app.userMetaData, []string{
 		retrieveAllUserKeyname(),
 		retrieveUserByPubKeyKeyname(pubKey),
-		retrieveUserByWalletIDKeyname(wal.ID()),
 	})
 
 	if insErr != nil {
@@ -75,7 +74,7 @@ func (app *repository) RetrieveByPubKeyAndWallet(pubKey crypto.PublicKey, wal wa
 		return usr, nil
 	}
 
-	str := fmt.Sprintf("the entity (ID: %s) retrieved (using pubKey: %s, walletID: %s) is not a valid User instance", ins.ID().String(), pubKey.String(), wal.ID().String())
+	str := fmt.Sprintf("the entity (ID: %s) retrieved (using pubKey: %s) is not a valid User instance", ins.ID().String(), pubKey.String())
 	return nil, errors.New(str)
 }
 

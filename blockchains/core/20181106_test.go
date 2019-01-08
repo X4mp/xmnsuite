@@ -198,31 +198,6 @@ func TestSaveGenesis_createAccount_Success(t *testing.T) {
 	saveUserWithNewWallet(t, routePrefix, client, pk, service, repository, genIns.User(), userIns)
 }
 
-func TestSaveGenesis_createWalletWithSameCreator_Success(t *testing.T) {
-	// variables:
-	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
-	pubKey := pk.PublicKey()
-	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
-	walletIns := wallet.CreateWalletWithPublicKeyForTests(genIns.User().Wallet().Creator())
-	userIns := user.CreateUserWithWalletAndPublicKeyAndSharesForTests(walletIns, walletIns.Creator(), walletIns.ConcensusNeeded())
-
-	rootPath := filepath.Join("./test_files_TestSaveGenesis_createWalletWithSameCreator_Success")
-	routePrefix := "/some-route-prefix"
-	defer func() {
-		os.RemoveAll(rootPath)
-	}()
-
-	// spawn bockchain with genesis instance:
-	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, routePrefix, genIns)
-	defer node.Stop()
-
-	// create the user with the new wallet:
-	saveUserWithNewWallet(t, routePrefix, client, pk, service, repository, genIns.User(), userIns)
-
-	// compare the wallets:
-	wallet.CompareWalletsForTests(t, walletIns.(wallet.Wallet), userIns.Wallet())
-}
-
 func TestSaveGenesis_addUserToWallet_addAnotherUserToWallerWithSamePublicKey_saveVotesWithEnoughSharesToPass_returnsError(t *testing.T) {
 	// variables:
 	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
@@ -597,6 +572,8 @@ func TestSaveGenesis_createNewWallet_createValidator_Success(t *testing.T) {
 	userIns := user.CreateUserWithWalletForTests(walletIns)
 
 	vldator := validator.SDKFunc.Create(validator.CreateParams{
+		IP:     net.ParseIP("127.0.0.1"),
+		Port:   8080,
 		PubKey: ed25519.GenPrivKey().PubKey(),
 		Pledge: pledge.SDKFunc.Create(pledge.CreateParams{
 			From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{

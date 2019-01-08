@@ -12,6 +12,9 @@ type Information interface {
 	GazPricePerKb() int
 	ConcensusNeeded() int
 	MaxAmountOfValidators() int
+	NetworkShare() int
+	ValidatorsShare() int
+	AffiliateShare() int
 }
 
 // Normalized represents the normalized Information instance
@@ -34,6 +37,9 @@ type CreateParams struct {
 	GazPricePerKb         int
 	ConcensusNeeded       int
 	MaxAmountOfValidators int
+	NetworkShare          int
+	ValidatorsShare       int
+	AffiliateShare        int
 }
 
 // CreateRepositoryParams represents the CreateRepository params
@@ -63,7 +69,7 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out, outErr := createInformation(params.ID, params.ConcensusNeeded, params.GazPricePerKb, params.MaxAmountOfValidators)
+		out, outErr := createInformation(params.ID, params.ConcensusNeeded, params.GazPricePerKb, params.MaxAmountOfValidators, params.NetworkShare, params.ValidatorsShare, params.AffiliateShare)
 		if outErr != nil {
 			panic(outErr)
 		}

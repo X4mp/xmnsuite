@@ -76,16 +76,14 @@ func TestUser_Success(t *testing.T) {
 	}
 
 	// retrieve, should have 1 user with that public key:
-	retPS, retPSErr := repository.RetrieveSetByPubKey(usr.PubKey(), 0, 20)
-	if retPSErr != nil {
-		t.Errorf("the returned error was expected to be nil, error returned: %s", retPSErr.Error())
+	retUsrByPubKey, retUsrByPubKeyErr := repository.RetrieveByPubKey(usr.PubKey())
+	if retUsrByPubKeyErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", retUsrByPubKeyErr.Error())
 		return
 	}
 
-	if retPS.Amount() != 1 {
-		t.Errorf("the was supposed to be %d usrlets, %d returned", 1, retPS.Amount())
-		return
-	}
+	// compare:
+	CompareUserForTests(t, usr.(User), retUsrByPubKey.(User))
 
 	empty := new(user)
 	tests.ConvertToBinary(t, usr, empty, cdc)

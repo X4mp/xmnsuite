@@ -14,7 +14,9 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/affiliates"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/validator"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/fees"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	active_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote"
@@ -276,14 +278,43 @@ func (app *core20181108) saveEntity() routers.CreateRouteParams {
 						return nil, jsDataErr
 					}
 
-					// create the gaz price:
-					gazUsed := int(unsafe.Sizeof(jsData)) * gen.Info().GazPricePerKb()
+					// retrieve the client:
+					client, clientErr := dep.userRepository.RetrieveByPubKey(from)
+					if clientErr != nil {
+						return nil, clientErr
+					}
+
+					// retrieve the affiliate:
+					var aff affiliates.Affiliate
+					if client.HasBeenReferred() {
+						aff, _ = dep.affiliateRepository.RetrieveByWallet(client.Referral())
+					}
+
+					vals, valsErr := dep.validatorRepository.RetrieveSetOrderedByPledgeAmount(0, gen.Info().MaxAmountOfValidators())
+					if valsErr != nil {
+						return nil, valsErr
+					}
+
+					// create the fees:
+					fee := fees.SDKFunc.Create(fees.CreateParams{
+						Gen:        gen,
+						StoredData: jsData,
+						Client:     client,
+						Affiliate:  aff,
+						Validators: vals,
+					})
+
+					// save the fees:
+					saveFeesErr := dep.entityService.Save(fee, fees.SDKFunc.CreateRepresentation())
+					if saveFeesErr != nil {
+						return nil, saveFeesErr
+					}
 
 					// return the response:
 					resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
 						Code:    routers.IsSuccessful,
 						Log:     "success",
-						GazUsed: int64(gazUsed),
+						GazUsed: int64(fee.Client().Amount()),
 						Tags: map[string][]byte{
 							path: jsData,
 						},
@@ -624,14 +655,14 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 				return nil, errors.New(str)
 			}
 
-			if wal, ok := walIns.(wallet.Wallet); ok {
-				// retrieve the user:
-				usr, usrErr := dep.userRepository.RetrieveByPubKeyAndWallet(from, wal)
-				if usrErr != nil {
-					str := fmt.Sprintf("the requester PublicKey (%s) is not a user on the given wallet (ID: %s)", from.String(), wal.ID().String())
-					return nil, errors.New(str)
-				}
+			// retrieve the user:
+			usr, usrErr := dep.userRepository.RetrieveByPubKey(from)
+			if usrErr != nil {
+				str := fmt.Sprintf("the requester PublicKey (%s) is not a valid user", from.String())
+				return nil, errors.New(str)
+			}
 
+			if wal, ok := walIns.(wallet.Wallet); ok {
 				if keynameName, ok := params["keyname"]; ok {
 					// retrieve the keyname by name:
 					kname, knameErr := dep.keynameRepository.RetrieveByName(keynameName)
@@ -718,14 +749,43 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 								return nil, jsDataErr
 							}
 
-							// create the gaz price:
-							gazUsed := int(unsafe.Sizeof(jsData)) * gen.Info().GazPricePerKb()
+							// retrieve the client:
+							client, clientErr := dep.userRepository.RetrieveByPubKey(from)
+							if clientErr != nil {
+								return nil, clientErr
+							}
+
+							// retrieve the affiliate:
+							var aff affiliates.Affiliate
+							if client.HasBeenReferred() {
+								aff, _ = dep.affiliateRepository.RetrieveByWallet(client.Referral())
+							}
+
+							vals, valsErr := dep.validatorRepository.RetrieveSetOrderedByPledgeAmount(0, gen.Info().MaxAmountOfValidators())
+							if valsErr != nil {
+								return nil, valsErr
+							}
+
+							// create the fees:
+							fee := fees.SDKFunc.Create(fees.CreateParams{
+								Gen:        gen,
+								StoredData: jsData,
+								Client:     client,
+								Affiliate:  aff,
+								Validators: vals,
+							})
+
+							// save the fees:
+							saveFeesErr := dep.entityService.Save(fee, fees.SDKFunc.CreateRepresentation())
+							if saveFeesErr != nil {
+								return nil, saveFeesErr
+							}
 
 							// return the response:
 							resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
 								Code:    routers.IsSuccessful,
 								Log:     "success",
-								GazUsed: int64(gazUsed),
+								GazUsed: int64(fee.Client().Amount()),
 								Tags: map[string][]byte{
 									path: jsData,
 								},
@@ -856,14 +916,43 @@ func (app *core20181108) saveEntityRequestVote() routers.CreateRouteParams {
 								return nil, jsDataErr
 							}
 
-							// create the gaz price:
-							gazUsed := int(unsafe.Sizeof(jsData)) * gen.Info().GazPricePerKb()
+							// retrieve the client:
+							client, clientErr := dep.userRepository.RetrieveByPubKey(from)
+							if clientErr != nil {
+								return nil, clientErr
+							}
+
+							// retrieve the affiliate:
+							var aff affiliates.Affiliate
+							if client.HasBeenReferred() {
+								aff, _ = dep.affiliateRepository.RetrieveByWallet(client.Referral())
+							}
+
+							vals, valsErr := dep.validatorRepository.RetrieveSetOrderedByPledgeAmount(0, gen.Info().MaxAmountOfValidators())
+							if valsErr != nil {
+								return nil, valsErr
+							}
+
+							// create the fees:
+							fee := fees.SDKFunc.Create(fees.CreateParams{
+								Gen:        gen,
+								StoredData: jsData,
+								Client:     client,
+								Affiliate:  aff,
+								Validators: vals,
+							})
+
+							// save the fees:
+							saveFeesErr := dep.entityService.Save(fee, fees.SDKFunc.CreateRepresentation())
+							if saveFeesErr != nil {
+								return nil, saveFeesErr
+							}
 
 							// return the response:
 							resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
 								Code:    routers.IsSuccessful,
 								Log:     "success",
-								GazUsed: int64(gazUsed),
+								GazUsed: int64(fee.Client().Amount()),
 								Tags: map[string][]byte{
 									path: jsData,
 								},

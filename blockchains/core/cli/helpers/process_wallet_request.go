@@ -4,10 +4,8 @@ import (
 	"errors"
 	"fmt"
 
-	uuid "github.com/satori/go.uuid"
 	cliapp "github.com/urfave/cli"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
@@ -22,14 +20,6 @@ func processWalletRequest(c *cliapp.Context, representation entity.Representatio
 	conf, confErr := confRepository.Retrieve(fileAsString, c.String("pass"))
 	if confErr != nil {
 		str := fmt.Sprintf("the given file (%s) either does not exist or the given password is invalid", fileAsString)
-		return nil, errors.New(str)
-	}
-
-	// convert the walletid:
-	walletIDAsString := c.String("walletid")
-	walID, walIDErr := uuid.FromString(walletIDAsString)
-	if walIDErr != nil {
-		str := fmt.Sprintf("the given walletID (ID: %s) is invalid, but mandatory", walletIDAsString)
 		return nil, errors.New(str)
 	}
 
@@ -48,11 +38,6 @@ func processWalletRequest(c *cliapp.Context, representation entity.Representatio
 		RoutePrefix: "",
 	})
 
-	// create the user repository:
-	walletRepository := wallet.SDKFunc.CreateRepository(wallet.CreateRepositoryParams{
-		EntityRepository: entityRepository,
-	})
-
 	userRepository := user.SDKFunc.CreateRepository(user.CreateRepositoryParams{
 		EntityRepository: entityRepository,
 	})
@@ -68,13 +53,6 @@ func processWalletRequest(c *cliapp.Context, representation entity.Representatio
 		RoutePrefix: "",
 	})
 
-	// retrieve the wallet:
-	wal, walErr := walletRepository.RetrieveByID(&walID)
-	if walErr != nil {
-		str := fmt.Sprintf("there was an error while retrieving a wallet (ID: %s): %s", walID.String(), walErr.Error())
-		return nil, errors.New(str)
-	}
-
 	// convert the storable to an entity:
 	ent, entErr := metaData.ToEntity()(entityRepository, storable)
 	if entErr != nil {
@@ -84,9 +62,9 @@ func processWalletRequest(c *cliapp.Context, representation entity.Representatio
 
 	// retrieve the from user:
 	pubKey := conf.WalletPK().PublicKey()
-	fromUser, fromUserErr := userRepository.RetrieveByPubKeyAndWallet(pubKey, wal)
+	fromUser, fromUserErr := userRepository.RetrieveByPubKey(pubKey)
 	if fromUserErr != nil {
-		str := fmt.Sprintf("there was an error while retrieving a user (pubKey: %s, walletID: %s): %s", pubKey.String(), wal.ID().String(), fromUserErr.Error())
+		str := fmt.Sprintf("there was an error while retrieving a user (pubKey: %s): %s", pubKey.String(), fromUserErr.Error())
 		return nil, errors.New(str)
 	}
 

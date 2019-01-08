@@ -29,6 +29,11 @@ func retrieveUserByNameKeyname(name string) string {
 	return fmt.Sprintf("%s:by_name:%s", base, name)
 }
 
+func retrieveUserByWalletReferralKeyname(walletRefID *uuid.UUID) string {
+	base := retrieveAllUserKeyname()
+	return fmt.Sprintf("%s:by_wallet_referral_id:%s", base, walletRefID)
+}
+
 func createMetaData() entity.MetaData {
 	return entity.SDKFunc.CreateMetaData(entity.CreateMetaDataParams{
 		Name: "User",
@@ -57,10 +62,30 @@ func createMetaData() entity.MetaData {
 				}
 
 				if wal, ok := ins.(wallet.Wallet); ok {
+
+					if storable.ReferralID != "" {
+						refID, refIDErr := uuid.FromString(storable.ReferralID)
+						if refIDErr != nil {
+							return nil, refIDErr
+						}
+
+						refIns, refInsErr := rep.RetrieveByID(walletMetaData, &refID)
+						if refInsErr != nil {
+							return nil, refInsErr
+						}
+
+						if ref, ok := refIns.(wallet.Wallet); ok {
+							return createUserWithReferral(&id, storable.Name, pubKey, storable.Shares, wal, ref)
+						}
+
+						str := fmt.Sprintf("the entity (ID: %s) is not a valid Wallet instance", refIns.ID().String())
+						return nil, errors.New(str)
+					}
+
 					return createUser(&id, storable.Name, pubKey, storable.Shares, wal)
 				}
 
-				str := fmt.Sprintf("the entity (ID: %s) is not a valid Wallet instance and thererfore the given data cannot be transformed to a User instance", walletID.String())
+				str := fmt.Sprintf("the entity (ID: %s) is not a valid Wallet instance", walletID.String())
 				return nil, errors.New(str)
 			}
 
