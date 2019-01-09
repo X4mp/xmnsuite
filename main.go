@@ -2,8 +2,10 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 
+	update "github.com/inconshreveable/go-update"
 	term "github.com/nsf/termbox-go"
 	amino "github.com/tendermint/go-amino"
 	cliapp "github.com/urfave/cli"
@@ -48,4 +50,14 @@ func main() {
 		log.Fatal(err)
 	}
 
+}
+
+func doUpdate(url string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	upErr := update.Apply(resp.Body, update.Options{})
+	return upErr
 }

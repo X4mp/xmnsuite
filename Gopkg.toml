@@ -38,6 +38,10 @@
   name = "github.com/robertkrimen/otto"
   branch = "master"
 
+[[override]]
+  name = "github.com/inconshreveable/go-update"
+  branch = "master"
+
 [prune]
   go-tests = true
   unused-packages = true
