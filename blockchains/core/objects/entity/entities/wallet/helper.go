@@ -17,6 +17,11 @@ func retrieveByPublicKeyWalletKeyname(pubKey crypto.PublicKey) string {
 	return fmt.Sprintf("%s:by_pubkey:%s", base, pubKey.String())
 }
 
+func retrieveByNameKeyname(name string) string {
+	base := retrieveAllWalletKeyname()
+	return fmt.Sprintf("%s:by_name:%s", base, name)
+}
+
 func createMetaData() entity.MetaData {
 	return entity.SDKFunc.CreateMetaData(entity.CreateMetaDataParams{
 		Name: "Wallet",

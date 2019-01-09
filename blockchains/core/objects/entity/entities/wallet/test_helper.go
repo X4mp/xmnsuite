@@ -9,6 +9,16 @@ import (
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func randStringBytes(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
+}
+
 // CreateWalletForTests creates a Wallet instance, for tests
 func CreateWalletForTests() Wallet {
 	pubKey := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{}).PublicKey()
@@ -25,7 +35,7 @@ func CreateWalletWithPublicKeyForTests(pubKey crypto.PublicKey) Wallet {
 // CreateWalletWithPubKeyAndConcensusNeededForTests creates a Wallet instance with a required concensus, for tests
 func CreateWalletWithPubKeyAndConcensusNeededForTests(pubKey crypto.PublicKey, concensusNeeded int) Wallet {
 	id := uuid.NewV4()
-	out := createWallet(&id, pubKey, concensusNeeded)
+	out, _ := createWallet(&id, randStringBytes(10), pubKey, concensusNeeded)
 	return out
 }
 

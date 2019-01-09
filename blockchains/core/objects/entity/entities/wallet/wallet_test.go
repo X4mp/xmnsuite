@@ -15,7 +15,7 @@ func TestWallet_Success(t *testing.T) {
 	pubKey := privKey.PublicKey()
 
 	wal := CreateWalletWithPublicKeyForTests(pubKey)
-	invalidWal := createWallet(wal.ID(), crypto.SDKFunc.CreatePK(crypto.CreatePKParams{}).PublicKey(), 32)
+	invalidWal, _ := createWallet(wal.ID(), wal.Name(), crypto.SDKFunc.CreatePK(crypto.CreatePKParams{}).PublicKey(), 32)
 	anotherWal := CreateWalletWithPublicKeyForTests(pubKey)
 
 	// create repository and service:

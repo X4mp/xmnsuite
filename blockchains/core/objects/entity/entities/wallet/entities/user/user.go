@@ -25,14 +25,14 @@ func createUser(id *uuid.UUID, nme string, pubKey crypto.PublicKey, shares int, 
 
 func createUserWithReferral(id *uuid.UUID, nme string, pubKey crypto.PublicKey, shares int, wallet wallet.Wallet, ref wallet.Wallet) (User, error) {
 
-	pattern, patternErr := regexp.Compile("[a-zA-Z0-9_]{3,}")
+	pattern, patternErr := regexp.Compile("[a-zA-Z0-9-]{3,}")
 	if patternErr != nil {
 		return nil, patternErr
 	}
 
 	found := pattern.FindString(nme)
 	if found != nme {
-		str := fmt.Sprintf("the name (%s) must only contain letters, numbers and underscores (_) with at least 3 characters", nme)
+		str := fmt.Sprintf("the name (%s) must only contain letters, numbers and hyphens (-) with at least 3 characters", nme)
 		return nil, errors.New(str)
 	}
 
