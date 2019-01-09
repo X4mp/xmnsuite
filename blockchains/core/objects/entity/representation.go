@@ -7,9 +7,10 @@ type representation struct {
 	keynames Keynames
 	toData   ToStorable
 	onSave   OnSave
+	onDelete OnDelete
 }
 
-func createRepresentation(met MetaData, toData ToStorable, keynames Keynames, onSave OnSave) (Representation, error) {
+func createRepresentation(met MetaData, toData ToStorable, keynames Keynames, onSave OnSave, onDelete OnDelete) (Representation, error) {
 
 	if met == nil {
 		return nil, errors.New("the metadata is mandatory in order to create a representation instance")
@@ -24,6 +25,7 @@ func createRepresentation(met MetaData, toData ToStorable, keynames Keynames, on
 		keynames: keynames,
 		toData:   toData,
 		onSave:   onSave,
+		onDelete: onDelete,
 	}
 
 	return &out, nil
@@ -57,4 +59,9 @@ func (obj *representation) HasSync() bool {
 // OnSave returns the OnSave: func
 func (obj *representation) OnSave() OnSave {
 	return obj.onSave
+}
+
+// OnDelete returns the OnDelete: func
+func (obj *representation) OnDelete() OnDelete {
+	return obj.onDelete
 }

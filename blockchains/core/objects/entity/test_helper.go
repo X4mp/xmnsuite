@@ -26,7 +26,7 @@ func CreateRepresentationForTests() Representation {
 		}, nil
 	}
 
-	out, _ := createRepresentation(met, toData, keynames, nil)
+	out, _ := createRepresentation(met, toData, keynames, nil, nil)
 	return out
 }
 

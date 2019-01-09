@@ -22,6 +22,9 @@ type Keynames func(ins Entity) ([]string, error)
 // OnSave is a method executed before saving the entity instance.  Can be used to store the sub entities in the database, before storing the current entity
 type OnSave func(ds datastore.DataStore, ins Entity) error
 
+// OnDelete is a method executed before deleting the entity instance.  Can be used to cleanup sub entities
+type OnDelete func(ds datastore.DataStore, ins Entity) error
+
 // Normalize normalized an entity
 type Normalize func(ins Entity) (interface{}, error)
 
@@ -60,6 +63,7 @@ type Representation interface {
 	Keynames() Keynames
 	HasSync() bool
 	OnSave() OnSave
+	OnDelete() OnDelete
 }
 
 // PartialSet represents an  entity partial set
@@ -111,6 +115,7 @@ type CreateRepresentationParams struct {
 	ToStorable ToStorable
 	Keynames   Keynames
 	OnSave     OnSave
+	OnDelete   OnDelete
 }
 
 // CreateSDKRepositoryParams represents the CreateSDKRepository params
@@ -167,7 +172,7 @@ var SDKFunc = struct {
 		return met
 	},
 	CreateRepresentation: func(params CreateRepresentationParams) Representation {
-		out, outErr := createRepresentation(params.Met, params.ToStorable, params.Keynames, params.OnSave)
+		out, outErr := createRepresentation(params.Met, params.ToStorable, params.Keynames, params.OnSave, params.OnDelete)
 		if outErr != nil {
 			panic(outErr)
 		}
