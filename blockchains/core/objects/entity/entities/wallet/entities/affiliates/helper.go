@@ -83,7 +83,7 @@ func createRepresentation() entity.Representation {
 			str := fmt.Sprintf("the given entity (ID: %s) is not a valid Affiliate instance", ins.ID().String())
 			return nil, errors.New(str)
 		},
-		Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+		OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 			// create the entity repository and service:
 			entityRepository := entity.SDKFunc.CreateRepository(ds)
 			walletReposiotry := wallet.SDKFunc.CreateRepository(wallet.CreateRepositoryParams{

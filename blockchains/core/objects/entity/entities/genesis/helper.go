@@ -140,7 +140,7 @@ func representation() entity.Representation {
 				keyname(),
 			}, nil
 		},
-		Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+		OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 			if gen, ok := ins.(Genesis); ok {
 				// the user must have enough shares in order to fill the concensus, on genesis:
 				genUser := gen.User()

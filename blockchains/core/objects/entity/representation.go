@@ -6,10 +6,10 @@ type representation struct {
 	met      MetaData
 	keynames Keynames
 	toData   ToStorable
-	sync     Sync
+	onSave   OnSave
 }
 
-func createRepresentation(met MetaData, toData ToStorable, keynames Keynames, sync Sync) (Representation, error) {
+func createRepresentation(met MetaData, toData ToStorable, keynames Keynames, onSave OnSave) (Representation, error) {
 
 	if met == nil {
 		return nil, errors.New("the metadata is mandatory in order to create a representation instance")
@@ -23,7 +23,7 @@ func createRepresentation(met MetaData, toData ToStorable, keynames Keynames, sy
 		met:      met,
 		keynames: keynames,
 		toData:   toData,
-		sync:     sync,
+		onSave:   onSave,
 	}
 
 	return &out, nil
@@ -51,10 +51,10 @@ func (obj *representation) Keynames() Keynames {
 
 // HasSync returns true if there is a Sync func, false otherwise
 func (obj *representation) HasSync() bool {
-	return obj.sync != nil
+	return obj.onSave != nil
 }
 
-// Sync returns the sync func
-func (obj *representation) Sync() Sync {
-	return obj.sync
+// OnSave returns the OnSave: func
+func (obj *representation) OnSave() OnSave {
+	return obj.onSave
 }

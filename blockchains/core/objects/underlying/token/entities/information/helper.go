@@ -87,7 +87,7 @@ func representation() entity.Representation {
 				keyname(),
 			}, nil
 		},
-		Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+		OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 			if info, ok := ins.(Information); ok {
 				// crate metadata and representation:
 				metaData := createMetaData()

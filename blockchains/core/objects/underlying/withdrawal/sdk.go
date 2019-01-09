@@ -92,7 +92,7 @@ var SDKFunc = struct {
 				return nil, errors.New(str)
 
 			},
-			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+			OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 
 				calculate := func(withs []Withdrawal, deps []deposit.Deposit) (int, error) {
 					// calculate the withdrawals amount:

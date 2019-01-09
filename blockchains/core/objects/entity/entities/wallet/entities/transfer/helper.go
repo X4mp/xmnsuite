@@ -131,7 +131,7 @@ func createRepresentation() entity.Representation {
 			str := fmt.Sprintf("the entity (ID: %s) is not a valid Transfer instance", ins.ID().String())
 			return nil, errors.New(str)
 		},
-		Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+		OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 			// create the repository and service:
 			repository := entity.SDKFunc.CreateRepository(ds)
 			service := entity.SDKFunc.CreateService(ds)

@@ -163,7 +163,7 @@ var SDKFunc = struct {
 
 				return nil, errors.New("the given entity is not a valid Fee instance")
 			},
-			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+			OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 				if fe, ok := ins.(Fee); ok {
 					// metadata:
 					metaData := createMetaData()

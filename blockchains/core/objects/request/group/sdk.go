@@ -81,7 +81,7 @@ var SDKFunc = struct {
 
 				return nil, errors.New("the given entity is not a valid Group instance")
 			},
-			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+			OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 				if grp, ok := ins.(Group); ok {
 					// metadata:
 					metaData := createMetaData()

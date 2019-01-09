@@ -92,7 +92,7 @@ var SDKFunc = struct {
 				return nil, errors.New(str)
 
 			},
-			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+			OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 
 				// create the entity repository and service:
 				repository := entity.SDKFunc.CreateRepository(ds)

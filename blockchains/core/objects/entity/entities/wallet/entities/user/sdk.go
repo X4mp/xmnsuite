@@ -124,7 +124,7 @@ var SDKFunc = struct {
 				return nil, errors.New(str)
 
 			},
-			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+			OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 
 				if usr, ok := ins.(User); ok {
 
