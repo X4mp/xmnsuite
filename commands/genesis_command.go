@@ -59,7 +59,6 @@ func (app *genesisCommand) Execute() (applications.Node, error) {
 		Port:          conf.Port(),
 		NodePK:        conf.NodePrivateKey(),
 		RootDir:       conf.BlockchainRootDirectory(),
-		RoutePrefix:   cons.RoutePrefix(),
 		RouterRoleKey: cons.RouterRoleKey(),
 		RootPubKey:    app.conf.RootPrivateKey().PublicKey(),
 		Store:         store,
@@ -89,16 +88,14 @@ func (app *genesisCommand) Execute() (applications.Node, error) {
 
 	// create the genesis service:
 	entityService := entity.SDKFunc.CreateSDKService(entity.CreateSDKServiceParams{
-		PK:          app.conf.RootPrivateKey(),
-		Client:      client,
-		RoutePrefix: cons.RoutePrefix(),
+		PK:     app.conf.RootPrivateKey(),
+		Client: client,
 	})
 
 	genesisService := genesis.SDKFunc.CreateService(genesis.CreateServiceParams{
 		EntityRepository: entity.SDKFunc.CreateSDKRepository(entity.CreateSDKRepositoryParams{
-			PK:          app.conf.RootPrivateKey(),
-			Client:      client,
-			RoutePrefix: cons.RoutePrefix(),
+			PK:     app.conf.RootPrivateKey(),
+			Client: client,
 		}),
 		EntityService: entityService,
 	})

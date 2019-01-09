@@ -63,7 +63,7 @@ func createConstantFromParams(params CreateConstantsParams) Constants {
 		panic(idErr)
 	}
 
-	cons, consErr := createConstants(params.Namespace, params.Name, &id, params.RoutePrefix, params.RouterRoleKey)
+	cons, consErr := createConstants(params.Namespace, params.Name, &id, params.RouterRoleKey)
 	if consErr != nil {
 		panic(consErr)
 	}

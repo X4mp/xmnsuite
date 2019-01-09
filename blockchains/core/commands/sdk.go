@@ -13,7 +13,6 @@ const (
 	id                           = "5aac4a8d-7cb5-457c-b43d-ca0933c20dab"
 	databaseFilePath             = "db/blockchain/blockchain.db"
 	blockchainRootDirectory      = "db/blockchain/files"
-	routePrefix                  = ""
 	tokenSymbol                  = "XMN"
 	tokenName                    = "XMN"
 	tokenDescription             = "The XMN core is a decentralized core blockchain infrastructure."

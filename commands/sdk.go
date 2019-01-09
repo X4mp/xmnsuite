@@ -23,7 +23,6 @@ type Constants interface {
 	Namespace() string
 	Name() string
 	ID() *uuid.UUID
-	RoutePrefix() string
 	RouterRoleKey() string
 }
 
@@ -63,7 +62,6 @@ type CreateConstantsParams struct {
 	Namespace     string
 	Name          string
 	ID            string
-	RoutePrefix   string
 	RouterRoleKey string
 }
 

@@ -120,16 +120,14 @@ type CreateRepresentationParams struct {
 
 // CreateSDKRepositoryParams represents the CreateSDKRepository params
 type CreateSDKRepositoryParams struct {
-	PK          crypto.PrivateKey
-	Client      applications.Client
-	RoutePrefix string
+	PK     crypto.PrivateKey
+	Client applications.Client
 }
 
 // CreateSDKServiceParams represents the CreateSDKService params
 type CreateSDKServiceParams struct {
-	PK          crypto.PrivateKey
-	Client      applications.Client
-	RoutePrefix string
+	PK     crypto.PrivateKey
+	Client applications.Client
 }
 
 // NormalizePartialSetParams represents the normalize partial set params
@@ -189,11 +187,11 @@ var SDKFunc = struct {
 		return out
 	},
 	CreateSDKRepository: func(params CreateSDKRepositoryParams) Repository {
-		out := createSDKRepository(params.PK, params.Client, params.RoutePrefix)
+		out := createSDKRepository(params.PK, params.Client)
 		return out
 	},
 	CreateSDKService: func(params CreateSDKServiceParams) Service {
-		out := createSDKService(params.PK, params.Client, params.RoutePrefix)
+		out := createSDKService(params.PK, params.Client)
 		return out
 	},
 	NormalizePartialSet: func(params NormalizePartialSetParams) NormalizedPartialSet {

@@ -51,9 +51,8 @@ type RegisterParams struct {
 
 // CreateSDKServiceParams represents the CreateSDKService params
 type CreateSDKServiceParams struct {
-	PK          crypto.PrivateKey
-	Client      applications.Client
-	RoutePrefix string
+	PK     crypto.PrivateKey
+	Client applications.Client
 }
 
 var reg = createRegistry()
@@ -152,7 +151,7 @@ var SDKFunc = struct {
 		})
 	},
 	CreateSDKService: func(params CreateSDKServiceParams) Service {
-		out := createSDKService(params.PK, params.Client, params.RoutePrefix)
+		out := createSDKService(params.PK, params.Client)
 		return out
 	},
 }

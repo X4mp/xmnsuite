@@ -33,7 +33,6 @@ func createBlockchain(
 			Namespace:     namespace,
 			Name:          name,
 			ID:            id.String(),
-			RoutePrefix:   "",
 			RouterRoleKey: "router-role-key",
 		},
 		Port:                    port,

@@ -89,9 +89,8 @@ func create(met meta.Meta) *cliapp.Command {
 			})
 
 			voteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
-				PK:          conf.WalletPK(),
-				Client:      client,
-				RoutePrefix: "",
+				PK:     conf.WalletPK(),
+				Client: client,
 			})
 
 			activeVoteRepository := active_vote.SDKFunc.CreateRepository(active_vote.CreateRepositoryParams{

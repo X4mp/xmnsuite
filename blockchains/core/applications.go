@@ -13,7 +13,6 @@ func createApplications(
 	name string,
 	id *uuid.UUID,
 	rootDir string,
-	routePrefix string,
 	routerRoleKey string,
 	ds datastore.StoredDataStore,
 	met meta.Meta,
@@ -22,7 +21,7 @@ func createApplications(
 	// create the applications:
 	apps := applications.SDKFunc.CreateApplications(applications.CreateApplicationsParams{
 		Apps: []applications.Application{
-			create20181106(namespace, name, id, 0, -1, rootDir, routePrefix, routerRoleKey, ds, met),
+			create20181106(namespace, name, id, 0, -1, rootDir, routerRoleKey, ds, met),
 		},
 	})
 
@@ -34,7 +33,6 @@ func createApplicationsWithRootPubKey(
 	name string,
 	id *uuid.UUID,
 	rootDir string,
-	routePrefix string,
 	routerRoleKey string,
 	ds datastore.StoredDataStore,
 	met meta.Meta,
@@ -44,7 +42,7 @@ func createApplicationsWithRootPubKey(
 	// create the applications:
 	apps := applications.SDKFunc.CreateApplications(applications.CreateApplicationsParams{
 		Apps: []applications.Application{
-			create20181106WithRootPubKey(namespace, name, id, 0, -1, rootDir, routePrefix, routerRoleKey, ds, met, rootPubKey),
+			create20181106WithRootPubKey(namespace, name, id, 0, -1, rootDir, routerRoleKey, ds, met, rootPubKey),
 		},
 	})
 

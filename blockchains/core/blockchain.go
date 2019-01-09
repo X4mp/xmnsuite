@@ -36,7 +36,6 @@ func spawnBlockchain(
 	id *uuid.UUID,
 	seeds []string,
 	rootDirPath string,
-	routePrefix string,
 	port int,
 	met meta.Meta,
 ) (applications.Node, error) {
@@ -61,7 +60,7 @@ func spawnBlockchain(
 
 	// create the applications:
 	routerRoleKey := "router-role"
-	apps := createApplications(namespace, name, id, rootDirPath, routePrefix, routerRoleKey, store, met)
+	apps := createApplications(namespace, name, id, rootDirPath, routerRoleKey, store, met)
 
 	// create the application service:
 	appService := tendermint.SDKFunc.CreateApplicationService()
@@ -81,7 +80,6 @@ func saveThenSpawnBlockchain(
 	id *uuid.UUID,
 	seeds []string,
 	rootDirPath string,
-	routePrefix string,
 	port int,
 	pk tcrypto.PrivKey,
 	rootPubKey crypto.PublicKey,
@@ -110,7 +108,7 @@ func saveThenSpawnBlockchain(
 
 	// create the applications:
 	routerRoleKey := "router-role"
-	apps := createApplicationsWithRootPubKey(namespace, name, id, rootDirPath, routePrefix, routerRoleKey, store, met, rootPubKey)
+	apps := createApplicationsWithRootPubKey(namespace, name, id, rootDirPath, routerRoleKey, store, met, rootPubKey)
 
 	// create the application service:
 	appService := tendermint.SDKFunc.CreateApplicationService()

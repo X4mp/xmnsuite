@@ -33,9 +33,8 @@ func processWalletRequest(c *cliapp.Context, representation entity.Representatio
 
 	// create the repositories:
 	entityRepository := entity.SDKFunc.CreateSDKRepository(entity.CreateSDKRepositoryParams{
-		PK:          conf.WalletPK(),
-		Client:      client,
-		RoutePrefix: "",
+		PK:     conf.WalletPK(),
+		Client: client,
 	})
 
 	userRepository := user.SDKFunc.CreateRepository(user.CreateRepositoryParams{
@@ -48,9 +47,8 @@ func processWalletRequest(c *cliapp.Context, representation entity.Representatio
 
 	// create the services:
 	requestService := request.SDKFunc.CreateSDKService(request.CreateSDKServiceParams{
-		PK:          conf.WalletPK(),
-		Client:      client,
-		RoutePrefix: "",
+		PK:     conf.WalletPK(),
+		Client: client,
 	})
 
 	// convert the storable to an entity:

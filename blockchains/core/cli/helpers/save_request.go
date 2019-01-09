@@ -21,9 +21,8 @@ func saveRequest(c *cliapp.Context, entityRepresentation entity.Representation, 
 
 	// create the request service:
 	reqService := request.SDKFunc.CreateSDKService(request.CreateSDKServiceParams{
-		PK:          conf.WalletPK(),
-		Client:      client,
-		RoutePrefix: "",
+		PK:     conf.WalletPK(),
+		Client: client,
 	})
 
 	// create the repositories:
