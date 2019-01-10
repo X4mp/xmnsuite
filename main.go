@@ -30,6 +30,7 @@ func main() {
 	app.Name = "xmn"
 	app.Usage = "This is the xmn core application"
 	app.Commands = []cliapp.Command{
+		*cli.SDKFunc.Config(),
 		*cli.SDKFunc.Spawn(),
 		*cli.SDKFunc.Wallet(),
 		*cli.SDKFunc.Genesis(),

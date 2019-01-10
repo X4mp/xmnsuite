@@ -22,6 +22,7 @@ func reset() {
 
 // SDKFunc represents the CLI sdk func
 var SDKFunc = struct {
+	Config 		func() *cliapp.Command
 	Spawn       func() *cliapp.Command
 	Genesis     func() *cliapp.Command
 	Information func() *cliapp.Command
@@ -34,6 +35,9 @@ var SDKFunc = struct {
 	Affiliates  func() *cliapp.Command
 	Request     func(met meta.Meta) *cliapp.Command
 }{
+	Config: func() *cliapp.Command {
+		return generateConfig()
+	},
 	Spawn: func() *cliapp.Command {
 		return spawn()
 	},

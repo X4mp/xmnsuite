@@ -29,17 +29,16 @@ func spawn() *cliapp.Command {
 			},
 			cliapp.StringFlag{
 				Name:  "pass",
-				Value: "",
+				Value: "ADck5qlB",
 				Usage: "this is the password used to decrypt your configuration file",
 			},
 			cliapp.StringFlag{
 				Name:  "file",
-				Value: "",
+				Value: "xmn.conf",
 				Usage: "this is the path of your encrypted configuration file",
 			},
 		},
 		Action: func(c *cliapp.Context) error {
-
 			// spawn the node:
 			node := commands.SDKFunc.Spawn(commands.SpawnParams{
 				Pass:     c.String("pass"),
@@ -66,7 +65,6 @@ func spawn() *cliapp.Command {
 			// blockchain started, loop until we stop:
 			str := fmt.Sprintf("XMN cloud blockchain spawned, IP: %s\nPress Esc to stop...", client.IP())
 			helpers.Print(str)
-
 		keyPressListenerLoop:
 			for {
 				switch ev := term.PollEvent(); ev.Type {

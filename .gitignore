@@ -12,3 +12,5 @@ ui/libs
 .DS_Store
 credentials.xmn
 credentials2.xmn
+
+/.idea/
