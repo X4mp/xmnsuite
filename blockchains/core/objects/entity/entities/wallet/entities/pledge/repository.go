@@ -1,6 +1,7 @@
 package pledge
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 
@@ -35,6 +36,31 @@ func (app *repository) RetrieveByID(id *uuid.UUID) (Pledge, error) {
 	}
 
 	str := fmt.Sprintf("the entity (ID: %s) is not a valid Pledge instance", ins.ID().String())
+	return nil, errors.New(str)
+}
+
+// RetrieveByFromAndToWallet retrieves a pledge by from and to wallet
+func (app *repository) RetrieveByFromAndToWallet(frm wallet.Wallet, to wallet.Wallet) (Pledge, error) {
+	pldgePS, pldgePSErr := app.RetrieveSetByFromWallet(frm, 0, -1)
+	if pldgePSErr != nil {
+		return nil, pldgePSErr
+	}
+
+	pldges := pldgePS.Instances()
+	for _, onePledgeIns := range pldges {
+		if onePledge, ok := onePledgeIns.(Pledge); ok {
+			if bytes.Compare(onePledge.To().ID().Bytes(), to.ID().Bytes()) == 0 {
+				return onePledge, nil
+			}
+
+			continue
+		}
+
+		str := fmt.Sprintf("the entity (ID: %s) is not a valid Pledge instance", onePledgeIns.ID().String())
+		return nil, errors.New(str)
+	}
+
+	str := fmt.Sprintf("there is no pledge that match a from wallet (ID: %s) and to wallet (ID: %s)", frm.ID().String(), to.ID().String())
 	return nil, errors.New(str)
 }
 

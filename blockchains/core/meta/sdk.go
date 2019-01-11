@@ -9,6 +9,13 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/affiliates"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project/feature"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project/milestone"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project/milestone/task"
+	completed_task "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project/milestone/task/completed"
+	pledge_task "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project/milestone/task/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/transfer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/validator"
@@ -18,9 +25,11 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/category"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/information"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/link"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/node"
+	approved_project "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/project"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/withdrawal"
 )
 
@@ -99,6 +108,15 @@ var SDKFunc = struct {
 		activeVoteRepresentation := active_vote.SDKFunc.CreateRepresentation()
 		withdrawalRepresentation := withdrawal.SDKFunc.CreateRepresentation()
 		depositRepresentation := deposit.SDKFunc.CreateRepresentation()
+		categoryRepresentation := category.SDKFunc.CreateRepresentation()
+		proposalRepresentation := proposal.SDKFunc.CreateRepresentation()
+		approvedProjectRepresentation := approved_project.SDKFunc.CreateRepresentation()
+		projectRepresentation := project.SDKFunc.CreateRepresentation()
+		milestoneRepresentation := milestone.SDKFunc.CreateRepresentation()
+		featureRepresentation := feature.SDKFunc.CreateRepresentation()
+		taskRepresentation := task.SDKFunc.CreateRepresentation()
+		pledgeTaskRepresentation := pledge_task.SDKFunc.CreateRepresentation()
+		completedTaskRepresentation := completed_task.SDKFunc.CreateRepresentation()
 
 		// create the additional writes:
 		additionalWrites := map[string]entity.Representation{
@@ -118,22 +136,31 @@ var SDKFunc = struct {
 
 		// create the read:
 		additionalReads := map[string]entity.MetaData{
-			genesisRepresentation.MetaData().Keyname():       genesisRepresentation.MetaData(),
-			informationRepresentation.MetaData().Keyname():   informationRepresentation.MetaData(),
-			walletRepresentation.MetaData().Keyname():        walletRepresentation.MetaData(),
-			validatorRepresentation.MetaData().Keyname():     validatorRepresentation.MetaData(),
-			userRepresentation.MetaData().Keyname():          userRepresentation.MetaData(),
-			activeRequestRepresentation.MetaData().Keyname(): activeRequestRepresentation.MetaData(),
-			activeVoteRepresentation.MetaData().Keyname():    activeVoteRepresentation.MetaData(),
-			pledgeRepresentation.MetaData().Keyname():        pledgeRepresentation.MetaData(),
-			transferRepresentation.MetaData().Keyname():      transferRepresentation.MetaData(),
-			linkRepresentation.MetaData().Keyname():          linkRepresentation.MetaData(),
-			nodeRepresentation.MetaData().Keyname():          nodeRepresentation.MetaData(),
-			withdrawalRepresentation.MetaData().Keyname():    withdrawalRepresentation.MetaData(),
-			depositRepresentation.MetaData().Keyname():       depositRepresentation.MetaData(),
-			keynameRepresentation.MetaData().Keyname():       keynameRepresentation.MetaData(),
-			groupRepresentation.MetaData().Keyname():         groupRepresentation.MetaData(),
-			affiliatesRepresentation.MetaData().Keyname():    affiliatesRepresentation.MetaData(),
+			genesisRepresentation.MetaData().Keyname():         genesisRepresentation.MetaData(),
+			informationRepresentation.MetaData().Keyname():     informationRepresentation.MetaData(),
+			walletRepresentation.MetaData().Keyname():          walletRepresentation.MetaData(),
+			validatorRepresentation.MetaData().Keyname():       validatorRepresentation.MetaData(),
+			userRepresentation.MetaData().Keyname():            userRepresentation.MetaData(),
+			activeRequestRepresentation.MetaData().Keyname():   activeRequestRepresentation.MetaData(),
+			activeVoteRepresentation.MetaData().Keyname():      activeVoteRepresentation.MetaData(),
+			pledgeRepresentation.MetaData().Keyname():          pledgeRepresentation.MetaData(),
+			transferRepresentation.MetaData().Keyname():        transferRepresentation.MetaData(),
+			linkRepresentation.MetaData().Keyname():            linkRepresentation.MetaData(),
+			nodeRepresentation.MetaData().Keyname():            nodeRepresentation.MetaData(),
+			withdrawalRepresentation.MetaData().Keyname():      withdrawalRepresentation.MetaData(),
+			depositRepresentation.MetaData().Keyname():         depositRepresentation.MetaData(),
+			keynameRepresentation.MetaData().Keyname():         keynameRepresentation.MetaData(),
+			groupRepresentation.MetaData().Keyname():           groupRepresentation.MetaData(),
+			affiliatesRepresentation.MetaData().Keyname():      affiliatesRepresentation.MetaData(),
+			categoryRepresentation.MetaData().Keyname():        categoryRepresentation.MetaData(),
+			proposalRepresentation.MetaData().Keyname():        proposalRepresentation.MetaData(),
+			approvedProjectRepresentation.MetaData().Keyname(): approvedProjectRepresentation.MetaData(),
+			projectRepresentation.MetaData().Keyname():         projectRepresentation.MetaData(),
+			milestoneRepresentation.MetaData().Keyname():       milestoneRepresentation.MetaData(),
+			featureRepresentation.MetaData().Keyname():         featureRepresentation.MetaData(),
+			taskRepresentation.MetaData().Keyname():            taskRepresentation.MetaData(),
+			pledgeTaskRepresentation.MetaData().Keyname():      pledgeTaskRepresentation.MetaData(),
+			completedTaskRepresentation.MetaData().Keyname():   completedTaskRepresentation.MetaData(),
 		}
 
 		// add the additional reads to the map:
@@ -148,20 +175,29 @@ var SDKFunc = struct {
 
 		// create the additional writes for wallets:
 		additionalWriteForWallet := createEntityRequest(walletRepresentation, map[string]entity.Representation{
-			pledgeRepresentation.MetaData().Keyname():     pledgeRepresentation,
-			transferRepresentation.MetaData().Keyname():   transferRepresentation,
-			userRepresentation.MetaData().Keyname():       userRepresentation,
-			validatorRepresentation.MetaData().Keyname():  validatorRepresentation,
-			walletRepresentation.MetaData().Keyname():     walletRepresentation, // for updates
-			affiliatesRepresentation.MetaData().Keyname(): affiliatesRepresentation,
+			pledgeRepresentation.MetaData().Keyname():        pledgeRepresentation,
+			transferRepresentation.MetaData().Keyname():      transferRepresentation,
+			userRepresentation.MetaData().Keyname():          userRepresentation,
+			validatorRepresentation.MetaData().Keyname():     validatorRepresentation,
+			walletRepresentation.MetaData().Keyname():        walletRepresentation, // for updates
+			affiliatesRepresentation.MetaData().Keyname():    affiliatesRepresentation,
+			proposalRepresentation.MetaData().Keyname():      proposalRepresentation,
+			projectRepresentation.MetaData().Keyname():       projectRepresentation,
+			milestoneRepresentation.MetaData().Keyname():     milestoneRepresentation,
+			featureRepresentation.MetaData().Keyname():       featureRepresentation,
+			taskRepresentation.MetaData().Keyname():          taskRepresentation,
+			pledgeTaskRepresentation.MetaData().Keyname():    pledgeTaskRepresentation,
+			completedTaskRepresentation.MetaData().Keyname(): completedTaskRepresentation,
 		})
 
 		// create the additional writes for tokens:
 		tokenRepresentation := token.SDKFunc.CreateRepresentation()
 		additionalWriteForToken := createEntityRequest(tokenRepresentation, map[string]entity.Representation{
-			informationRepresentation.MetaData().Keyname(): informationRepresentation,
-			linkRepresentation.MetaData().Keyname():        linkRepresentation,
-			nodeRepresentation.MetaData().Keyname():        nodeRepresentation,
+			informationRepresentation.MetaData().Keyname():     informationRepresentation,
+			linkRepresentation.MetaData().Keyname():            linkRepresentation,
+			nodeRepresentation.MetaData().Keyname():            nodeRepresentation,
+			categoryRepresentation.MetaData().Keyname():        categoryRepresentation,
+			approvedProjectRepresentation.MetaData().Keyname(): approvedProjectRepresentation,
 		})
 
 		// verify the additional writes for wallet:

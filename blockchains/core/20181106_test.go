@@ -15,6 +15,13 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project/feature"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project/milestone"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project/milestone/task"
+	completed_task "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project/milestone/task/completed"
+	pledge_task "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project/milestone/task/pledge"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/transfer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/validator"
@@ -23,8 +30,10 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/category"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/link"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/node"
+	community_project "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/project"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/withdrawal"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
@@ -168,7 +177,7 @@ func TestSaveGenesis_createSameGenesisInstance_returnsError(t *testing.T) {
 	}
 }
 
-func TestSaveGenesis_createAccount_Success(t *testing.T) {
+func TestSaveGenesis_createUser_Success(t *testing.T) {
 	// variables:
 	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
 	pubKey := pk.PublicKey()
@@ -467,7 +476,7 @@ func TestSaveGenesis_createNewWallet_createPledge_transferPledgeTokens_returnsEr
 	wallet.CompareWalletsForTests(t, walletIns.(wallet.Wallet), userIns.Wallet())
 
 	// save the pledge:
-	savePledge(t, client, pk, service, repository, genIns, userIns, pldge)
+	savePledge(t, client, pk, service, repository, genIns, pldge)
 
 	// transfer the pledge funds, returns error:
 	trsf := transfer.SDKFunc.Create(transfer.CreateParams{
@@ -744,4 +753,665 @@ func TestSaveGenesis_CreateLink_voteOnLink_CreateNode_voteOnNode_Success(t *test
 
 	// save the link:
 	saveNode(t, client, pk, service, repository, genIns.User(), lnk, nod)
+}
+
+func TestSaveGenesis_createCategory_thenCreateCategoryWithParent_Success(t *testing.T) {
+	// variables:
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
+
+	cat := category.CreateCategoryForTests()
+	catWithParent := category.CreateCategoryWithParentForTests(cat)
+
+	rootPath := filepath.Join("./test_files_TestSaveGenesis_createCategory_thenCreateCategoryWithParent_Success")
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// spawn bockchain with genesis instance:
+	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
+	defer node.Stop()
+
+	// create the category:
+	saveCategory(t, client, pk, service, repository, genIns, cat)
+
+	// create the category with parent:
+	saveCategory(t, client, pk, service, repository, genIns, catWithParent)
+}
+
+func TestSaveGenesis_saveCategory_saveProposal_Success(t *testing.T) {
+	// variables:
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
+
+	cat := category.CreateCategoryForTests()
+	prop := proposal.CreateProposalWithCategoryForTests(cat)
+
+	rootPath := filepath.Join("./test_files_TestSaveGenesis_saveCategory_saveProposal_Success")
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// spawn bockchain with genesis instance:
+	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
+	defer node.Stop()
+
+	// save the category:
+	saveCategory(t, client, pk, service, repository, genIns, cat)
+
+	// save proposal:
+	saveProposal(t, client, pk, service, repository, genIns, prop)
+}
+
+func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_Success(t *testing.T) {
+	// variables:
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
+
+	cat := category.CreateCategoryForTests()
+	prop := proposal.CreateProposalWithCategoryForTests(cat)
+	communityProject := community_project.CreateProjectWithProposalForTests(prop)
+
+	rootPath := filepath.Join("./test_files_TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_Success")
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// spawn bockchain with genesis instance:
+	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
+	defer node.Stop()
+
+	// save the category:
+	saveCategory(t, client, pk, service, repository, genIns, cat)
+
+	// save proposal:
+	saveProposal(t, client, pk, service, repository, genIns, prop)
+
+	// save approved project:
+	saveCommunityProject(t, client, pk, service, repository, genIns, communityProject)
+}
+
+func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_Success(t *testing.T) {
+	// variables:
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
+
+	cat := category.CreateCategoryForTests()
+	prop := proposal.CreateProposalWithCategoryForTests(cat)
+	communityProject := community_project.CreateProjectWithProposalForTests(prop)
+	ownerUser := user.CreateUserForTests()
+	managerUser := user.CreateUserForTests()
+	linkerUser := user.CreateUserForTests()
+	proj := project.CreateProjectWithCommunityProjectAndWallets(communityProject, ownerUser.Wallet(), managerUser.Wallet(), linkerUser.Wallet())
+
+	rootPath := filepath.Join("./test_files_TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_Success")
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// spawn bockchain with genesis instance:
+	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
+	defer node.Stop()
+
+	// save the wallets in project:
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), ownerUser)
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), managerUser)
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), linkerUser)
+
+	// save a transfer between our genesis and the manager:
+	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
+		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   genIns.Deposit().To(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
+			To:     proj.Manager(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+	}))
+
+	// save a transfer between our genesis and the linker:
+	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
+		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   genIns.Deposit().To(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
+			To:     proj.Linker(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+	}))
+
+	// make the manager pledge:
+	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
+		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   proj.Manager(),
+			Token:  genIns.Deposit().Token(),
+			Amount: proj.Project().Proposal().ManagerPledgeNeeded(),
+		}),
+		To: proj.Owner(),
+	}))
+
+	// make the linker pledge:
+	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
+		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   proj.Linker(),
+			Token:  genIns.Deposit().Token(),
+			Amount: proj.Project().Proposal().LinkerPledgeNeeded(),
+		}),
+		To: proj.Owner(),
+	}))
+
+	// save the category:
+	saveCategory(t, client, pk, service, repository, genIns, cat)
+
+	// save proposal:
+	saveProposal(t, client, pk, service, repository, genIns, prop)
+
+	// save approved project:
+	saveCommunityProject(t, client, pk, service, repository, genIns, communityProject)
+
+	// save project:
+	saveProject(t, client, pk, service, repository, genIns, proj)
+}
+
+func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_saveMilestone_Success(t *testing.T) {
+	// variables:
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
+
+	cat := category.CreateCategoryForTests()
+	prop := proposal.CreateProposalWithCategoryForTests(cat)
+	communityProject := community_project.CreateProjectWithProposalForTests(prop)
+	ownerUser := user.CreateUserForTests()
+	managerUser := user.CreateUserForTests()
+	linkerUser := user.CreateUserForTests()
+	proj := project.CreateProjectWithCommunityProjectAndWallets(communityProject, ownerUser.Wallet(), managerUser.Wallet(), linkerUser.Wallet())
+	mils := milestone.CreateMilestoneWithProjectForTests(proj)
+
+	rootPath := filepath.Join("./test_files_TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_saveMilestone_Success")
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// spawn bockchain with genesis instance:
+	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
+	defer node.Stop()
+
+	// save the wallets in project:
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), ownerUser)
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), managerUser)
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), linkerUser)
+
+	// save a transfer between our genesis and the manager:
+	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
+		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   genIns.Deposit().To(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
+			To:     proj.Manager(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+	}))
+
+	// save a transfer between our genesis and the linker:
+	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
+		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   genIns.Deposit().To(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
+			To:     proj.Linker(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+	}))
+
+	// make the manager pledge:
+	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
+		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   proj.Manager(),
+			Token:  genIns.Deposit().Token(),
+			Amount: proj.Project().Proposal().ManagerPledgeNeeded(),
+		}),
+		To: proj.Owner(),
+	}))
+
+	// make the linker pledge:
+	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
+		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   proj.Linker(),
+			Token:  genIns.Deposit().Token(),
+			Amount: proj.Project().Proposal().LinkerPledgeNeeded(),
+		}),
+		To: proj.Owner(),
+	}))
+
+	// save the category:
+	saveCategory(t, client, pk, service, repository, genIns, cat)
+
+	// save proposal:
+	saveProposal(t, client, pk, service, repository, genIns, prop)
+
+	// save approved project:
+	saveCommunityProject(t, client, pk, service, repository, genIns, communityProject)
+
+	// save project:
+	saveProject(t, client, pk, service, repository, genIns, proj)
+
+	// save milestone:
+	saveMilestone(t, client, pk, service, repository, genIns, mils)
+}
+
+func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_saveFeature_Success(t *testing.T) {
+	// variables:
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
+
+	cat := category.CreateCategoryForTests()
+	prop := proposal.CreateProposalWithCategoryForTests(cat)
+	communityProject := community_project.CreateProjectWithProposalForTests(prop)
+	ownerUser := user.CreateUserForTests()
+	managerUser := user.CreateUserForTests()
+	linkerUser := user.CreateUserForTests()
+	proj := project.CreateProjectWithCommunityProjectAndWallets(communityProject, ownerUser.Wallet(), managerUser.Wallet(), linkerUser.Wallet())
+	feat := feature.CreateFeatureWithProjectAndCreatedByUser(proj, genIns.User())
+
+	rootPath := filepath.Join("./test_files_TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_saveFeature_Success")
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// spawn bockchain with genesis instance:
+	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
+	defer node.Stop()
+
+	// save the wallets in project:
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), ownerUser)
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), managerUser)
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), linkerUser)
+
+	// save a transfer between our genesis and the manager:
+	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
+		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   genIns.Deposit().To(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
+			To:     proj.Manager(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+	}))
+
+	// save a transfer between our genesis and the linker:
+	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
+		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   genIns.Deposit().To(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
+			To:     proj.Linker(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+	}))
+
+	// make the manager pledge:
+	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
+		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   proj.Manager(),
+			Token:  genIns.Deposit().Token(),
+			Amount: proj.Project().Proposal().ManagerPledgeNeeded(),
+		}),
+		To: proj.Owner(),
+	}))
+
+	// make the linker pledge:
+	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
+		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   proj.Linker(),
+			Token:  genIns.Deposit().Token(),
+			Amount: proj.Project().Proposal().LinkerPledgeNeeded(),
+		}),
+		To: proj.Owner(),
+	}))
+
+	// save the category:
+	saveCategory(t, client, pk, service, repository, genIns, cat)
+
+	// save proposal:
+	saveProposal(t, client, pk, service, repository, genIns, prop)
+
+	// save approved project:
+	saveCommunityProject(t, client, pk, service, repository, genIns, communityProject)
+
+	// save project:
+	saveProject(t, client, pk, service, repository, genIns, proj)
+
+	// save feature:
+	saveFeature(t, client, pk, service, repository, genIns, feat)
+}
+
+func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_saveTask_Success(t *testing.T) {
+	// variables:
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
+
+	cat := category.CreateCategoryForTests()
+	prop := proposal.CreateProposalWithCategoryForTests(cat)
+	communityProject := community_project.CreateProjectWithProposalForTests(prop)
+	ownerUser := user.CreateUserForTests()
+	managerUser := user.CreateUserForTests()
+	linkerUser := user.CreateUserForTests()
+	proj := project.CreateProjectWithCommunityProjectAndWallets(communityProject, ownerUser.Wallet(), managerUser.Wallet(), linkerUser.Wallet())
+	mils := milestone.CreateMilestoneWithProjectForTests(proj)
+	tsk := task.CreateTaskWithMilestoneAndUser(mils, genIns.User())
+
+	rootPath := filepath.Join("./test_files_TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_saveTask_Success")
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// spawn bockchain with genesis instance:
+	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
+	defer node.Stop()
+
+	// save the wallets in project:
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), ownerUser)
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), managerUser)
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), linkerUser)
+
+	// save a transfer between our genesis and the manager:
+	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
+		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   genIns.Deposit().To(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
+			To:     proj.Manager(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+	}))
+
+	// save a transfer between our genesis and the linker:
+	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
+		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   genIns.Deposit().To(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
+			To:     proj.Linker(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+	}))
+
+	// make the manager pledge:
+	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
+		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   proj.Manager(),
+			Token:  genIns.Deposit().Token(),
+			Amount: proj.Project().Proposal().ManagerPledgeNeeded(),
+		}),
+		To: proj.Owner(),
+	}))
+
+	// make the linker pledge:
+	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
+		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   proj.Linker(),
+			Token:  genIns.Deposit().Token(),
+			Amount: proj.Project().Proposal().LinkerPledgeNeeded(),
+		}),
+		To: proj.Owner(),
+	}))
+
+	// save the category:
+	saveCategory(t, client, pk, service, repository, genIns, cat)
+
+	// save proposal:
+	saveProposal(t, client, pk, service, repository, genIns, prop)
+
+	// save approved project:
+	saveCommunityProject(t, client, pk, service, repository, genIns, communityProject)
+
+	// save project:
+	saveProject(t, client, pk, service, repository, genIns, proj)
+
+	// save milestone:
+	saveMilestone(t, client, pk, service, repository, genIns, mils)
+
+	// save task:
+	saveTask(t, client, pk, service, repository, genIns, tsk)
+}
+
+func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_saveTask_savePledgeTask_Success(t *testing.T) {
+	// variables:
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
+
+	cat := category.CreateCategoryForTests()
+	prop := proposal.CreateProposalWithCategoryForTests(cat)
+	communityProject := community_project.CreateProjectWithProposalForTests(prop)
+	ownerUser := user.CreateUserForTests()
+	managerUser := user.CreateUserForTests()
+	linkerUser := user.CreateUserForTests()
+	proj := project.CreateProjectWithCommunityProjectAndWallets(communityProject, ownerUser.Wallet(), managerUser.Wallet(), linkerUser.Wallet())
+
+	mils := milestone.CreateMilestoneWithProjectForTests(proj)
+	tsk := task.CreateTaskWithMilestoneAndUser(mils, genIns.User())
+	pldge := pledge.CreatePledgeWithWalletForTests(genIns.User().Wallet(), tsk.Milestone().Wallet(), genIns.Deposit().Token(), tsk.PledgeNeeded())
+	pledgeTask := pledge_task.CreateTaskWithMilestoneTaskAndPledge(tsk, pldge)
+
+	rootPath := filepath.Join("./test_files_TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_saveTask_savePledgeTask_Success")
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// spawn bockchain with genesis instance:
+	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
+	defer node.Stop()
+
+	// save the wallets in project:
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), ownerUser)
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), managerUser)
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), linkerUser)
+
+	// save a transfer between our genesis and the manager:
+	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
+		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   genIns.Deposit().To(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
+			To:     proj.Manager(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+	}))
+
+	// save a transfer between our genesis and the linker:
+	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
+		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   genIns.Deposit().To(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
+			To:     proj.Linker(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+	}))
+
+	// make the manager pledge:
+	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
+		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   proj.Manager(),
+			Token:  genIns.Deposit().Token(),
+			Amount: proj.Project().Proposal().ManagerPledgeNeeded(),
+		}),
+		To: proj.Owner(),
+	}))
+
+	// make the linker pledge:
+	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
+		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   proj.Linker(),
+			Token:  genIns.Deposit().Token(),
+			Amount: proj.Project().Proposal().LinkerPledgeNeeded(),
+		}),
+		To: proj.Owner(),
+	}))
+
+	// save the category:
+	saveCategory(t, client, pk, service, repository, genIns, cat)
+
+	// save proposal:
+	saveProposal(t, client, pk, service, repository, genIns, prop)
+
+	// save approved project:
+	saveCommunityProject(t, client, pk, service, repository, genIns, communityProject)
+
+	// save project:
+	saveProject(t, client, pk, service, repository, genIns, proj)
+
+	// save milestone:
+	saveMilestone(t, client, pk, service, repository, genIns, mils)
+
+	// save task:
+	saveTask(t, client, pk, service, repository, genIns, tsk)
+
+	// save pledge task:
+	savePledgeTask(t, client, pk, service, repository, genIns, pledgeTask)
+}
+
+func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_saveTask_saveCompletedTask_Success(t *testing.T) {
+	// variables:
+	pk := crypto.SDKFunc.CreatePK(crypto.CreatePKParams{})
+	pubKey := pk.PublicKey()
+	genIns := genesis.CreateGenesisWithPubKeyForTests(pubKey)
+
+	cat := category.CreateCategoryForTests()
+	prop := proposal.CreateProposalWithCategoryForTests(cat)
+	communityProject := community_project.CreateProjectWithProposalForTests(prop)
+	ownerUser := user.CreateUserForTests()
+	managerUser := user.CreateUserForTests()
+	linkerUser := user.CreateUserForTests()
+	proj := project.CreateProjectWithCommunityProjectAndWallets(communityProject, ownerUser.Wallet(), managerUser.Wallet(), linkerUser.Wallet())
+
+	mils := milestone.CreateMilestoneWithProjectForTests(proj)
+	tsk := task.CreateTaskWithMilestoneAndUser(mils, genIns.User())
+	pldge := pledge.CreatePledgeWithWalletForTests(genIns.User().Wallet(), tsk.Milestone().Wallet(), genIns.Deposit().Token(), tsk.PledgeNeeded())
+	pledgeTask := pledge_task.CreateTaskWithMilestoneTaskAndPledge(tsk, pldge)
+	completedTask := completed_task.CreateTaskWithMilestoneTask(tsk)
+
+	rootPath := filepath.Join("./test_files_TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_saveTask_saveCompletedTask_Success")
+	defer func() {
+		os.RemoveAll(rootPath)
+	}()
+
+	// spawn bockchain with genesis instance:
+	node, client, service, repository := spawnBlockchainWithGenesisForTests(t, pk, rootPath, genIns)
+	defer node.Stop()
+
+	// save the wallets in project:
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), ownerUser)
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), managerUser)
+	saveUserWithNewWallet(t, client, pk, service, repository, genIns.User(), linkerUser)
+
+	// save a transfer between our genesis and the manager:
+	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
+		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   genIns.Deposit().To(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
+			To:     proj.Manager(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+	}))
+
+	// save a transfer between our genesis and the linker:
+	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
+		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   genIns.Deposit().To(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
+			To:     proj.Linker(),
+			Token:  genIns.Deposit().Token(),
+			Amount: 50,
+		}),
+	}))
+
+	// make the manager pledge:
+	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
+		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   proj.Manager(),
+			Token:  genIns.Deposit().Token(),
+			Amount: proj.Project().Proposal().ManagerPledgeNeeded(),
+		}),
+		To: proj.Owner(),
+	}))
+
+	// make the linker pledge:
+	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
+		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
+			From:   proj.Linker(),
+			Token:  genIns.Deposit().Token(),
+			Amount: proj.Project().Proposal().LinkerPledgeNeeded(),
+		}),
+		To: proj.Owner(),
+	}))
+
+	// save the category:
+	saveCategory(t, client, pk, service, repository, genIns, cat)
+
+	// save proposal:
+	saveProposal(t, client, pk, service, repository, genIns, prop)
+
+	// save approved project:
+	saveCommunityProject(t, client, pk, service, repository, genIns, communityProject)
+
+	// save project:
+	saveProject(t, client, pk, service, repository, genIns, proj)
+
+	// save milestone:
+	saveMilestone(t, client, pk, service, repository, genIns, mils)
+
+	// save task:
+	saveTask(t, client, pk, service, repository, genIns, tsk)
+
+	// save pledge task:
+	savePledgeTask(t, client, pk, service, repository, genIns, pledgeTask)
+
+	// save the completed task:
+	saveCompletedTask(t, client, pk, service, repository, genIns, completedTask)
 }

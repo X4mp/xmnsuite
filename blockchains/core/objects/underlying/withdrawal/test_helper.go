@@ -21,6 +21,13 @@ func CreateWithdrawalWithPublicKeyForTests(pubKey crypto.PublicKey) Withdrawal {
 	return out
 }
 
+// CreateWithdrawalWithTokenAndWalletForTests creates a withdrawal instance with wallet and token for tests
+func CreateWithdrawalWithTokenAndWalletForTests(tok token.Token, fromWallet wallet.Wallet, amount int) Withdrawal {
+	id := uuid.NewV4()
+	out, _ := createWithdrawal(&id, fromWallet, tok, amount)
+	return out
+}
+
 // CreateWithdrawalWithPublicKeyAndAmountForTests creates a withdrawal instance for tests
 func CreateWithdrawalWithPublicKeyAndAmountForTests(pubKey crypto.PublicKey, amount int) Withdrawal {
 	id := uuid.NewV4()

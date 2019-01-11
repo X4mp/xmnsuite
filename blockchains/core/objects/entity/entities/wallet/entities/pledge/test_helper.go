@@ -6,6 +6,7 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/withdrawal"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
@@ -18,6 +19,14 @@ func CreatePledgeForTests() Pledge {
 	from := withdrawal.CreateWithdrawalWithPublicKeyForTests(pubKey)
 	to := wallet.CreateWalletWithPublicKeyForTests(pubKey)
 	out := createPledge(&id, from, to)
+	return out
+}
+
+// CreatePledgeWithWalletForTests creates a pledge with wallet instance for tests
+func CreatePledgeWithWalletForTests(from wallet.Wallet, to wallet.Wallet, tok token.Token, amount int) Pledge {
+	id := uuid.NewV4()
+	fromWith := withdrawal.CreateWithdrawalWithTokenAndWalletForTests(tok, from, amount)
+	out := createPledge(&id, fromWith, to)
 	return out
 }
 

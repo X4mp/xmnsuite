@@ -22,6 +22,7 @@ type Pledge interface {
 // Repository represents the pledge repository
 type Repository interface {
 	RetrieveByID(id *uuid.UUID) (Pledge, error)
+	RetrieveByFromAndToWallet(frm wallet.Wallet, to wallet.Wallet) (Pledge, error)
 	RetrieveSetByFromWallet(frm wallet.Wallet, index int, amount int) (entity.PartialSet, error)
 	RetrieveSetByToWallet(to wallet.Wallet, index int, amount int) (entity.PartialSet, error)
 }
