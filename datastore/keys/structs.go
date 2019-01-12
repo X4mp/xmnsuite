@@ -45,22 +45,24 @@ func createStoredInstance(data interface{}) *storedInstance {
  */
 
 type concreteKeys struct {
-	HD  hashtree.HashTree
-	Dat map[string]*storedInstance
+	IsUpdated bool
+	HD        hashtree.HashTree
+	Dat       map[string]*storedInstance
 }
 
 func createConcreteKeys() Keys {
 	out := concreteKeys{
-		HD:  nil,
-		Dat: map[string]*storedInstance{},
+		HD:        nil,
+		IsUpdated: true,
+		Dat:       map[string]*storedInstance{},
 	}
 
-	out.rebuildHead()
 	return &out
 }
 
-// Head returns the hash head
+// Head returns the head hashtree
 func (app *concreteKeys) Head() hashtree.HashTree {
+	app.rebuildHead()
 	return app.HD
 }
 
@@ -73,11 +75,11 @@ func (app *concreteKeys) Copy() Keys {
 	}
 
 	out := concreteKeys{
-		HD:  nil,
-		Dat: data,
+		HD:        nil,
+		IsUpdated: true,
+		Dat:       data,
 	}
 
-	out.rebuildHead()
 	return &out
 }
 
@@ -152,8 +154,8 @@ func (app *concreteKeys) Save(key string, data interface{}) {
 	//add the data:
 	app.Dat[key] = createStoredInstance(data)
 
-	//rebuild the head:
-	app.rebuildHead()
+	// the data is now updated:
+	app.IsUpdated = true
 }
 
 // Delete deletes the passed keys
@@ -166,14 +168,18 @@ func (app *concreteKeys) Delete(key ...string) int {
 		}
 	}
 
-	//rebuild the head:
-	app.rebuildHead()
+	// the data is now updated:
+	app.IsUpdated = true
 
 	//returns the amount of deleted keys:
 	return cpt
 }
 
 func (app *concreteKeys) rebuildHead() {
+	if !app.IsUpdated {
+		return
+	}
+
 	blocks := [][]byte{
 		[]byte("root"),
 	}
@@ -194,4 +200,5 @@ func (app *concreteKeys) rebuildHead() {
 	})
 
 	app.HD = ht
+	app.IsUpdated = false
 }
