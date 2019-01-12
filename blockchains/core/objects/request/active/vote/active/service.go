@@ -6,13 +6,15 @@ import (
 	"log"
 
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/completed"
 )
 
 type voteService struct {
-	repository            entity.Repository
-	service               entity.Service
-	voteRepresentation    entity.Representation
-	requestRepresentation entity.Representation
+	repository                     entity.Repository
+	service                        entity.Service
+	voteRepresentation             entity.Representation
+	requestRepresentation          entity.Representation
+	completedRequestRepresentation entity.Representation
 }
 
 func createVoteService(
@@ -20,12 +22,14 @@ func createVoteService(
 	service entity.Service,
 	voteRepresentation entity.Representation,
 	requestRepresentation entity.Representation,
+	completedRequestRepresentation entity.Representation,
 ) Service {
 	out := voteService{
-		repository:            repository,
-		service:               service,
-		voteRepresentation:    voteRepresentation,
-		requestRepresentation: requestRepresentation,
+		repository:                     repository,
+		service:                        service,
+		voteRepresentation:             voteRepresentation,
+		requestRepresentation:          requestRepresentation,
+		completedRequestRepresentation: completedRequestRepresentation,
 	}
 
 	return &out
@@ -124,10 +128,27 @@ func (app *voteService) Save(vote Vote, rep entity.Representation) error {
 				}
 			}
 
-			// delete the request:
-			delReqErr := app.service.Delete(req, app.requestRepresentation)
-			if delReqErr != nil {
-				log.Printf("there was an error while deleting a Request (ID: %s) after concensus was reached: %s", reqID.String(), delReqErr.Error())
+			// create the completed request:
+			completedReq := completed.SDKFunc.Create(completed.CreateParams{
+				Request:         req.Request(),
+				ConcensusNeeded: neededConcensus,
+				Approved:        approved,
+				Disapproved:     disapproved,
+				Neutral:         neutral,
+			})
+
+			// save the completed request:
+			saveCompletedReqErr := app.service.Save(completedReq, app.completedRequestRepresentation)
+			if saveCompletedReqErr != nil {
+				str := fmt.Sprintf("there was an error while saving a completed request: %s", saveCompletedReqErr.Error())
+				return errors.New(str)
+			}
+
+			// delete the active request:
+			delActiveReqErr := app.service.Delete(req, app.requestRepresentation)
+			if delActiveReqErr != nil {
+				str := fmt.Sprintf("there was an error while deleting an ActiveRequest (ID: %s) after concensus was reached: %s", req.ID().String(), delActiveReqErr.Error())
+				return errors.New(str)
 			}
 
 			// everything worked:

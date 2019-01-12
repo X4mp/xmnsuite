@@ -21,6 +21,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/validator"
 	active_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
 	active_vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote/active"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/completed"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/group"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
@@ -103,6 +104,7 @@ var SDKFunc = struct {
 		linkRepresentation := link.SDKFunc.CreateRepresentation()
 		nodeRepresentation := node.SDKFunc.CreateRepresentation()
 		activeRequestRepresentation := active_request.SDKFunc.CreateRepresentation()
+		completedRequestRepresentation := completed.SDKFunc.CreateRepresentation()
 		keynameRepresentation := keyname.SDKFunc.CreateRepresentation()
 		groupRepresentation := group.SDKFunc.CreateRepresentation()
 		activeVoteRepresentation := active_vote.SDKFunc.CreateRepresentation()
@@ -136,31 +138,32 @@ var SDKFunc = struct {
 
 		// create the read:
 		additionalReads := map[string]entity.MetaData{
-			genesisRepresentation.MetaData().Keyname():         genesisRepresentation.MetaData(),
-			informationRepresentation.MetaData().Keyname():     informationRepresentation.MetaData(),
-			walletRepresentation.MetaData().Keyname():          walletRepresentation.MetaData(),
-			validatorRepresentation.MetaData().Keyname():       validatorRepresentation.MetaData(),
-			userRepresentation.MetaData().Keyname():            userRepresentation.MetaData(),
-			activeRequestRepresentation.MetaData().Keyname():   activeRequestRepresentation.MetaData(),
-			activeVoteRepresentation.MetaData().Keyname():      activeVoteRepresentation.MetaData(),
-			pledgeRepresentation.MetaData().Keyname():          pledgeRepresentation.MetaData(),
-			transferRepresentation.MetaData().Keyname():        transferRepresentation.MetaData(),
-			linkRepresentation.MetaData().Keyname():            linkRepresentation.MetaData(),
-			nodeRepresentation.MetaData().Keyname():            nodeRepresentation.MetaData(),
-			withdrawalRepresentation.MetaData().Keyname():      withdrawalRepresentation.MetaData(),
-			depositRepresentation.MetaData().Keyname():         depositRepresentation.MetaData(),
-			keynameRepresentation.MetaData().Keyname():         keynameRepresentation.MetaData(),
-			groupRepresentation.MetaData().Keyname():           groupRepresentation.MetaData(),
-			affiliatesRepresentation.MetaData().Keyname():      affiliatesRepresentation.MetaData(),
-			categoryRepresentation.MetaData().Keyname():        categoryRepresentation.MetaData(),
-			proposalRepresentation.MetaData().Keyname():        proposalRepresentation.MetaData(),
-			approvedProjectRepresentation.MetaData().Keyname(): approvedProjectRepresentation.MetaData(),
-			projectRepresentation.MetaData().Keyname():         projectRepresentation.MetaData(),
-			milestoneRepresentation.MetaData().Keyname():       milestoneRepresentation.MetaData(),
-			featureRepresentation.MetaData().Keyname():         featureRepresentation.MetaData(),
-			taskRepresentation.MetaData().Keyname():            taskRepresentation.MetaData(),
-			pledgeTaskRepresentation.MetaData().Keyname():      pledgeTaskRepresentation.MetaData(),
-			completedTaskRepresentation.MetaData().Keyname():   completedTaskRepresentation.MetaData(),
+			genesisRepresentation.MetaData().Keyname():          genesisRepresentation.MetaData(),
+			informationRepresentation.MetaData().Keyname():      informationRepresentation.MetaData(),
+			walletRepresentation.MetaData().Keyname():           walletRepresentation.MetaData(),
+			validatorRepresentation.MetaData().Keyname():        validatorRepresentation.MetaData(),
+			userRepresentation.MetaData().Keyname():             userRepresentation.MetaData(),
+			activeRequestRepresentation.MetaData().Keyname():    activeRequestRepresentation.MetaData(),
+			completedRequestRepresentation.MetaData().Keyname(): completedRequestRepresentation.MetaData(),
+			activeVoteRepresentation.MetaData().Keyname():       activeVoteRepresentation.MetaData(),
+			pledgeRepresentation.MetaData().Keyname():           pledgeRepresentation.MetaData(),
+			transferRepresentation.MetaData().Keyname():         transferRepresentation.MetaData(),
+			linkRepresentation.MetaData().Keyname():             linkRepresentation.MetaData(),
+			nodeRepresentation.MetaData().Keyname():             nodeRepresentation.MetaData(),
+			withdrawalRepresentation.MetaData().Keyname():       withdrawalRepresentation.MetaData(),
+			depositRepresentation.MetaData().Keyname():          depositRepresentation.MetaData(),
+			keynameRepresentation.MetaData().Keyname():          keynameRepresentation.MetaData(),
+			groupRepresentation.MetaData().Keyname():            groupRepresentation.MetaData(),
+			affiliatesRepresentation.MetaData().Keyname():       affiliatesRepresentation.MetaData(),
+			categoryRepresentation.MetaData().Keyname():         categoryRepresentation.MetaData(),
+			proposalRepresentation.MetaData().Keyname():         proposalRepresentation.MetaData(),
+			approvedProjectRepresentation.MetaData().Keyname():  approvedProjectRepresentation.MetaData(),
+			projectRepresentation.MetaData().Keyname():          projectRepresentation.MetaData(),
+			milestoneRepresentation.MetaData().Keyname():        milestoneRepresentation.MetaData(),
+			featureRepresentation.MetaData().Keyname():          featureRepresentation.MetaData(),
+			taskRepresentation.MetaData().Keyname():             taskRepresentation.MetaData(),
+			pledgeTaskRepresentation.MetaData().Keyname():       pledgeTaskRepresentation.MetaData(),
+			completedTaskRepresentation.MetaData().Keyname():    completedTaskRepresentation.MetaData(),
 		}
 
 		// add the additional reads to the map:

@@ -20,6 +20,7 @@ import (
 	active_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
 	vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote"
 	active_vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote/active"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/completed"
 	deposit "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
 	token "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 	category "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/category"
@@ -55,6 +56,7 @@ func Register(codec *amino.Codec) {
 	completed_task.Register(codec)
 	feature.Register(codec)
 	active_request.Register(codec)
+	completed.Register(codec)
 	active_vote.Register(codec)
 	validator.Register(codec)
 	link.Register(codec)
@@ -65,6 +67,7 @@ func Register(codec *amino.Codec) {
 	entity.Replace(codec)
 	request.Replace(codec)
 	active_request.Replace(codec)
+	completed.Replace(codec)
 	vote.Replace(codec)
 	active_vote.Replace(codec)
 
