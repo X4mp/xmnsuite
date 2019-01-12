@@ -6,7 +6,6 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 
@@ -14,9 +13,8 @@ import (
 func CreateDepositWithPubKeyForTests(pubKey crypto.PublicKey) Deposit {
 	id := uuid.NewV4()
 	wal := wallet.CreateWalletWithPublicKeyForTests(pubKey)
-	tok := token.CreateTokenForTests()
 	amount := (rand.Int() % 200) + 50000
-	out, _ := createDeposit(&id, wal, tok, amount)
+	out, _ := createDeposit(&id, wal, amount)
 	return out
 }
 

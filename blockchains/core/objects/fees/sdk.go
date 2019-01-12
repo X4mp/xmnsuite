@@ -12,7 +12,6 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/validator"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/information"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/withdrawal"
 	"github.com/xmnservices/xmnsuite/datastore"
@@ -71,7 +70,7 @@ var SDKFunc = struct {
 			return networkPrice, validatorsPrice, affiliatePrice
 		}
 
-		createValidatorsDeposits := func(tok token.Token, vals []validator.Validator, totalPrice int) ([]deposit.Deposit, int) {
+		createValidatorsDeposits := func(vals []validator.Validator, totalPrice int) ([]deposit.Deposit, int) {
 			totalPledge := 0
 			for _, oneVal := range vals {
 				totalPledge += oneVal.Pledge().From().Amount()
@@ -83,7 +82,6 @@ var SDKFunc = struct {
 				amount := int((oneVal.Pledge().From().Amount() / totalPledge) * totalPrice)
 				deps = append(deps, deposit.SDKFunc.Create(deposit.CreateParams{
 					To:     oneVal.Pledge().To(),
-					Token:  tok,
 					Amount: amount,
 				}))
 
@@ -98,20 +96,17 @@ var SDKFunc = struct {
 		networkPrice, validatorsPrice, affiliatePrice := createPrices(params.Affiliate, params.Gen.Info(), price)
 
 		// create the validators deposits:
-		tok := params.Gen.Deposit().Token()
-		validatorsDeps, totalPaidToVals := createValidatorsDeposits(tok, params.Validators, validatorsPrice)
+		validatorsDeps, totalPaidToVals := createValidatorsDeposits(params.Validators, validatorsPrice)
 
 		// create the network deposit:
 		networkDeposit := deposit.SDKFunc.Create(deposit.CreateParams{
 			To:     params.Gen.Deposit().To(),
-			Token:  tok,
 			Amount: networkPrice,
 		})
 
 		// create the client withdrawal:
 		client := withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   params.Client.Wallet(),
-			Token:  tok,
 			Amount: networkPrice + totalPaidToVals + affiliatePrice,
 		})
 
@@ -128,7 +123,6 @@ var SDKFunc = struct {
 		// crate the affiliate deposit:
 		affDeposit := deposit.SDKFunc.Create(deposit.CreateParams{
 			To:     params.Affiliate.Owner(),
-			Token:  tok,
 			Amount: affiliatePrice,
 		})
 

@@ -6,7 +6,6 @@ import (
 
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 )
 
 type repository struct {
@@ -23,11 +22,11 @@ func createRepository(entityRepository entity.Repository, withdrawalMetaData ent
 	return &out
 }
 
-// RetrieveSetByFromWalletAndToken retrieves a withdrawal set related to a wallet and token:
-func (app *repository) RetrieveSetByFromWalletAndToken(wal wallet.Wallet, tok token.Token) ([]Withdrawal, error) {
+// RetrieveSetByFromWalletAndToken retrieves a withdrawal set related to a wallet
+func (app *repository) RetrieveSetByFromWallet(wal wallet.Wallet) ([]Withdrawal, error) {
 	keynames := []string{
+		retrieveAllWithdrawalsKeyname(),
 		retrieveWithdrawalsByFromWalletIDKeyname(wal.ID()),
-		retrieveWithdrawalsByTokenIDKeyname(tok.ID()),
 	}
 
 	ps, psErr := app.entityRepository.RetrieveSetByIntersectKeynames(app.withdrawalMetaData, keynames, 0, -1)

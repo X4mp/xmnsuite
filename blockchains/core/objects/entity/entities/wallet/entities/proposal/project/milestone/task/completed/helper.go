@@ -122,7 +122,6 @@ func representation() entity.Representation {
 				frm := pldgeTask.Pledge().From()
 				dep := deposit.SDKFunc.Create(deposit.CreateParams{
 					To:     frm.From(),
-					Token:  frm.Token(),
 					Amount: pldgeTask.Task().Reward(),
 				})
 

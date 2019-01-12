@@ -7,7 +7,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
+
 	"github.com/xmnservices/xmnsuite/datastore"
 )
 
@@ -15,7 +15,6 @@ import (
 type Deposit interface {
 	ID() *uuid.UUID
 	To() wallet.Wallet
-	Token() token.Token
 	Amount() int
 }
 
@@ -25,14 +24,13 @@ type Normalized interface {
 
 // Repository represents the deposit Repository
 type Repository interface {
-	RetrieveSetByToWalletAndToken(wal wallet.Wallet, tok token.Token) ([]Deposit, error)
+	RetrieveSetByToWallet(wal wallet.Wallet) ([]Deposit, error)
 }
 
 // CreateParams represents the Create params
 type CreateParams struct {
 	ID     *uuid.UUID
 	To     wallet.Wallet
-	Token  token.Token
 	Amount int
 }
 
@@ -55,7 +53,7 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out, outErr := createDeposit(params.ID, params.To, params.Token, params.Amount)
+		out, outErr := createDeposit(params.ID, params.To, params.Amount)
 		if outErr != nil {
 			panic(outErr)
 		}
@@ -79,12 +77,9 @@ var SDKFunc = struct {
 			},
 			Keynames: func(ins entity.Entity) ([]string, error) {
 				if deposit, ok := ins.(Deposit); ok {
-					base := retrieveAllDepositsKeyname()
-
 					return []string{
-						base,
+						retrieveAllDepositsKeyname(),
 						retrieveDepositsByToWalletIDKeyname(deposit.To().ID()),
-						retrieveDepositsByTokenIDKeyname(deposit.Token().ID()),
 					}, nil
 				}
 
@@ -94,12 +89,12 @@ var SDKFunc = struct {
 			},
 			OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 
+				// metadata and representation:
+				walletRepresentation := wallet.SDKFunc.CreateRepresentation()
+
 				// create the entity repository and service:
 				repository := entity.SDKFunc.CreateRepository(ds)
 				service := entity.SDKFunc.CreateService(ds)
-
-				walletRepresentation := wallet.SDKFunc.CreateRepresentation()
-				tokRepresentation := token.SDKFunc.CreateRepresentation()
 
 				if deposit, ok := ins.(Deposit); ok {
 					// try to retrieve the wallet:
@@ -108,17 +103,6 @@ var SDKFunc = struct {
 					if retToWalletErr != nil {
 						// save the wallet:
 						saveErr := service.Save(toWallet, walletRepresentation)
-						if saveErr != nil {
-							return saveErr
-						}
-					}
-
-					// try to retrieve the token:
-					tok := deposit.Token()
-					_, retTokErr := repository.RetrieveByID(tokRepresentation.MetaData(), tok.ID())
-					if retTokErr != nil {
-						// save the token:
-						saveErr := service.Save(tok, tokRepresentation)
 						if saveErr != nil {
 							return saveErr
 						}

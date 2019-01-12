@@ -151,12 +151,6 @@ func createRepresentation() entity.Representation {
 					return errors.New(str)
 				}
 
-				// make sure the token of the withdrawal matches the deposit token:
-				if bytes.Compare(with.Token().ID().Bytes(), dep.Token().ID().Bytes()) != 0 {
-					str := fmt.Sprintf("the withdrawal token (ID: %s) does not match the deposit token (ID: %s)", with.Token().ID().String(), dep.Token().ID().String())
-					return errors.New(str)
-				}
-
 				// make sure the withdrawal amount matches the deposit amount:
 				if with.Amount() != dep.Amount() {
 					str := fmt.Sprintf("the withdrawal amount (%d) does not match the deposit amount (%d)", with.Amount(), dep.Amount())

@@ -451,7 +451,6 @@ func TestSaveGenesis_createNewWallet_createPledge_transferPledgeTokens_returnsEr
 	pldge := pledge.SDKFunc.Create(pledge.CreateParams{
 		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   genIns.Deposit().To(),
-			Token:  genIns.Deposit().Token(),
 			Amount: int(math.Floor(float64(genIns.Deposit().Amount() / 2))),
 		}),
 		To: walletIns,
@@ -482,12 +481,10 @@ func TestSaveGenesis_createNewWallet_createPledge_transferPledgeTokens_returnsEr
 	trsf := transfer.SDKFunc.Create(transfer.CreateParams{
 		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   walletIns,
-			Token:  genIns.Deposit().Token(),
 			Amount: pldge.From().Amount(),
 		}),
 		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
 			To:     genIns.Deposit().To(),
-			Token:  genIns.Deposit().Token(),
 			Amount: pldge.From().Amount(),
 		}),
 	})
@@ -573,7 +570,6 @@ func TestSaveGenesis_createNewWallet_createValidator_Success(t *testing.T) {
 		Pledge: pledge.SDKFunc.Create(pledge.CreateParams{
 			From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 				From:   genIns.Deposit().To(),
-				Token:  genIns.Deposit().Token(),
 				Amount: int(math.Floor(float64(genIns.Deposit().Amount() / 2))),
 			}),
 			To: walletIns,
@@ -642,12 +638,10 @@ func TestSaveGenesis_createNewWallet_createTransfer_Success(t *testing.T) {
 	trsf := transfer.SDKFunc.Create(transfer.CreateParams{
 		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   genIns.Deposit().To(),
-			Token:  genIns.Deposit().Token(),
 			Amount: int(math.Floor(float64(genIns.Deposit().Amount() / 2))),
 		}),
 		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
 			To:     walletIns,
-			Token:  genIns.Deposit().Token(),
 			Amount: int(math.Floor(float64(genIns.Deposit().Amount() / 2))),
 		}),
 	})
@@ -866,12 +860,10 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
 		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   genIns.Deposit().To(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
 			To:     proj.Manager(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 	}))
@@ -880,12 +872,10 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
 		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   genIns.Deposit().To(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
 			To:     proj.Linker(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 	}))
@@ -894,7 +884,6 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
 		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   proj.Manager(),
-			Token:  genIns.Deposit().Token(),
 			Amount: proj.Project().Proposal().ManagerPledgeNeeded(),
 		}),
 		To: proj.Owner(),
@@ -904,7 +893,6 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
 		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   proj.Linker(),
-			Token:  genIns.Deposit().Token(),
 			Amount: proj.Project().Proposal().LinkerPledgeNeeded(),
 		}),
 		To: proj.Owner(),
@@ -956,12 +944,10 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
 		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   genIns.Deposit().To(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
 			To:     proj.Manager(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 	}))
@@ -970,12 +956,10 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
 		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   genIns.Deposit().To(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
 			To:     proj.Linker(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 	}))
@@ -984,7 +968,6 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
 		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   proj.Manager(),
-			Token:  genIns.Deposit().Token(),
 			Amount: proj.Project().Proposal().ManagerPledgeNeeded(),
 		}),
 		To: proj.Owner(),
@@ -994,7 +977,6 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
 		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   proj.Linker(),
-			Token:  genIns.Deposit().Token(),
 			Amount: proj.Project().Proposal().LinkerPledgeNeeded(),
 		}),
 		To: proj.Owner(),
@@ -1049,12 +1031,10 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
 		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   genIns.Deposit().To(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
 			To:     proj.Manager(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 	}))
@@ -1063,12 +1043,10 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
 		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   genIns.Deposit().To(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
 			To:     proj.Linker(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 	}))
@@ -1077,7 +1055,6 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
 		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   proj.Manager(),
-			Token:  genIns.Deposit().Token(),
 			Amount: proj.Project().Proposal().ManagerPledgeNeeded(),
 		}),
 		To: proj.Owner(),
@@ -1087,7 +1064,6 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
 		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   proj.Linker(),
-			Token:  genIns.Deposit().Token(),
 			Amount: proj.Project().Proposal().LinkerPledgeNeeded(),
 		}),
 		To: proj.Owner(),
@@ -1143,12 +1119,10 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
 		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   genIns.Deposit().To(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
 			To:     proj.Manager(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 	}))
@@ -1157,12 +1131,10 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
 		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   genIns.Deposit().To(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
 			To:     proj.Linker(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 	}))
@@ -1171,7 +1143,6 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
 		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   proj.Manager(),
-			Token:  genIns.Deposit().Token(),
 			Amount: proj.Project().Proposal().ManagerPledgeNeeded(),
 		}),
 		To: proj.Owner(),
@@ -1181,7 +1152,6 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
 		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   proj.Linker(),
-			Token:  genIns.Deposit().Token(),
 			Amount: proj.Project().Proposal().LinkerPledgeNeeded(),
 		}),
 		To: proj.Owner(),
@@ -1222,7 +1192,7 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 
 	mils := milestone.CreateMilestoneWithProjectForTests(proj)
 	tsk := task.CreateTaskWithMilestoneAndUser(mils, genIns.User())
-	pldge := pledge.CreatePledgeWithWalletForTests(genIns.User().Wallet(), tsk.Milestone().Wallet(), genIns.Deposit().Token(), tsk.PledgeNeeded())
+	pldge := pledge.CreatePledgeWithWalletForTests(genIns.User().Wallet(), tsk.Milestone().Wallet(), tsk.PledgeNeeded())
 	pledgeTask := pledge_task.CreateTaskWithMilestoneTaskAndPledge(tsk, pldge)
 
 	rootPath := filepath.Join("./test_files_TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_saveTask_savePledgeTask_Success")
@@ -1243,12 +1213,10 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
 		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   genIns.Deposit().To(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
 			To:     proj.Manager(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 	}))
@@ -1257,12 +1225,10 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
 		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   genIns.Deposit().To(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
 			To:     proj.Linker(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 	}))
@@ -1271,7 +1237,6 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
 		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   proj.Manager(),
-			Token:  genIns.Deposit().Token(),
 			Amount: proj.Project().Proposal().ManagerPledgeNeeded(),
 		}),
 		To: proj.Owner(),
@@ -1281,7 +1246,6 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
 		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   proj.Linker(),
-			Token:  genIns.Deposit().Token(),
 			Amount: proj.Project().Proposal().LinkerPledgeNeeded(),
 		}),
 		To: proj.Owner(),
@@ -1325,7 +1289,7 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 
 	mils := milestone.CreateMilestoneWithProjectForTests(proj)
 	tsk := task.CreateTaskWithMilestoneAndUser(mils, genIns.User())
-	pldge := pledge.CreatePledgeWithWalletForTests(genIns.User().Wallet(), tsk.Milestone().Wallet(), genIns.Deposit().Token(), tsk.PledgeNeeded())
+	pldge := pledge.CreatePledgeWithWalletForTests(genIns.User().Wallet(), tsk.Milestone().Wallet(), tsk.PledgeNeeded())
 	pledgeTask := pledge_task.CreateTaskWithMilestoneTaskAndPledge(tsk, pldge)
 	completedTask := completed_task.CreateTaskWithMilestoneTask(tsk)
 
@@ -1347,12 +1311,10 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
 		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   genIns.Deposit().To(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
 			To:     proj.Manager(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 	}))
@@ -1361,12 +1323,10 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	saveTransfer(t, client, pk, service, repository, genIns, transfer.SDKFunc.Create(transfer.CreateParams{
 		Withdrawal: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   genIns.Deposit().To(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 		Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
 			To:     proj.Linker(),
-			Token:  genIns.Deposit().Token(),
 			Amount: 50,
 		}),
 	}))
@@ -1375,7 +1335,6 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
 		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   proj.Manager(),
-			Token:  genIns.Deposit().Token(),
 			Amount: proj.Project().Proposal().ManagerPledgeNeeded(),
 		}),
 		To: proj.Owner(),
@@ -1385,7 +1344,6 @@ func TestSaveGenesis_saveCategory_saveProposal_saveCommunityProject_saveProject_
 	savePledge(t, client, pk, service, repository, genIns, pledge.SDKFunc.Create(pledge.CreateParams{
 		From: withdrawal.SDKFunc.Create(withdrawal.CreateParams{
 			From:   proj.Linker(),
-			Token:  genIns.Deposit().Token(),
 			Amount: proj.Project().Proposal().LinkerPledgeNeeded(),
 		}),
 		To: proj.Owner(),

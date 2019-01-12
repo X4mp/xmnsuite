@@ -878,7 +878,7 @@ func (app *core20181108) saveEntityRequestVote() routers.CreateRouteParams {
 							var activeVote active_vote.Vote
 							keyname := entityRequest.RequestedBy().MetaData().Keyname()
 							if keyname == token.SDKFunc.CreateMetaData().Keyname() {
-								balance, balanceErr := dep.balanceRepository.RetrieveByWalletAndToken(voter.Wallet(), gen.Deposit().Token())
+								balance, balanceErr := dep.balanceRepository.RetrieveByWallet(voter.Wallet())
 								if balanceErr != nil {
 									return nil, balanceErr
 								}

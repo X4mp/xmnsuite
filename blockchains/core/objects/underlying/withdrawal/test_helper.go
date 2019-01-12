@@ -7,7 +7,6 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 
@@ -15,16 +14,15 @@ import (
 func CreateWithdrawalWithPublicKeyForTests(pubKey crypto.PublicKey) Withdrawal {
 	id := uuid.NewV4()
 	fromWallet := wallet.CreateWalletWithPublicKeyForTests(pubKey)
-	tok := token.CreateTokenForTests()
 	amount := rand.Int() % 200
-	out, _ := createWithdrawal(&id, fromWallet, tok, amount)
+	out, _ := createWithdrawal(&id, fromWallet, amount)
 	return out
 }
 
-// CreateWithdrawalWithTokenAndWalletForTests creates a withdrawal instance with wallet and token for tests
-func CreateWithdrawalWithTokenAndWalletForTests(tok token.Token, fromWallet wallet.Wallet, amount int) Withdrawal {
+// CreateWithdrawalWithWalletForTests creates a withdrawal instance with wallet for tests
+func CreateWithdrawalWithWalletForTests(fromWallet wallet.Wallet, amount int) Withdrawal {
 	id := uuid.NewV4()
-	out, _ := createWithdrawal(&id, fromWallet, tok, amount)
+	out, _ := createWithdrawal(&id, fromWallet, amount)
 	return out
 }
 
@@ -32,8 +30,7 @@ func CreateWithdrawalWithTokenAndWalletForTests(tok token.Token, fromWallet wall
 func CreateWithdrawalWithPublicKeyAndAmountForTests(pubKey crypto.PublicKey, amount int) Withdrawal {
 	id := uuid.NewV4()
 	fromWallet := wallet.CreateWalletWithPublicKeyForTests(pubKey)
-	tok := token.CreateTokenForTests()
-	out, _ := createWithdrawal(&id, fromWallet, tok, amount)
+	out, _ := createWithdrawal(&id, fromWallet, amount)
 	return out
 }
 
@@ -50,5 +47,4 @@ func CompareWithdrawalsForTests(t *testing.T, first Withdrawal, second Withdrawa
 	}
 
 	wallet.CompareWalletsForTests(t, first.From(), second.From())
-	token.CompareTokensForTests(t, first.Token(), second.Token())
 }

@@ -3,6 +3,7 @@ package genesis
 import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/information"
 )
 
@@ -11,6 +12,7 @@ type normalizedGenesis struct {
 	Info    information.Normalized `json:"information"`
 	User    user.Normalized        `json:"user"`
 	Deposit deposit.Normalized     `json:"deposit"`
+	Token   token.Normalized       `json:"token"`
 }
 
 func createNormalizedGenesis(ins Genesis) (*normalizedGenesis, error) {
@@ -29,11 +31,17 @@ func createNormalizedGenesis(ins Genesis) (*normalizedGenesis, error) {
 		return nil, normalizedInfoErr
 	}
 
+	tok, tokErr := token.SDKFunc.CreateMetaData().Normalize()(ins.Token())
+	if tokErr != nil {
+		return nil, tokErr
+	}
+
 	out := normalizedGenesis{
 		ID:      ins.ID().String(),
 		Info:    normalizedInfo,
 		User:    normalizedUser,
 		Deposit: normalizedDeposit,
+		Token:   tok,
 	}
 
 	return &out, nil

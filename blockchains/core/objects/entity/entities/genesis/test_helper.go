@@ -6,6 +6,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/information"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
@@ -17,7 +18,8 @@ func CreateGenesisWithPubKeyForTests(pubKey crypto.PublicKey) Genesis {
 	concensusNeeded := int(dep.Amount()/2) - 1
 	usr := user.CreateUserWithWalletAndPublicKeyAndSharesForTests(dep.To(), pubKey, dep.To().ConcensusNeeded())
 	inf := information.CreateInformationWithConcensusNeededForTests(concensusNeeded)
-	out, outErr := createGenesis(&id, inf, dep, usr)
+	tok := token.CreateTokenForTests()
+	out, outErr := createGenesis(&id, inf, dep, usr, tok)
 	if outErr != nil {
 		panic(outErr)
 	}
