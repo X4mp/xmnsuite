@@ -12,3 +12,8 @@ ui/libs
 .DS_Store
 credentials.xmn
 credentials2.xmn
+bin
+node_modules
+coreui-free-vue-admin-template
+apps/resources/app
+apps/bind_darwin_amd64.go

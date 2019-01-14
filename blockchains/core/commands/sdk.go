@@ -21,6 +21,9 @@ const (
 	initialGazPricePerKB         = 1
 	initialTokenConcensusNeeded  = 50
 	initialMaxAmountOfValidators = 200
+	initialNetworkShare          = 5
+	initialValidatorShare        = 80
+	initialReferralShare         = 15
 	initialUserAmountOfShares    = 100
 )
 

@@ -25,7 +25,7 @@ func main() {
 	core.Register(cdc)
 
 	// create the meta:
-	met := meta.SDKFunc.Create(meta.CreateParams{})
+	meta.SDKFunc.Create(meta.CreateParams{})
 
 	app := cliapp.NewApp()
 	app.Version = "2019.01.01"
@@ -33,16 +33,6 @@ func main() {
 	app.Usage = "This is the xmn core application"
 	app.Commands = []cliapp.Command{
 		*cli.SDKFunc.Spawn(),
-		*cli.SDKFunc.Wallet(),
-		*cli.SDKFunc.Genesis(),
-		*cli.SDKFunc.Information(),
-		*cli.SDKFunc.Balance(),
-		*cli.SDKFunc.User(),
-		*cli.SDKFunc.Transfer(),
-		*cli.SDKFunc.Pledge(),
-		*cli.SDKFunc.Validator(),
-		*cli.SDKFunc.Affiliates(),
-		*cli.SDKFunc.Request(met),
 	}
 
 	err := app.Run(os.Args)
