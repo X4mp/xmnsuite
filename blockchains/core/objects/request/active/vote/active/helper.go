@@ -102,7 +102,7 @@ func createRepresentation() entity.Representation {
 
 			return nil, errors.New("the given entity is not a valid active Vote instance")
 		},
-		Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+		OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 			if vot, ok := ins.(Vote); ok {
 				// metadata:
 				metaData := createMetaData()

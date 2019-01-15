@@ -7,17 +7,15 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 )
 
 type deposit struct {
 	UUID     *uuid.UUID    `json:"id"`
 	ToWallet wallet.Wallet `json:"to"`
-	Tok      token.Token   `json:"token"`
 	Am       int           `json:"amount"`
 }
 
-func createDeposit(id *uuid.UUID, toWallet wallet.Wallet, tok token.Token, amount int) (Deposit, error) {
+func createDeposit(id *uuid.UUID, toWallet wallet.Wallet, amount int) (Deposit, error) {
 
 	if amount <= 0 {
 		return nil, errors.New("the amount (%d) must be bigger than 0")
@@ -31,7 +29,6 @@ func createDeposit(id *uuid.UUID, toWallet wallet.Wallet, tok token.Token, amoun
 	out := deposit{
 		UUID:     id,
 		ToWallet: toWallet,
-		Tok:      tok,
 		Am:       amount,
 	}
 
@@ -50,18 +47,8 @@ func createDepositFromNormalized(ins *normalizedDeposit) (Deposit, error) {
 		return nil, toWalletInsErr
 	}
 
-	tokenIns, tokenInsErr := token.SDKFunc.CreateMetaData().Denormalize()(ins.Token)
-	if tokenInsErr != nil {
-		return nil, tokenInsErr
-	}
-
 	if toWallet, ok := toWalletIns.(wallet.Wallet); ok {
-		if tok, ok := tokenIns.(token.Token); ok {
-			return createDeposit(&id, toWallet, tok, ins.Amount)
-		}
-
-		str := fmt.Sprintf("the entity (ID: %s) is not  avalid Token instance", tokenIns.ID().String())
-		return nil, errors.New(str)
+		return createDeposit(&id, toWallet, ins.Amount)
 	}
 
 	str := fmt.Sprintf("the entity (ID: %s) is not  avalid Wallet instance", toWalletIns.ID().String())
@@ -77,11 +64,6 @@ func (app *deposit) ID() *uuid.UUID {
 // To returns the to user
 func (app *deposit) To() wallet.Wallet {
 	return app.ToWallet
-}
-
-// Token returns the token
-func (app *deposit) Token() token.Token {
-	return app.Tok
 }
 
 // Amount returns the amount

@@ -12,6 +12,14 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project/feature"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project/milestone"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project/milestone/task"
+	completed_task "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project/milestone/task/completed"
+	pledge_task "github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/proposal/project/milestone/task/pledge"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/transfer"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	active_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
@@ -19,8 +27,10 @@ import (
 	active_vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote/active"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/group"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/category"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/link"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/node"
+	community_project "github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/project"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 
@@ -29,7 +39,7 @@ type simpleRequestVote struct {
 	IsApproved bool
 }
 
-func spawnBlockchainForTests(t *testing.T, pk crypto.PrivateKey, rootPath string, routePrefix string) (applications.Node, applications.Client, entity.Service, entity.Repository) {
+func spawnBlockchainForTests(t *testing.T, pk crypto.PrivateKey, rootPath string) (applications.Node, applications.Client, entity.Service, entity.Repository) {
 	// variables:
 	namespace := "xmn"
 	name := "core"
@@ -40,7 +50,7 @@ func spawnBlockchainForTests(t *testing.T, pk crypto.PrivateKey, rootPath string
 
 	// spawn the blockchain:
 	met := meta.SDKFunc.Create(meta.CreateParams{})
-	node, nodeErr := saveThenSpawnBlockchain(namespace, name, &id, nil, rootPath, routePrefix, port, nodePK, pk.PublicKey(), met)
+	node, nodeErr := saveThenSpawnBlockchain(namespace, name, &id, nil, rootPath, port, nodePK, pk.PublicKey(), met)
 	if nodeErr != nil {
 		t.Errorf("the returned error was expected to be nil, error returned: %s", nodeErr.Error())
 		return nil, nil, nil, nil
@@ -58,25 +68,23 @@ func spawnBlockchainForTests(t *testing.T, pk crypto.PrivateKey, rootPath string
 
 	// create the entity service:
 	entityService := entity.SDKFunc.CreateSDKService(entity.CreateSDKServiceParams{
-		PK:          pk,
-		Client:      client,
-		RoutePrefix: routePrefix,
+		PK:     pk,
+		Client: client,
 	})
 
 	// create the entity repository:
 	entityRepository := entity.SDKFunc.CreateSDKRepository(entity.CreateSDKRepositoryParams{
-		PK:          pk,
-		Client:      client,
-		RoutePrefix: routePrefix,
+		PK:     pk,
+		Client: client,
 	})
 
 	// returns:
 	return node, client, entityService, entityRepository
 }
 
-func spawnBlockchainWithGenesisForTests(t *testing.T, pk crypto.PrivateKey, rootPath string, routePrefix string, genIns genesis.Genesis) (applications.Node, applications.Client, entity.Service, entity.Repository) {
+func spawnBlockchainWithGenesisForTests(t *testing.T, pk crypto.PrivateKey, rootPath string, genIns genesis.Genesis) (applications.Node, applications.Client, entity.Service, entity.Repository) {
 	// sopawn the blockchain:
-	node, client, service, repository := spawnBlockchainForTests(t, pk, rootPath, routePrefix)
+	node, client, service, repository := spawnBlockchainForTests(t, pk, rootPath)
 
 	// create the representation:
 	representation := genesis.SDKFunc.CreateRepresentation()
@@ -213,7 +221,6 @@ func saveEntityThenRetrieveEntityByIDThenDeleteEntityByID(
 
 func saveRequestThenSaveVotesForTests(
 	t *testing.T,
-	routePrefix string,
 	client applications.Client,
 	pk crypto.PrivateKey,
 	repository entity.Repository,
@@ -227,9 +234,8 @@ func saveRequestThenSaveVotesForTests(
 
 	// create the request service:
 	requestService := request.SDKFunc.CreateSDKService(request.CreateSDKServiceParams{
-		PK:          pk,
-		Client:      client,
-		RoutePrefix: routePrefix,
+		PK:     pk,
+		Client: client,
 	})
 
 	// create the request repository:
@@ -263,9 +269,8 @@ func saveRequestThenSaveVotesForTests(
 	for index, oneVote := range reqVotes {
 		// create the vote service:
 		oneVoteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
-			PK:          votesPK[index],
-			Client:      client,
-			RoutePrefix: routePrefix,
+			PK:     votesPK[index],
+			Client: client,
 		})
 
 		// create the vote:
@@ -326,7 +331,6 @@ func saveRequestThenSaveVotesForTests(
 
 func saveUserWithNewWallet(
 	t *testing.T,
-	routePrefix string,
 	client applications.Client,
 	pk crypto.PrivateKey,
 	service entity.Service,
@@ -364,7 +368,7 @@ func saveUserWithNewWallet(
 	}
 
 	// save the new token request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, userRepresentation, newUserRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, userRepresentation, newUserRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		newUserRequestVote,
 	})
 
@@ -374,7 +378,6 @@ func saveUserWithNewWallet(
 
 func saveLink(
 	t *testing.T,
-	routePrefix string,
 	client applications.Client,
 	pk crypto.PrivateKey,
 	service entity.Service,
@@ -411,7 +414,7 @@ func saveLink(
 	}
 
 	// save the new token request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, linkRepresentation, newLinkRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, linkRepresentation, newLinkRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		newLinkRequestVote,
 	})
 
@@ -421,7 +424,6 @@ func saveLink(
 
 func saveNode(
 	t *testing.T,
-	routePrefix string,
 	client applications.Client,
 	pk crypto.PrivateKey,
 	service entity.Service,
@@ -435,7 +437,7 @@ func saveNode(
 	nodeRepresentation := node.SDKFunc.CreateRepresentation()
 
 	// save the link:
-	saveLink(t, routePrefix, client, pk, service, repository, fromUser, lnk)
+	saveLink(t, client, pk, service, repository, fromUser, lnk)
 
 	// retrieve the keyname:
 	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
@@ -462,7 +464,7 @@ func saveNode(
 	}
 
 	// save the new token request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, nodeRepresentation, newNodeRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, nodeRepresentation, newNodeRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		newNodeRequestVote,
 	})
 
@@ -472,13 +474,11 @@ func saveNode(
 
 func savePledge(
 	t *testing.T,
-	routePrefix string,
 	client applications.Client,
 	pk crypto.PrivateKey,
 	service entity.Service,
 	repository entity.Repository,
 	fromGen genesis.Genesis,
-	newUser user.User,
 	pldge pledge.Pledge,
 ) request.Service {
 
@@ -510,8 +510,468 @@ func savePledge(
 	}
 
 	// save the new wallet request, then save vote:
-	requestService := saveRequestThenSaveVotesForTests(t, routePrefix, client, pk, repository, pldgeRepresentation, pldgeRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, pldgeRepresentation, pldgeRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
 		pldgeRequestVote,
+	})
+
+	// returns:
+	return requestService
+}
+
+func saveCategory(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromGen genesis.Genesis,
+	cat category.Category,
+) request.Service {
+
+	// create the representation:
+	categoryRepresentation := category.SDKFunc.CreateRepresentation()
+
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(category.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
+	// create the user in wallet request:
+	catRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:   fromGen.User(),
+		SaveEntity: cat,
+		Reason:     "TEST",
+		Keyname:    kname,
+	})
+
+	// create our user vote:
+	catRequestVote := &simpleRequestVote{
+		Voter:      fromGen.User(),
+		IsApproved: true,
+	}
+
+	// save the new wallet request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, categoryRepresentation, catRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
+		catRequestVote,
+	})
+
+	// returns:
+	return requestService
+}
+
+func saveProposal(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromGen genesis.Genesis,
+	prop proposal.Proposal,
+) request.Service {
+
+	// create the representation:
+	proposalRepresentation := proposal.SDKFunc.CreateRepresentation()
+
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(proposal.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
+	// create the user in wallet request:
+	proposalRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:   fromGen.User(),
+		SaveEntity: prop,
+		Reason:     "TEST",
+		Keyname:    kname,
+	})
+
+	// create our user vote:
+	proposalRequestVote := &simpleRequestVote{
+		Voter:      fromGen.User(),
+		IsApproved: true,
+	}
+
+	// save the new wallet request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, proposalRepresentation, proposalRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
+		proposalRequestVote,
+	})
+
+	// returns:
+	return requestService
+}
+
+func saveCommunityProject(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromGen genesis.Genesis,
+	proj community_project.Project,
+) request.Service {
+
+	// create the representation:
+	projectRepresentation := community_project.SDKFunc.CreateRepresentation()
+
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(community_project.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
+	// create the user in wallet request:
+	projRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:   fromGen.User(),
+		SaveEntity: proj,
+		Reason:     "TEST",
+		Keyname:    kname,
+	})
+
+	// create our user vote:
+	projRequestVote := &simpleRequestVote{
+		Voter:      fromGen.User(),
+		IsApproved: true,
+	}
+
+	// save the new wallet request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, projectRepresentation, projRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
+		projRequestVote,
+	})
+
+	// returns:
+	return requestService
+}
+
+func saveProject(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromGen genesis.Genesis,
+	proj project.Project,
+) request.Service {
+
+	// create the representation:
+	projectRepresentation := project.SDKFunc.CreateRepresentation()
+
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(project.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
+	// create the user in wallet request:
+	projRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:   fromGen.User(),
+		SaveEntity: proj,
+		Reason:     "TEST",
+		Keyname:    kname,
+	})
+
+	// create our user vote:
+	projRequestVote := &simpleRequestVote{
+		Voter:      fromGen.User(),
+		IsApproved: true,
+	}
+
+	// save the new wallet request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, projectRepresentation, projRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
+		projRequestVote,
+	})
+
+	// returns:
+	return requestService
+}
+
+func saveMilestone(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromGen genesis.Genesis,
+	mils milestone.Milestone,
+) request.Service {
+
+	// create the representation:
+	milestoneRepresentation := milestone.SDKFunc.CreateRepresentation()
+
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(milestone.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
+	// create the user in wallet request:
+	milsRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:   fromGen.User(),
+		SaveEntity: mils,
+		Reason:     "TEST",
+		Keyname:    kname,
+	})
+
+	// create our user vote:
+	milsRequestVote := &simpleRequestVote{
+		Voter:      fromGen.User(),
+		IsApproved: true,
+	}
+
+	// save the new wallet request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, milestoneRepresentation, milsRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
+		milsRequestVote,
+	})
+
+	// returns:
+	return requestService
+}
+
+func saveFeature(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromGen genesis.Genesis,
+	feat feature.Feature,
+) request.Service {
+
+	// create the representation:
+	featureRepresentation := feature.SDKFunc.CreateRepresentation()
+
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(feature.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
+	// create the user in wallet request:
+	featureRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:   fromGen.User(),
+		SaveEntity: feat,
+		Reason:     "TEST",
+		Keyname:    kname,
+	})
+
+	// create our user vote:
+	featureRequestVote := &simpleRequestVote{
+		Voter:      fromGen.User(),
+		IsApproved: true,
+	}
+
+	// save the new wallet request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, featureRepresentation, featureRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
+		featureRequestVote,
+	})
+
+	// returns:
+	return requestService
+}
+
+func saveTask(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromGen genesis.Genesis,
+	tsk task.Task,
+) request.Service {
+
+	// create the representation:
+	taskRepresentation := task.SDKFunc.CreateRepresentation()
+
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(task.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
+	// create the user in wallet request:
+	taskRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:   fromGen.User(),
+		SaveEntity: tsk,
+		Reason:     "TEST",
+		Keyname:    kname,
+	})
+
+	// create our user vote:
+	taskRequestVote := &simpleRequestVote{
+		Voter:      fromGen.User(),
+		IsApproved: true,
+	}
+
+	// save the new wallet request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, taskRepresentation, taskRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
+		taskRequestVote,
+	})
+
+	// returns:
+	return requestService
+}
+
+func savePledgeTask(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromGen genesis.Genesis,
+	tsk pledge_task.Task,
+) request.Service {
+
+	// create the representation:
+	taskRepresentation := pledge_task.SDKFunc.CreateRepresentation()
+
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(pledge_task.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
+	// create the user in wallet request:
+	taskRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:   fromGen.User(),
+		SaveEntity: tsk,
+		Reason:     "TEST",
+		Keyname:    kname,
+	})
+
+	// create our user vote:
+	taskRequestVote := &simpleRequestVote{
+		Voter:      fromGen.User(),
+		IsApproved: true,
+	}
+
+	// save the new wallet request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, taskRepresentation, taskRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
+		taskRequestVote,
+	})
+
+	// returns:
+	return requestService
+}
+
+func saveCompletedTask(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromGen genesis.Genesis,
+	tsk completed_task.Task,
+) request.Service {
+
+	// create the representation:
+	taskRepresentation := completed_task.SDKFunc.CreateRepresentation()
+
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(completed_task.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
+	// create the user in wallet request:
+	taskRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:   fromGen.User(),
+		SaveEntity: tsk,
+		Reason:     "TEST",
+		Keyname:    kname,
+	})
+
+	// create our user vote:
+	taskRequestVote := &simpleRequestVote{
+		Voter:      fromGen.User(),
+		IsApproved: true,
+	}
+
+	// save the new wallet request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, taskRepresentation, taskRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
+		taskRequestVote,
+	})
+
+	// returns:
+	return requestService
+}
+
+func saveTransfer(
+	t *testing.T,
+	client applications.Client,
+	pk crypto.PrivateKey,
+	service entity.Service,
+	repository entity.Repository,
+	fromGen genesis.Genesis,
+	trsf transfer.Transfer,
+) request.Service {
+
+	// create the representation:
+	transferRepresentation := transfer.SDKFunc.CreateRepresentation()
+
+	// retrieve the keyname:
+	knameRepository := keyname.SDKFunc.CreateRepository(keyname.CreateRepositoryParams{
+		EntityRepository: repository,
+	})
+
+	kname, knameErr := knameRepository.RetrieveByName(transfer.SDKFunc.CreateMetaData().Keyname())
+	if knameErr != nil {
+		t.Errorf("the returned error was expected to be nil, error returned: %s", knameErr.Error())
+	}
+
+	// create the user in wallet request:
+	trsfRequest := request.SDKFunc.Create(request.CreateParams{
+		FromUser:   fromGen.User(),
+		SaveEntity: trsf,
+		Reason:     "TEST",
+		Keyname:    kname,
+	})
+
+	// create our user vote:
+	trsfRequestVote := &simpleRequestVote{
+		Voter:      fromGen.User(),
+		IsApproved: true,
+	}
+
+	// save the new wallet request, then save vote:
+	requestService := saveRequestThenSaveVotesForTests(t, client, pk, repository, transferRepresentation, trsfRequest, []crypto.PrivateKey{pk}, []*simpleRequestVote{
+		trsfRequestVote,
 	})
 
 	// returns:

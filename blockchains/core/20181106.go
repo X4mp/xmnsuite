@@ -14,7 +14,9 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/affiliates"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/validator"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/fees"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request"
 	active_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote"
@@ -44,15 +46,13 @@ type incomingRequest struct {
 }
 
 type core20181108 struct {
-	routePrefix   string
 	routerRoleKey string
 	meta          meta.Meta
 }
 
-func createCore20181108(met meta.Meta, routePrefix string, routerRoleKey string) *core20181108 {
+func createCore20181108(met meta.Meta, routerRoleKey string) *core20181108 {
 
 	out := core20181108{
-		routePrefix:   routePrefix,
 		routerRoleKey: routerRoleKey,
 		meta:          met,
 	}
@@ -67,7 +67,6 @@ func create20181106WithRootPubKey(
 	fromBlockIndex int64,
 	toBlockIndex int64,
 	rootDir string,
-	routePrefix string,
 	routerRoleKey string,
 	ds datastore.StoredDataStore,
 	met meta.Meta,
@@ -77,9 +76,9 @@ func create20181106WithRootPubKey(
 	store := ds.DataStore()
 	store.Users().Insert(rootPubKey)
 	store.Roles().Add(routerRoleKey, rootPubKey)
-	store.Roles().EnableWriteAccess(routerRoleKey, fmt.Sprintf("%s/genesis", routePrefix))
+	store.Roles().EnableWriteAccess(routerRoleKey, "/genesis")
 
-	return create20181106(namespace, name, id, fromBlockIndex, toBlockIndex, rootDir, routePrefix, routerRoleKey, ds, met)
+	return create20181106(namespace, name, id, fromBlockIndex, toBlockIndex, rootDir, routerRoleKey, ds, met)
 }
 
 func create20181106(
@@ -89,13 +88,12 @@ func create20181106(
 	fromBlockIndex int64,
 	toBlockIndex int64,
 	rootDir string,
-	routePrefix string,
 	routerRoleKey string,
 	ds datastore.StoredDataStore,
 	met meta.Meta,
 ) applications.Application {
 	// create core:
-	core := createCore20181108(met, routePrefix, routerRoleKey)
+	core := createCore20181108(met, routerRoleKey)
 
 	// create application:
 	version := "2018.11.06"
@@ -163,7 +161,7 @@ func create20181106(
 
 func (app *core20181108) saveGenesis() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
-		Pattern: fmt.Sprintf("%s/genesis", app.routePrefix),
+		Pattern: "/genesis",
 		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
 
 			// create the dependencies:
@@ -183,13 +181,13 @@ func (app *core20181108) saveGenesis() routers.CreateRouteParams {
 				}
 
 				// enable the route to save accounts:
-				store.Roles().EnableWriteAccess(app.routerRoleKey, fmt.Sprintf("%s/account", app.routePrefix))
+				store.Roles().EnableWriteAccess(app.routerRoleKey, "/account")
 
 				// enable the route to save instances:
-				store.Roles().EnableWriteAccess(app.routerRoleKey, fmt.Sprintf("%s/[a-z-]+", app.routePrefix))
+				store.Roles().EnableWriteAccess(app.routerRoleKey, "/[a-z-]+")
 
 				// enable the route to save requests:
-				store.Roles().EnableWriteAccess(app.routerRoleKey, fmt.Sprintf("%s/[a-z-]+/requests", app.routePrefix))
+				store.Roles().EnableWriteAccess(app.routerRoleKey, "/[a-z-]+/requests")
 
 				// convert to json:
 				normalized, normalizedErr := app.meta.Genesis().MetaData().Normalize()(gen)
@@ -225,7 +223,7 @@ func (app *core20181108) saveGenesis() routers.CreateRouteParams {
 
 func (app *core20181108) saveEntity() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
-		Pattern: fmt.Sprintf("%s/<name|[a-z-]+>", app.routePrefix),
+		Pattern: "/<name|[a-z-]+>",
 		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
 
 			// create the dependencies:
@@ -263,7 +261,7 @@ func (app *core20181108) saveEntity() routers.CreateRouteParams {
 					}
 
 					// enable the ability to update/delete the entity:
-					store.Roles().EnableWriteAccess(app.routerRoleKey, fmt.Sprintf("%s/%s/%s", app.routePrefix, name, ins.ID().String()))
+					store.Roles().EnableWriteAccess(app.routerRoleKey, fmt.Sprintf("/%s/%s", name, ins.ID().String()))
 
 					// convert to json:
 					storable, storableErr := representation.ToStorable()(ins)
@@ -276,14 +274,43 @@ func (app *core20181108) saveEntity() routers.CreateRouteParams {
 						return nil, jsDataErr
 					}
 
-					// create the gaz price:
-					gazUsed := int(unsafe.Sizeof(jsData)) * gen.Info().GazPricePerKb()
+					// retrieve the client:
+					client, clientErr := dep.userRepository.RetrieveByPubKey(from)
+					if clientErr != nil {
+						return nil, clientErr
+					}
+
+					// retrieve the affiliate:
+					var aff affiliates.Affiliate
+					if client.HasBeenReferred() {
+						aff, _ = dep.affiliateRepository.RetrieveByWallet(client.Referral())
+					}
+
+					vals, valsErr := dep.validatorRepository.RetrieveSetOrderedByPledgeAmount(0, gen.Info().MaxAmountOfValidators())
+					if valsErr != nil {
+						return nil, valsErr
+					}
+
+					// create the fees:
+					fee := fees.SDKFunc.Create(fees.CreateParams{
+						Gen:        gen,
+						StoredData: jsData,
+						Client:     client,
+						Affiliate:  aff,
+						Validators: vals,
+					})
+
+					// save the fees:
+					saveFeesErr := dep.entityService.Save(fee, fees.SDKFunc.CreateRepresentation())
+					if saveFeesErr != nil {
+						return nil, saveFeesErr
+					}
 
 					// return the response:
 					resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
 						Code:    routers.IsSuccessful,
 						Log:     "success",
-						GazUsed: int64(gazUsed),
+						GazUsed: int64(fee.Client().Amount()),
 						Tags: map[string][]byte{
 							path: jsData,
 						},
@@ -303,7 +330,7 @@ func (app *core20181108) saveEntity() routers.CreateRouteParams {
 
 func (app *core20181108) retrieveEntityByID() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
-		Pattern: fmt.Sprintf("%s/<name|[a-z-]+>/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", app.routePrefix),
+		Pattern: "/<name|[a-z-]+>/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
 		QueryTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (routers.QueryResponse, error) {
 
 			// create the dependencies:
@@ -361,7 +388,7 @@ func (app *core20181108) retrieveEntityByID() routers.CreateRouteParams {
 
 func (app *core20181108) retrieveByIntersectKeynames() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
-		Pattern: fmt.Sprintf("%s/<name|[a-z-]+>/<keynames|[^/]+>/intersect", app.routePrefix),
+		Pattern: "/<name|[a-z-]+>/<keynames|[^/]+>/intersect",
 		QueryTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (routers.QueryResponse, error) {
 
 			// create the dependencies:
@@ -421,7 +448,7 @@ func (app *core20181108) retrieveByIntersectKeynames() routers.CreateRouteParams
 
 func (app *core20181108) retrieveSetByIntersectKeynames() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
-		Pattern: fmt.Sprintf("%s/<name|[a-z-]+>/<keynames|[^/]+>/set/intersect", app.routePrefix),
+		Pattern: "/<name|[a-z-]+>/<keynames|[^/]+>/set/intersect",
 		QueryTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (routers.QueryResponse, error) {
 			index := 0
 			if indexAsString, ok := params["index"]; ok {
@@ -506,7 +533,7 @@ func (app *core20181108) retrieveSetByIntersectKeynames() routers.CreateRoutePar
 
 func (app *core20181108) deleteEntityByID() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
-		Pattern: fmt.Sprintf("%s/<name|[a-z-]+>/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", app.routePrefix),
+		Pattern: "/<name|[a-z-]+>/<id|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
 		DelTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, sig crypto.Signature) (routers.TransactionResponse, error) {
 			// create the dependencies:
 			dep := createDependencies(store)
@@ -584,7 +611,7 @@ func (app *core20181108) deleteEntityByID() routers.CreateRouteParams {
 
 func (app *core20181108) saveRequest() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
-		Pattern: fmt.Sprintf("%s/<keyname|[a-z-]+>/requests", app.routePrefix),
+		Pattern: "/<keyname|[a-z-]+>/requests",
 		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
 
 			// create the dependencies:
@@ -624,14 +651,14 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 				return nil, errors.New(str)
 			}
 
-			if wal, ok := walIns.(wallet.Wallet); ok {
-				// retrieve the user:
-				usr, usrErr := dep.userRepository.RetrieveByPubKeyAndWallet(from, wal)
-				if usrErr != nil {
-					str := fmt.Sprintf("the requester PublicKey (%s) is not a user on the given wallet (ID: %s)", from.String(), wal.ID().String())
-					return nil, errors.New(str)
-				}
+			// retrieve the user:
+			usr, usrErr := dep.userRepository.RetrieveByPubKey(from)
+			if usrErr != nil {
+				str := fmt.Sprintf("the requester PublicKey (%s) is not a valid user", from.String())
+				return nil, errors.New(str)
+			}
 
+			if wal, ok := walIns.(wallet.Wallet); ok {
 				if keynameName, ok := params["keyname"]; ok {
 					// retrieve the keyname by name:
 					kname, knameErr := dep.keynameRepository.RetrieveByName(keynameName)
@@ -705,7 +732,7 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 							}
 
 							// enable the voting on the request:
-							store.Roles().EnableWriteAccess(app.routerRoleKey, fmt.Sprintf("%s/%s/requests/%s", app.routePrefix, kname.Name(), activeReq.ID().String()))
+							store.Roles().EnableWriteAccess(app.routerRoleKey, fmt.Sprintf("/%s/requests/%s", kname.Name(), activeReq.ID().String()))
 
 							// convert to json:
 							storable, storableErr := activeRepresentation.ToStorable()(activeReq)
@@ -718,14 +745,43 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 								return nil, jsDataErr
 							}
 
-							// create the gaz price:
-							gazUsed := int(unsafe.Sizeof(jsData)) * gen.Info().GazPricePerKb()
+							// retrieve the client:
+							client, clientErr := dep.userRepository.RetrieveByPubKey(from)
+							if clientErr != nil {
+								return nil, clientErr
+							}
+
+							// retrieve the affiliate:
+							var aff affiliates.Affiliate
+							if client.HasBeenReferred() {
+								aff, _ = dep.affiliateRepository.RetrieveByWallet(client.Referral())
+							}
+
+							vals, valsErr := dep.validatorRepository.RetrieveSetOrderedByPledgeAmount(0, gen.Info().MaxAmountOfValidators())
+							if valsErr != nil {
+								return nil, valsErr
+							}
+
+							// create the fees:
+							fee := fees.SDKFunc.Create(fees.CreateParams{
+								Gen:        gen,
+								StoredData: jsData,
+								Client:     client,
+								Affiliate:  aff,
+								Validators: vals,
+							})
+
+							// save the fees:
+							saveFeesErr := dep.entityService.Save(fee, fees.SDKFunc.CreateRepresentation())
+							if saveFeesErr != nil {
+								return nil, saveFeesErr
+							}
 
 							// return the response:
 							resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
 								Code:    routers.IsSuccessful,
 								Log:     "success",
-								GazUsed: int64(gazUsed),
+								GazUsed: int64(fee.Client().Amount()),
 								Tags: map[string][]byte{
 									path: jsData,
 								},
@@ -753,7 +809,7 @@ func (app *core20181108) saveRequest() routers.CreateRouteParams {
 
 func (app *core20181108) saveEntityRequestVote() routers.CreateRouteParams {
 	return routers.CreateRouteParams{
-		Pattern: fmt.Sprintf("%s/<keyname|[a-z-]+>/requests/<requestid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>", app.routePrefix),
+		Pattern: "/<keyname|[a-z-]+>/requests/<requestid|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}>",
 		SaveTrx: func(store datastore.DataStore, from crypto.PublicKey, path string, params map[string]string, data []byte, sig crypto.Signature) (routers.TransactionResponse, error) {
 			// create the dependencies:
 			dep := createDependencies(store)
@@ -822,7 +878,7 @@ func (app *core20181108) saveEntityRequestVote() routers.CreateRouteParams {
 							var activeVote active_vote.Vote
 							keyname := entityRequest.RequestedBy().MetaData().Keyname()
 							if keyname == token.SDKFunc.CreateMetaData().Keyname() {
-								balance, balanceErr := dep.balanceRepository.RetrieveByWalletAndToken(voter.Wallet(), gen.Deposit().Token())
+								balance, balanceErr := dep.balanceRepository.RetrieveByWallet(voter.Wallet())
 								if balanceErr != nil {
 									return nil, balanceErr
 								}
@@ -856,14 +912,43 @@ func (app *core20181108) saveEntityRequestVote() routers.CreateRouteParams {
 								return nil, jsDataErr
 							}
 
-							// create the gaz price:
-							gazUsed := int(unsafe.Sizeof(jsData)) * gen.Info().GazPricePerKb()
+							// retrieve the client:
+							client, clientErr := dep.userRepository.RetrieveByPubKey(from)
+							if clientErr != nil {
+								return nil, clientErr
+							}
+
+							// retrieve the affiliate:
+							var aff affiliates.Affiliate
+							if client.HasBeenReferred() {
+								aff, _ = dep.affiliateRepository.RetrieveByWallet(client.Referral())
+							}
+
+							vals, valsErr := dep.validatorRepository.RetrieveSetOrderedByPledgeAmount(0, gen.Info().MaxAmountOfValidators())
+							if valsErr != nil {
+								return nil, valsErr
+							}
+
+							// create the fees:
+							fee := fees.SDKFunc.Create(fees.CreateParams{
+								Gen:        gen,
+								StoredData: jsData,
+								Client:     client,
+								Affiliate:  aff,
+								Validators: vals,
+							})
+
+							// save the fees:
+							saveFeesErr := dep.entityService.Save(fee, fees.SDKFunc.CreateRepresentation())
+							if saveFeesErr != nil {
+								return nil, saveFeesErr
+							}
 
 							// return the response:
 							resp := routers.SDKFunc.CreateTransactionResponse(routers.CreateTransactionResponseParams{
 								Code:    routers.IsSuccessful,
 								Log:     "success",
-								GazUsed: int64(gazUsed),
+								GazUsed: int64(fee.Client().Amount()),
 								Tags: map[string][]byte{
 									path: jsData,
 								},

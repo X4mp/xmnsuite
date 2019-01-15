@@ -10,9 +10,12 @@ import (
 // CreateInformationWithConcensusNeededForTests creates a Information for tests
 func CreateInformationWithConcensusNeededForTests(concensusNeeded int) Information {
 	id := uuid.NewV4()
-	gazPricePerKb := rand.Int() % 30
-	maxAmountOfValidators := rand.Int() % 20
-	out, outErr := createInformation(&id, concensusNeeded, gazPricePerKb, maxAmountOfValidators)
+	gazPricePerKb := (rand.Int() % 30) + 1
+	maxAmountOfValidators := (rand.Int() % 20) + 1
+	netShares := 33
+	valShares := 33
+	affShares := 34
+	out, outErr := createInformation(&id, concensusNeeded, gazPricePerKb, maxAmountOfValidators, netShares, valShares, affShares)
 	if outErr != nil {
 		panic(outErr)
 	}

@@ -131,7 +131,7 @@ func createRepresentation() entity.Representation {
 			str := fmt.Sprintf("the entity (ID: %s) is not a valid Transfer instance", ins.ID().String())
 			return nil, errors.New(str)
 		},
-		Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+		OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 			// create the repository and service:
 			repository := entity.SDKFunc.CreateRepository(ds)
 			service := entity.SDKFunc.CreateService(ds)
@@ -148,12 +148,6 @@ func createRepresentation() entity.Representation {
 				// make sure the withdrawal wallet is not the same as the deposit wallet:
 				if bytes.Compare(with.From().ID().Bytes(), dep.To().ID().Bytes()) == 0 {
 					str := fmt.Sprintf("the wallet of the from withdrawal (ID: %s) cannot be the same as the deposit wallet (ID: %s)", with.From().ID().String(), dep.To().ID().String())
-					return errors.New(str)
-				}
-
-				// make sure the token of the withdrawal matches the deposit token:
-				if bytes.Compare(with.Token().ID().Bytes(), dep.Token().ID().Bytes()) != 0 {
-					str := fmt.Sprintf("the withdrawal token (ID: %s) does not match the deposit token (ID: %s)", with.Token().ID().String(), dep.Token().ID().String())
 					return errors.New(str)
 				}
 

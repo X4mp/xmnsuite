@@ -22,6 +22,7 @@ type Pledge interface {
 // Repository represents the pledge repository
 type Repository interface {
 	RetrieveByID(id *uuid.UUID) (Pledge, error)
+	RetrieveByFromAndToWallet(frm wallet.Wallet, to wallet.Wallet) (Pledge, error)
 	RetrieveSetByFromWallet(frm wallet.Wallet, index int, amount int) (entity.PartialSet, error)
 	RetrieveSetByToWallet(to wallet.Wallet, index int, amount int) (entity.PartialSet, error)
 }
@@ -87,7 +88,7 @@ var SDKFunc = struct {
 				str := fmt.Sprintf("the given entity (ID: %s) is not a valid Pledge instance", ins.ID().String())
 				return nil, errors.New(str)
 			},
-			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+			OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 				// create the repository and service:
 				repository := entity.SDKFunc.CreateRepository(ds)
 				service := entity.SDKFunc.CreateService(ds)

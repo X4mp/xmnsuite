@@ -13,16 +13,14 @@ import (
 )
 
 type sdkRepository struct {
-	pk          crypto.PrivateKey
-	client      applications.Client
-	routePrefix string
+	pk     crypto.PrivateKey
+	client applications.Client
 }
 
-func createSDKRepository(pk crypto.PrivateKey, client applications.Client, routePrefix string) Repository {
+func createSDKRepository(pk crypto.PrivateKey, client applications.Client) Repository {
 	out := sdkRepository{
-		pk:          pk,
-		client:      client,
-		routePrefix: routePrefix,
+		pk:     pk,
+		client: client,
 	}
 	return &out
 }
@@ -30,7 +28,7 @@ func createSDKRepository(pk crypto.PrivateKey, client applications.Client, route
 // RetrieveByID retrieves an entity by its ID
 func (app *sdkRepository) RetrieveByID(met MetaData, id *uuid.UUID) (Entity, error) {
 	// create the resource pointer:
-	queryPath := fmt.Sprintf("%s/%s/%s", app.routePrefix, met.Keyname(), id.String())
+	queryPath := fmt.Sprintf("/%s/%s", met.Keyname(), id.String())
 	queryResp, queryRespErr := app.execute(queryPath)
 	if queryRespErr != nil {
 		return nil, queryRespErr
@@ -54,7 +52,7 @@ func (app *sdkRepository) RetrieveByIntersectKeynames(met MetaData, keynames []s
 	encodedKeynames := base64.StdEncoding.EncodeToString([]byte(keynamesList))
 
 	// create the resource pointer:
-	queryPath := fmt.Sprintf("%s/%s/%s/intersect", app.routePrefix, met.Keyname(), encodedKeynames)
+	queryPath := fmt.Sprintf("/%s/%s/intersect", met.Keyname(), encodedKeynames)
 	queryResp, queryRespErr := app.execute(queryPath)
 	if queryRespErr != nil {
 		return nil, queryRespErr
@@ -83,7 +81,7 @@ func (app *sdkRepository) RetrieveSetByIntersectKeynames(met MetaData, keynames 
 	encodedKeynames := base64.StdEncoding.EncodeToString([]byte(keynamesList))
 
 	// create the resource pointer:
-	queryPath := fmt.Sprintf("%s/%s/%s/set/intersect", app.routePrefix, met.Keyname(), encodedKeynames)
+	queryPath := fmt.Sprintf("/%s/%s/set/intersect", met.Keyname(), encodedKeynames)
 	queryResp, queryRespErr := app.execute(queryPath)
 	if queryRespErr != nil {
 		return nil, queryRespErr

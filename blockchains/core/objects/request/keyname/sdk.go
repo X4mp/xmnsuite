@@ -85,7 +85,7 @@ var SDKFunc = struct {
 
 				return nil, errors.New("the given entity is not a valid Keyname instance")
 			},
-			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+			OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 				if kname, ok := ins.(Keyname); ok {
 					// metadata:
 					metaData := createMetaData()

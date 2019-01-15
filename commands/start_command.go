@@ -54,7 +54,6 @@ func (app *startCommand) Execute() (applications.Node, error) {
 		Port:          conf.Port(),
 		NodePK:        conf.NodePrivateKey(),
 		RootDir:       conf.BlockchainRootDirectory(),
-		RoutePrefix:   cons.RoutePrefix(),
 		RouterRoleKey: cons.RouterRoleKey(),
 		Store:         store,
 		Meta:          conf.Meta(),

@@ -17,7 +17,6 @@ type CreateParams struct {
 	Port          int
 	NodePK        tcrypto.PrivKey
 	RootDir       string
-	RoutePrefix   string
 	RouterRoleKey string
 	Store         datastore.StoredDataStore
 	Meta          meta.Meta
@@ -36,7 +35,6 @@ var SDKFunc = struct {
 				params.Name,
 				params.ID,
 				params.RootDir,
-				params.RoutePrefix,
 				params.RouterRoleKey,
 				params.Store,
 				params.Meta,
@@ -48,7 +46,6 @@ var SDKFunc = struct {
 			params.Name,
 			params.ID,
 			params.RootDir,
-			params.RoutePrefix,
 			params.RouterRoleKey,
 			params.Store,
 			params.Meta,

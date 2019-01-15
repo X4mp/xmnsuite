@@ -72,7 +72,7 @@ var SDKFunc = struct {
 					retrieveAllLinksKeyname(),
 				}, nil
 			},
-			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+			OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 				// create the repository and service:
 				repository := entity.SDKFunc.CreateRepository(ds)
 

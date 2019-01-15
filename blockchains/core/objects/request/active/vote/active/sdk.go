@@ -6,6 +6,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	active_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
 	core_vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/completed"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
 
@@ -94,7 +95,8 @@ var SDKFunc = struct {
 
 		voteRepresentation := createRepresentation()
 		requestRepresentation := active_request.SDKFunc.CreateRepresentation()
-		out := createVoteService(params.EntityRepository, params.EntityService, voteRepresentation, requestRepresentation)
+		completedRequestRepresentation := completed.SDKFunc.CreateRepresentation()
+		out := createVoteService(params.EntityRepository, params.EntityService, voteRepresentation, requestRepresentation, completedRequestRepresentation)
 		return out
 	},
 }

@@ -10,16 +10,14 @@ import (
 )
 
 type sdkService struct {
-	pk          crypto.PrivateKey
-	client      applications.Client
-	routePrefix string
+	pk     crypto.PrivateKey
+	client applications.Client
 }
 
-func createSDKService(pk crypto.PrivateKey, client applications.Client, routePrefix string) Service {
+func createSDKService(pk crypto.PrivateKey, client applications.Client) Service {
 	out := sdkService{
-		pk:          pk,
-		client:      client,
-		routePrefix: routePrefix,
+		pk:     pk,
+		client: client,
 	}
 	return &out
 }
@@ -37,7 +35,7 @@ func (app *sdkService) Save(ins Entity, rep Representation) error {
 	}
 
 	// create the resource:
-	route := fmt.Sprintf("%s/%s", app.routePrefix, rep.MetaData().Keyname())
+	route := fmt.Sprintf("/%s", rep.MetaData().Keyname())
 	firstRes := routers.SDKFunc.CreateResource(routers.CreateResourceParams{
 		ResPtr: routers.SDKFunc.CreateResourcePointer(routers.CreateResourcePointerParams{
 			From: app.pk.PublicKey(),
@@ -75,7 +73,7 @@ func (app *sdkService) Delete(ins Entity, rep Representation) error {
 	// create the resource:
 	respPtr := routers.SDKFunc.CreateResourcePointer(routers.CreateResourcePointerParams{
 		From: app.pk.PublicKey(),
-		Path: fmt.Sprintf("%s/%s/%s", app.routePrefix, rep.MetaData().Keyname(), ins.ID().String()),
+		Path: fmt.Sprintf("/%s/%s", rep.MetaData().Keyname(), ins.ID().String()),
 	})
 
 	// sign the resource:

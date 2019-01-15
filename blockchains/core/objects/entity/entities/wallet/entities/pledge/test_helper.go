@@ -21,6 +21,14 @@ func CreatePledgeForTests() Pledge {
 	return out
 }
 
+// CreatePledgeWithWalletForTests creates a pledge with wallet instance for tests
+func CreatePledgeWithWalletForTests(from wallet.Wallet, to wallet.Wallet, amount int) Pledge {
+	id := uuid.NewV4()
+	fromWith := withdrawal.CreateWithdrawalWithWalletForTests(from, amount)
+	out := createPledge(&id, fromWith, to)
+	return out
+}
+
 // CreatePledgeWithAmountForTests creates a pledge instance with amount for tests
 func CreatePledgeWithAmountForTests(amount int) Pledge {
 	id := uuid.NewV4()

@@ -9,7 +9,6 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/helpers"
 	"github.com/xmnservices/xmnsuite/blockchains/core/meta"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	active_request "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active"
 	vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote"
@@ -89,14 +88,9 @@ func create(met meta.Meta) *cliapp.Command {
 				EntityRepository: entityRepository,
 			})
 
-			walletRepository := wallet.SDKFunc.CreateRepository(wallet.CreateRepositoryParams{
-				EntityRepository: entityRepository,
-			})
-
 			voteService := vote.SDKFunc.CreateSDKService(vote.CreateSDKServiceParams{
-				PK:          conf.WalletPK(),
-				Client:      client,
-				RoutePrefix: "",
+				PK:     conf.WalletPK(),
+				Client: client,
 			})
 
 			activeVoteRepository := active_vote.SDKFunc.CreateRepository(active_vote.CreateRepositoryParams{
@@ -118,25 +112,10 @@ func create(met meta.Meta) *cliapp.Command {
 				panic(errors.New(str))
 			}
 
-			// parse the requestID:
-			walletIDAsString := c.String("walletid")
-			walletID, walletIDErr := uuid.FromString(walletIDAsString)
-			if walletIDErr != nil {
-				str := fmt.Sprintf("the given walletid (ID: %s) is not a valid id", walletIDAsString)
-				panic(errors.New(str))
-			}
-
-			// retrieve the wallet:
-			wal, walErr := walletRepository.RetrieveByID(&walletID)
-			if walErr != nil {
-				str := fmt.Sprintf("there was an error while retrieving the wallet (ID: %s): %s", walletID.String(), walErr.Error())
-				panic(errors.New(str))
-			}
-
 			// retrieve the user:
-			fromUser, fromUserErr := userRepository.RetrieveByPubKeyAndWallet(conf.WalletPK().PublicKey(), wal)
+			fromUser, fromUserErr := userRepository.RetrieveByPubKey(conf.WalletPK().PublicKey())
 			if fromUserErr != nil {
-				str := fmt.Sprintf("there was an error while retrieving the user (PubKey: %s, WalletID: %s): %s", conf.WalletPK().PublicKey().String(), wal.ID().String(), fromUserErr.Error())
+				str := fmt.Sprintf("there was an error while retrieving the user (PubKey: %s): %s", conf.WalletPK().PublicKey().String(), fromUserErr.Error())
 				panic(errors.New(str))
 			}
 

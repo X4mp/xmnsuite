@@ -3,7 +3,6 @@ package balance
 import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/withdrawal"
 )
 
@@ -20,26 +19,25 @@ func createRepository(depositRepository deposit.Repository, withdrawalRepository
 	return &out
 }
 
-// RetrieveByWalletAndToken retrieves a Balance instance by wallet and token
-func (app *repository) RetrieveByWalletAndToken(wal wallet.Wallet, tok token.Token) (Balance, error) {
-	// retrieve all the withdrawals related to our wallet and token:
-	withs, withsErr := app.withdrawalRepository.RetrieveSetByFromWalletAndToken(wal, tok)
+// RetrieveByWallet retrieves a Balance instance by wallet
+func (app *repository) RetrieveByWallet(wal wallet.Wallet) (Balance, error) {
+	// retrieve all the withdrawals related to our wallet:
+	withs, withsErr := app.withdrawalRepository.RetrieveSetByFromWallet(wal)
 	if withsErr != nil {
 		return nil, withsErr
 	}
 
-	// retrieve all the deposits related to our wallet and token:
-	deps, depsErr := app.depositRepository.RetrieveSetByToWalletAndToken(wal, tok)
+	// retrieve all the deposits related to our wallet:
+	deps, depsErr := app.depositRepository.RetrieveSetByToWallet(wal)
 	if depsErr != nil {
 		return nil, depsErr
 	}
 
-	return app.calculate(wal, tok, withs, deps)
+	return app.calculate(wal, withs, deps)
 }
 
 func (app *repository) calculate(
 	wal wallet.Wallet,
-	tok token.Token,
 	withs []withdrawal.Withdrawal,
 	deps []deposit.Deposit,
 ) (Balance, error) {
@@ -57,6 +55,6 @@ func (app *repository) calculate(
 
 	// create the balance:
 	total := depAmount - withAmount
-	bal := createBalance(wal, tok, total)
+	bal := createBalance(wal, total)
 	return bal, nil
 }

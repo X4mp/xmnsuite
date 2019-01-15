@@ -32,9 +32,9 @@ func (app *service) Save(ins Entity, rep Representation) error {
 
 	// sync the entity:
 	if rep.HasSync() {
-		syncErr := rep.Sync()(app.store, ins)
+		syncErr := rep.OnSave()(app.store, ins)
 		if syncErr != nil {
-			str := fmt.Sprintf("there was an error while syncing the instance (Name: %s, ID: %s): %s", name, ins.ID().String(), syncErr.Error())
+			str := fmt.Sprintf("there was an error while executing the OnSave method of the instance (Name: %s, ID: %s): %s", name, ins.ID().String(), syncErr.Error())
 			return errors.New(str)
 		}
 	}

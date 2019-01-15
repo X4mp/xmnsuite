@@ -4,7 +4,9 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/genesis"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/affiliates"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/validator"
 	active_vote "github.com/xmnservices/xmnsuite/blockchains/core/objects/request/active/vote/active"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/group"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/request/keyname"
@@ -13,16 +15,18 @@ import (
 )
 
 type dependencies struct {
-	entityRepository  entity.Repository
-	entityService     entity.Service
-	groupRepository   group.Repository
-	keynameRepository keyname.Repository
-	walletRepository  wallet.Repository
-	userRepository    user.Repository
-	genesisRepository genesis.Repository
-	genesisService    genesis.Service
-	balanceRepository balance.Repository
-	voteService       active_vote.Service
+	entityRepository    entity.Repository
+	entityService       entity.Service
+	groupRepository     group.Repository
+	keynameRepository   keyname.Repository
+	walletRepository    wallet.Repository
+	userRepository      user.Repository
+	genesisRepository   genesis.Repository
+	genesisService      genesis.Service
+	balanceRepository   balance.Repository
+	voteService         active_vote.Service
+	affiliateRepository affiliates.Repository
+	validatorRepository validator.Repository
 }
 
 func createDependencies(ds datastore.DataStore) *dependencies {
@@ -63,17 +67,27 @@ func createDependencies(ds datastore.DataStore) *dependencies {
 		EntityService:    entityService,
 	})
 
+	affiliateRepository := affiliates.SDKFunc.CreateRepository(affiliates.CreateRepositoryParams{
+		EntityRepository: entityRepository,
+	})
+
+	validatorRepository := validator.SDKFunc.CreateRepository(validator.CreateRepositoryParams{
+		EntityRepository: entityRepository,
+	})
+
 	out := dependencies{
-		entityRepository:  entityRepository,
-		entityService:     entityService,
-		groupRepository:   groupRepository,
-		keynameRepository: keynameRepository,
-		walletRepository:  walletRepository,
-		userRepository:    userRepository,
-		genesisRepository: genesisRepository,
-		genesisService:    genesisService,
-		balanceRepository: balanceRepository,
-		voteService:       voteService,
+		entityRepository:    entityRepository,
+		entityService:       entityService,
+		groupRepository:     groupRepository,
+		keynameRepository:   keynameRepository,
+		walletRepository:    walletRepository,
+		userRepository:      userRepository,
+		genesisRepository:   genesisRepository,
+		genesisService:      genesisService,
+		balanceRepository:   balanceRepository,
+		voteService:         voteService,
+		affiliateRepository: affiliateRepository,
+		validatorRepository: validatorRepository,
 	}
 
 	return &out

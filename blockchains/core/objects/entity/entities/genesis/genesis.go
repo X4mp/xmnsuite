@@ -7,6 +7,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/information"
 )
 
@@ -19,6 +20,7 @@ type genesis struct {
 	Inf  information.Information `json:"information"`
 	Usr  user.User               `json:"user"`
 	Dep  deposit.Deposit         `json:"deposit"`
+	Tok  token.Token             `json:"token"`
 }
 
 func createGenesis(
@@ -26,6 +28,7 @@ func createGenesis(
 	inf information.Information,
 	dep deposit.Deposit,
 	usr user.User,
+	tok token.Token,
 ) (Genesis, error) {
 
 	out := genesis{
@@ -33,6 +36,7 @@ func createGenesis(
 		Inf:  inf,
 		Usr:  usr,
 		Dep:  dep,
+		Tok:  tok,
 	}
 
 	return &out, nil
@@ -59,10 +63,20 @@ func createGenesisFromNormalized(ins *normalizedGenesis) (Genesis, error) {
 		return nil, usrInsErr
 	}
 
+	tokIns, tokInsErr := token.SDKFunc.CreateMetaData().Denormalize()(ins.Token)
+	if tokInsErr != nil {
+		return nil, tokInsErr
+	}
+
 	if dep, ok := depIns.(deposit.Deposit); ok {
 		if usr, ok := usrIns.(user.User); ok {
 			if inf, ok := infIns.(information.Information); ok {
-				return createGenesis(&id, inf, dep, usr)
+				if tok, ok := tokIns.(token.Token); ok {
+					return createGenesis(&id, inf, dep, usr, tok)
+				}
+
+				str := fmt.Sprintf("the entity (ID: %s) is not a valid Token instance", tokIns.ID().String())
+				return nil, errors.New(str)
 			}
 
 			str := fmt.Sprintf("the entity (ID: %s) is not a valid Information instance", infIns.ID().String())
@@ -95,4 +109,9 @@ func (app *genesis) User() user.User {
 // Deposit returns the initial deposit
 func (app *genesis) Deposit() deposit.Deposit {
 	return app.Dep
+}
+
+// Token returns the token
+func (app *genesis) Token() token.Token {
+	return app.Tok
 }

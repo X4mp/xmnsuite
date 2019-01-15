@@ -51,9 +51,8 @@ type RegisterParams struct {
 
 // CreateSDKServiceParams represents the CreateSDKService params
 type CreateSDKServiceParams struct {
-	PK          crypto.PrivateKey
-	Client      applications.Client
-	RoutePrefix string
+	PK     crypto.PrivateKey
+	Client applications.Client
 }
 
 var reg = createRegistry()
@@ -119,7 +118,7 @@ var SDKFunc = struct {
 
 				return nil, errors.New("the given entity is not a valid Request instance")
 			},
-			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+			OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 				if req, ok := ins.(Request); ok {
 					// metadata:
 					metaData := createMetaData(reg)
@@ -152,7 +151,7 @@ var SDKFunc = struct {
 		})
 	},
 	CreateSDKService: func(params CreateSDKServiceParams) Service {
-		out := createSDKService(params.PK, params.Client, params.RoutePrefix)
+		out := createSDKService(params.PK, params.Client)
 		return out
 	},
 }

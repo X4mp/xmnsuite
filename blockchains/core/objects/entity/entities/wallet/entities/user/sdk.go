@@ -18,6 +18,8 @@ type User interface {
 	Name() string
 	Shares() int
 	Wallet() wallet.Wallet
+	HasBeenReferred() bool
+	Referral() wallet.Wallet
 }
 
 // Normalized represents a normalized user
@@ -28,19 +30,19 @@ type Normalized interface {
 type Repository interface {
 	RetrieveByID(id *uuid.UUID) (User, error)
 	RetrieveByName(name string) (User, error)
-	RetrieveByPubKeyAndWallet(pubKey crypto.PublicKey, wal wallet.Wallet) (User, error)
-	RetrieveSetByPubKey(pubKey crypto.PublicKey, index int, amount int) (entity.PartialSet, error)
+	RetrieveByPubKey(pubKey crypto.PublicKey) (User, error)
 	RetrieveSetByWallet(wal wallet.Wallet, index int, amount int) (entity.PartialSet, error)
 	RetrieveSet(index int, amount int) (entity.PartialSet, error)
 }
 
 // CreateParams represents the Create params
 type CreateParams struct {
-	ID     *uuid.UUID
-	Name   string
-	PubKey crypto.PublicKey
-	Shares int
-	Wallet wallet.Wallet
+	ID       *uuid.UUID
+	Name     string
+	PubKey   crypto.PublicKey
+	Shares   int
+	Wallet   wallet.Wallet
+	Referral wallet.Wallet
 }
 
 // CreateRepositoryParams represents the CreateRepository params
@@ -60,6 +62,15 @@ var SDKFunc = struct {
 		if params.ID == nil {
 			id := uuid.NewV4()
 			params.ID = &id
+		}
+
+		if params.Referral != nil {
+			out, outErr := createUserWithReferral(params.ID, params.Name, params.PubKey, params.Shares, params.Wallet, params.Referral)
+			if outErr != nil {
+				panic(outErr)
+			}
+
+			return out
 		}
 
 		out, outErr := createUser(params.ID, params.Name, params.PubKey, params.Shares, params.Wallet)
@@ -95,19 +106,25 @@ var SDKFunc = struct {
 			},
 			Keynames: func(ins entity.Entity) ([]string, error) {
 				if usr, ok := ins.(User); ok {
-					return []string{
+					keynames := []string{
 						retrieveAllUserKeyname(),
 						retrieveUserByPubKeyKeyname(usr.PubKey()),
 						retrieveUserByWalletIDKeyname(usr.Wallet().ID()),
 						retrieveUserByNameKeyname(usr.Name()),
-					}, nil
+					}
+
+					if usr.HasBeenReferred() {
+						keynames = append(keynames, retrieveUserByWalletReferralKeyname(usr.Referral().ID()))
+					}
+
+					return keynames, nil
 				}
 
 				str := fmt.Sprintf("the given entity (ID: %s) is not a valid User instance", ins.ID().String())
 				return nil, errors.New(str)
 
 			},
-			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+			OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 
 				if usr, ok := ins.(User); ok {
 
@@ -120,10 +137,10 @@ var SDKFunc = struct {
 					repository := createRepository(metaData, entityRepository)
 					entityService := entity.SDKFunc.CreateService(ds)
 
-					// make sure there is no other user with the given public key, on the same wallet:
-					_, retUserErr := repository.RetrieveByPubKeyAndWallet(usr.PubKey(), usr.Wallet())
+					// make sure there is no other user with the given public key:
+					_, retUserErr := repository.RetrieveByPubKey(usr.PubKey())
 					if retUserErr == nil {
-						str := fmt.Sprintf("the User instance (PubKey: %s, WalletID: %s) already exists", usr.PubKey().String(), usr.Wallet().ID().String())
+						str := fmt.Sprintf("the User instance (PubKey: %s) already exists", usr.PubKey().String())
 						return errors.New(str)
 					}
 

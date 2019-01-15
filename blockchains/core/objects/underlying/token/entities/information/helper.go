@@ -24,7 +24,7 @@ func createMetaData() entity.MetaData {
 					return nil, idErr
 				}
 
-				return createInformation(&id, storable.ConcensusNeeded, storable.GzPricePerKb, storable.MxAmountOfValidators)
+				return createInformation(&id, storable.ConcensusNeeded, storable.GzPricePerKb, storable.MxAmountOfValidators, storable.NetworkShare, storable.ValidatorsShare, storable.AffiliateShare)
 			}
 
 			if storable, ok := data.(*storableInformation); ok {
@@ -87,7 +87,7 @@ func representation() entity.Representation {
 				keyname(),
 			}, nil
 		},
-		Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+		OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 			if info, ok := ins.(Information); ok {
 				// crate metadata and representation:
 				metaData := createMetaData()

@@ -1,24 +1,42 @@
 package wallet
 
 import (
+	"errors"
+	"fmt"
+	"regexp"
+
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/crypto"
 )
 
 type wallet struct {
 	UUID          *uuid.UUID       `json:"id"`
+	Nme           string           `json:"name"`
 	CreatorPubKey crypto.PublicKey `json:"creator"`
 	CNeeded       int              `json:"concensus_needed"`
 }
 
-func createWallet(id *uuid.UUID, creatorPubKey crypto.PublicKey, concensusNeeded int) Wallet {
+func createWallet(id *uuid.UUID, name string, creatorPubKey crypto.PublicKey, concensusNeeded int) (Wallet, error) {
+
+	pattern, patternErr := regexp.Compile("[a-zA-Z0-9-]{3,}")
+	if patternErr != nil {
+		return nil, patternErr
+	}
+
+	found := pattern.FindString(name)
+	if found != name {
+		str := fmt.Sprintf("the name (%s) must only contain letters, numbers and hyphens (-) with at least 3 characters", name)
+		return nil, errors.New(str)
+	}
+
 	out := wallet{
 		UUID:          id,
+		Nme:           name,
 		CreatorPubKey: creatorPubKey,
 		CNeeded:       concensusNeeded,
 	}
 
-	return &out
+	return &out, nil
 }
 
 func createWalletFromStorable(storable *storableWallet) (Wallet, error) {
@@ -31,13 +49,17 @@ func createWalletFromStorable(storable *storableWallet) (Wallet, error) {
 		PubKeyAsString: storable.Creator,
 	})
 
-	out := createWallet(&id, pubKey, storable.CNeeded)
-	return out, nil
+	return createWallet(&id, storable.Name, pubKey, storable.CNeeded)
 }
 
 // ID returns the ID
 func (app *wallet) ID() *uuid.UUID {
 	return app.UUID
+}
+
+// Name returns the name
+func (app *wallet) Name() string {
+	return app.Nme
 }
 
 // Creator returns the creator public key

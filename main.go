@@ -2,8 +2,10 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 
+	update "github.com/inconshreveable/go-update"
 	term "github.com/nsf/termbox-go"
 	amino "github.com/tendermint/go-amino"
 	cliapp "github.com/urfave/cli"
@@ -23,7 +25,7 @@ func main() {
 	core.Register(cdc)
 
 	// create the meta:
-	met := meta.SDKFunc.Create(meta.CreateParams{})
+	meta.SDKFunc.Create(meta.CreateParams{})
 
 	app := cliapp.NewApp()
 	app.Version = "2019.01.01"
@@ -32,16 +34,6 @@ func main() {
 	app.Commands = []cliapp.Command{
 		*cli.SDKFunc.Config(),
 		*cli.SDKFunc.Spawn(),
-		*cli.SDKFunc.Wallet(),
-		*cli.SDKFunc.Genesis(),
-		*cli.SDKFunc.Information(),
-		*cli.SDKFunc.Balance(),
-		*cli.SDKFunc.User(),
-		*cli.SDKFunc.Transfer(),
-		*cli.SDKFunc.Pledge(),
-		*cli.SDKFunc.Validator(),
-		*cli.SDKFunc.Affiliates(),
-		*cli.SDKFunc.Request(met),
 	}
 
 	err := app.Run(os.Args)
@@ -49,4 +41,14 @@ func main() {
 		log.Fatal(err)
 	}
 
+}
+
+func doUpdate(url string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+	upErr := update.Apply(resp.Body, update.Options{})
+	return upErr
 }

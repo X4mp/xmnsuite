@@ -13,7 +13,6 @@ const (
 	id                           = "5aac4a8d-7cb5-457c-b43d-ca0933c20dab"
 	databaseFilePath             = "db/blockchain/blockchain.db"
 	blockchainRootDirectory      = "db/blockchain/files"
-	routePrefix                  = ""
 	tokenSymbol                  = "XMN"
 	tokenName                    = "XMN"
 	tokenDescription             = "The XMN core is a decentralized core blockchain infrastructure."
@@ -22,6 +21,9 @@ const (
 	initialGazPricePerKB         = 1
 	initialTokenConcensusNeeded  = 50
 	initialMaxAmountOfValidators = 200
+	initialNetworkShare          = 5
+	initialValidatorShare        = 80
+	initialReferralShare         = 15
 	initialUserAmountOfShares    = 100
 )
 

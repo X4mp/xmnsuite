@@ -116,22 +116,22 @@ func retrieveRightUsers(c *cliapp.Context, conf configs.Configs, userRepository 
 	// if there is no wallet:
 	if walletIDAsString == "" {
 		if !me {
-			retUsersPS, retUSersPSErr := userRepository.RetrieveSet(index, amount)
-			if retUSersPSErr != nil {
-				str := fmt.Sprintf("there was an error while retrieving a set of users (index: %d, amount: %d): %s", index, amount, retUSersPSErr.Error())
+			retUsersPS, retUsersPSErr := userRepository.RetrieveSet(index, amount)
+			if retUsersPSErr != nil {
+				str := fmt.Sprintf("there was an error while retrieving a set of users (index: %d, amount: %d): %s", index, amount, retUsersPSErr.Error())
 				return nil, nil, errors.New(str)
 			}
 
 			return retUsersPS, nil, nil
 		}
 
-		retUsersPS, retUSersPSErr := userRepository.RetrieveSetByPubKey(conf.WalletPK().PublicKey(), index, amount)
-		if retUSersPSErr != nil {
-			str := fmt.Sprintf("there was an error while retrieving a set of users (index: %d, amount: %d, pubKey: %s): %s", index, amount, conf.WalletPK().PublicKey().String(), retUSersPSErr.Error())
-			return nil, nil, errors.New(str)
+		retUser, retUserErr := userRepository.RetrieveByPubKey(conf.WalletPK().PublicKey())
+		if retUserErr != nil {
+			str := fmt.Sprintf("there was an error while retrieving a user (pubKey: %s): %s", conf.WalletPK().PublicKey().String(), retUserErr.Error())
+			panic(errors.New(str))
 		}
 
-		return retUsersPS, nil, nil
+		return nil, retUser, nil
 	}
 
 	// parse the walletID:
@@ -149,16 +149,16 @@ func retrieveRightUsers(c *cliapp.Context, conf configs.Configs, userRepository 
 	}
 
 	if !me {
-		retUsersPS, retUSersPSErr := userRepository.RetrieveSetByWallet(wal, index, amount)
-		if retUSersPSErr != nil {
-			str := fmt.Sprintf("there was an error while retrieving a set of users (index: %d, amount: %d, walletID: %s): %s", index, amount, wal.ID().String(), retUSersPSErr.Error())
+		retUsersPS, retUsersPSErr := userRepository.RetrieveSetByWallet(wal, index, amount)
+		if retUsersPSErr != nil {
+			str := fmt.Sprintf("there was an error while retrieving a set of users (index: %d, amount: %d, walletID: %s): %s", index, amount, wal.ID().String(), retUsersPSErr.Error())
 			return nil, nil, errors.New(str)
 		}
 
 		return retUsersPS, nil, nil
 	}
 
-	retUser, retUserErr := userRepository.RetrieveByPubKeyAndWallet(conf.WalletPK().PublicKey(), wal)
+	retUser, retUserErr := userRepository.RetrieveByPubKey(conf.WalletPK().PublicKey())
 	if retUserErr != nil {
 		str := fmt.Sprintf("there was an error while retrieving a user (pubKey: %s, walletID: %s): %s", conf.WalletPK().PublicKey().String(), wal.ID().String(), retUserErr.Error())
 		panic(errors.New(str))

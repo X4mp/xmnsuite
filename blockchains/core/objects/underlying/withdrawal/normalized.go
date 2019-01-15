@@ -2,13 +2,11 @@ package withdrawal
 
 import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 )
 
 type normalizedWithdrawal struct {
 	ID     string            `json:"id"`
 	From   wallet.Normalized `json:"from"`
-	Token  token.Normalized  `json:"token"`
 	Amount int               `json:"amount"`
 }
 
@@ -18,15 +16,9 @@ func createNormalizedWithdrawal(ins Withdrawal) (*normalizedWithdrawal, error) {
 		return nil, fromErr
 	}
 
-	tok, tokErr := token.SDKFunc.CreateMetaData().Normalize()(ins.Token())
-	if tokErr != nil {
-		return nil, tokErr
-	}
-
 	out := normalizedWithdrawal{
 		ID:     ins.ID().String(),
 		From:   from,
-		Token:  tok,
 		Amount: ins.Amount(),
 	}
 

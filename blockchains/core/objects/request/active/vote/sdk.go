@@ -49,9 +49,8 @@ type CreateParams struct {
 
 // CreateSDKServiceParams represents the CreateSDKService params
 type CreateSDKServiceParams struct {
-	PK          crypto.PrivateKey
-	Client      applications.Client
-	RoutePrefix string
+	PK     crypto.PrivateKey
+	Client applications.Client
 }
 
 // SDKFunc represents the vote SDK func
@@ -81,7 +80,7 @@ var SDKFunc = struct {
 		return createRepresentation()
 	},
 	CreateSDKService: func(params CreateSDKServiceParams) Service {
-		out := createSDKService(params.PK, params.Client, params.RoutePrefix)
+		out := createSDKService(params.PK, params.Client)
 		return out
 	},
 }

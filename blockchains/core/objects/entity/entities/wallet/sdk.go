@@ -1,6 +1,7 @@
 package wallet
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 
@@ -13,6 +14,7 @@ import (
 // Wallet represents a wallet
 type Wallet interface {
 	ID() *uuid.UUID
+	Name() string
 	Creator() crypto.PublicKey
 	ConcensusNeeded() int
 }
@@ -20,6 +22,7 @@ type Wallet interface {
 // Repository represents the wallet repository
 type Repository interface {
 	RetrieveByID(id *uuid.UUID) (Wallet, error)
+	RetrieveByName(name string) (Wallet, error)
 	RetrieveSet(index int, amount int) (entity.PartialSet, error)
 	RetrieveSetByCreatorPublicKey(pubKey crypto.PublicKey, index int, amount int) (entity.PartialSet, error)
 }
@@ -31,14 +34,8 @@ type Normalized interface {
 // CreateParams represents the Create params
 type CreateParams struct {
 	ID              *uuid.UUID
+	Name            string
 	Creator         crypto.PublicKey
-	ConcensusNeeded int
-}
-
-// CreateNormalizedParams represents the CreateNormalized params
-type CreateNormalizedParams struct {
-	ID              string
-	CreatorPubKey   string
 	ConcensusNeeded int
 }
 
@@ -50,7 +47,6 @@ type CreateRepositoryParams struct {
 // SDKFunc represents the Wallet SDK func
 var SDKFunc = struct {
 	Create               func(params CreateParams) Wallet
-	CreateNormalized     func(params CreateNormalizedParams) Normalized
 	CreateMetaData       func() entity.MetaData
 	CreateRepresentation func() entity.Representation
 	CreateRepository     func(params CreateRepositoryParams) Repository
@@ -61,16 +57,12 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out := createWallet(params.ID, params.Creator, params.ConcensusNeeded)
-		return out
-	},
-	CreateNormalized: func(params CreateNormalizedParams) Normalized {
-		if params.ID == "" {
-			id := uuid.NewV4()
-			params.ID = id.String()
+		out, outErr := createWallet(params.ID, params.Name, params.Creator, params.ConcensusNeeded)
+		if outErr != nil {
+			panic(outErr)
 		}
 
-		return createStorableWalletFromParams(params.ID, params.CreatorPubKey, params.ConcensusNeeded)
+		return out
 	},
 	CreateMetaData: func() entity.MetaData {
 		return createMetaData()
@@ -92,6 +84,7 @@ var SDKFunc = struct {
 					return []string{
 						retrieveAllWalletKeyname(),
 						retrieveByPublicKeyWalletKeyname(wal.Creator()),
+						retrieveByNameKeyname(wal.Name()),
 					}, nil
 				}
 
@@ -99,16 +92,27 @@ var SDKFunc = struct {
 				return nil, errors.New(str)
 
 			},
-			Sync: func(ds datastore.DataStore, ins entity.Entity) error {
-				// create the repository and service:
-				repository := entity.SDKFunc.CreateRepository(ds)
-
+			OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 				// create the metadata:
 				metaData := createMetaData()
 
+				// create the repository and service:
+				entityRepository := entity.SDKFunc.CreateRepository(ds)
+				repository := createRepository(metaData, entityRepository)
+
 				if wal, ok := ins.(Wallet); ok {
+					// make sure there is no other wallet with the same name:
+					retWalletByName, retWalletByNameErr := repository.RetrieveByName(wal.Name())
+					if retWalletByNameErr == nil {
+						// if the IDs do not match:
+						if bytes.Compare(retWalletByName.ID().Bytes(), wal.ID().Bytes()) != 0 {
+							str := fmt.Sprintf("the Wallet instance (Name: %s) already exists", wal.Name())
+							return errors.New(str)
+						}
+					}
+
 					// if the wallet already exists:
-					retWalletIns, retWalletInsErr := repository.RetrieveByID(metaData, wal.ID())
+					retWalletIns, retWalletInsErr := repository.RetrieveByID(wal.ID())
 					if retWalletInsErr == nil {
 						// cast the returned wallet:
 						if retWal, ok := retWalletIns.(Wallet); ok {

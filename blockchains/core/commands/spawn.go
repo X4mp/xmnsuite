@@ -45,6 +45,9 @@ func spawn(pass string, filename string, rootDir string, port int) (applications
 				GazPricePerKb:         initialGazPricePerKB,
 				ConcensusNeeded:       initialTokenConcensusNeeded,
 				MaxAmountOfValidators: initialMaxAmountOfValidators,
+				NetworkShare:          initialNetworkShare,
+				ValidatorsShare:       initialValidatorShare,
+				AffiliateShare:        initialReferralShare,
 			}),
 			User: user.SDKFunc.Create(user.CreateParams{
 				PubKey: retConf.WalletPK().PublicKey(),
@@ -52,13 +55,13 @@ func spawn(pass string, filename string, rootDir string, port int) (applications
 				Wallet: wal,
 			}),
 			Deposit: deposit.SDKFunc.Create(deposit.CreateParams{
-				To: wal,
-				Token: token.SDKFunc.Create(token.CreateParams{
-					Symbol:      tokenSymbol,
-					Name:        tokenName,
-					Description: tokenDescription,
-				}),
+				To:     wal,
 				Amount: totalTokenAmount,
+			}),
+			Token: token.SDKFunc.Create(token.CreateParams{
+				Symbol:      tokenSymbol,
+				Name:        tokenName,
+				Description: tokenDescription,
 			}),
 		}),
 	})

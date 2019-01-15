@@ -19,16 +19,14 @@ type outgoingVote struct {
 }
 
 type sdkService struct {
-	pk          crypto.PrivateKey
-	client      applications.Client
-	routePrefix string
+	pk     crypto.PrivateKey
+	client applications.Client
 }
 
-func createSDKService(pk crypto.PrivateKey, client applications.Client, routePrefix string) Service {
+func createSDKService(pk crypto.PrivateKey, client applications.Client) Service {
 	out := sdkService{
-		pk:          pk,
-		client:      client,
-		routePrefix: routePrefix,
+		pk:     pk,
+		client: client,
 	}
 	return &out
 }
@@ -57,7 +55,7 @@ func (app *sdkService) Save(ins Vote, rep entity.Representation) error {
 	}
 
 	// create the resource:
-	route := fmt.Sprintf("%s/%s/requests/%s", app.routePrefix, rep.MetaData().Keyname(), ins.Request().ID().String())
+	route := fmt.Sprintf("/%s/requests/%s", rep.MetaData().Keyname(), ins.Request().ID().String())
 	firstRes := routers.SDKFunc.CreateResource(routers.CreateResourceParams{
 		ResPtr: routers.SDKFunc.CreateResourcePointer(routers.CreateResourcePointerParams{
 			From: app.pk.PublicKey(),

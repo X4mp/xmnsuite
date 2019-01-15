@@ -16,18 +16,23 @@ type user struct {
 	PKey  crypto.PublicKey `json:"pubkey"`
 	Shres int              `json:"shares"`
 	Wal   wallet.Wallet    `json:"wallet"`
+	Ref   wallet.Wallet    `json:"referral"`
 }
 
 func createUser(id *uuid.UUID, nme string, pubKey crypto.PublicKey, shares int, wallet wallet.Wallet) (User, error) {
+	return createUserWithReferral(id, nme, pubKey, shares, wallet, nil)
+}
 
-	pattern, patternErr := regexp.Compile("[a-zA-Z0-9_]{3,}")
+func createUserWithReferral(id *uuid.UUID, nme string, pubKey crypto.PublicKey, shares int, wallet wallet.Wallet, ref wallet.Wallet) (User, error) {
+
+	pattern, patternErr := regexp.Compile("[a-zA-Z0-9-]{3,}")
 	if patternErr != nil {
 		return nil, patternErr
 	}
 
 	found := pattern.FindString(nme)
 	if found != nme {
-		str := fmt.Sprintf("the name (%s) must only contain letters, numbers and underscores (_) with at least 3 characters", nme)
+		str := fmt.Sprintf("the name (%s) must only contain letters, numbers and hyphens (-) with at least 3 characters", nme)
 		return nil, errors.New(str)
 	}
 
@@ -37,6 +42,7 @@ func createUser(id *uuid.UUID, nme string, pubKey crypto.PublicKey, shares int, 
 		PKey:  pubKey,
 		Shres: shares,
 		Wal:   wallet,
+		Ref:   ref,
 	}
 
 	return &out, nil
@@ -88,4 +94,14 @@ func (app *user) Shares() int {
 // Wallet returns the wallet
 func (app *user) Wallet() wallet.Wallet {
 	return app.Wal
+}
+
+// HasBeenReferred returns true if the user has been referred, false otherwise
+func (app *user) HasBeenReferred() bool {
+	return app.Ref != nil
+}
+
+// Referral returns the referral, if any
+func (app *user) Referral() wallet.Wallet {
+	return app.Ref
 }

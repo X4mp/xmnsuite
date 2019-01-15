@@ -6,16 +6,14 @@ type constants struct {
 	namespace     string
 	name          string
 	id            *uuid.UUID
-	routePrefix   string
 	routerRoleKey string
 }
 
-func createConstants(namespace string, name string, id *uuid.UUID, routePrefix string, routerRoleKey string) (Constants, error) {
+func createConstants(namespace string, name string, id *uuid.UUID, routerRoleKey string) (Constants, error) {
 	out := constants{
 		namespace:     namespace,
 		name:          name,
 		id:            id,
-		routePrefix:   routePrefix,
 		routerRoleKey: routerRoleKey,
 	}
 
@@ -35,11 +33,6 @@ func (obj *constants) Name() string {
 // ID returns the ID
 func (obj *constants) ID() *uuid.UUID {
 	return obj.id
-}
-
-// RoutePrefix returns the route prefix
-func (obj *constants) RoutePrefix() string {
-	return obj.routePrefix
 }
 
 // RouterRoleKey returns the router role key

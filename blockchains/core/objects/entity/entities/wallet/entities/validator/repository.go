@@ -76,6 +76,7 @@ func (app *repository) RetrieveSetOrderedByPledgeAmount(index int, amount int) (
 	for _, oneValIns := range valIns {
 		if val, ok := oneValIns.(Validator); ok {
 			vals = append(vals, val)
+			continue
 		}
 
 		str := fmt.Sprintf("the entity (ID: %s) is not a valid Validator instance", oneValIns.ID().String())

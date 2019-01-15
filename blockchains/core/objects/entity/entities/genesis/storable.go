@@ -5,6 +5,7 @@ type storableGenesis struct {
 	InfoID           string `json:"information_id"`
 	UserID           string `json:"user_id"`
 	InitialDepositID string `json:"initial_deposit_id"`
+	TokenID          string `json:"token_id"`
 }
 
 func createStorableGenesis(gen Genesis) *storableGenesis {
@@ -13,6 +14,7 @@ func createStorableGenesis(gen Genesis) *storableGenesis {
 		InfoID:           gen.Info().ID().String(),
 		UserID:           gen.User().ID().String(),
 		InitialDepositID: gen.Deposit().ID().String(),
+		TokenID:          gen.Token().ID().String(),
 	}
 
 	return &out

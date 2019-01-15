@@ -8,6 +8,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/information"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
@@ -41,6 +42,11 @@ func createMetaData() entity.MetaData {
 					return nil, infIDErr
 				}
 
+				tokID, tokIDErr := uuid.FromString(storable.TokenID)
+				if tokIDErr != nil {
+					return nil, tokIDErr
+				}
+
 				// retrieve the initial deposit:
 				depositMet := deposit.SDKFunc.CreateMetaData()
 				depIns, depInsErr := rep.RetrieveByID(depositMet, &initialDepID)
@@ -62,10 +68,22 @@ func createMetaData() entity.MetaData {
 					return nil, infInsErr
 				}
 
+				// retrieve the token:
+				tokMet := token.SDKFunc.CreateMetaData()
+				tokIns, tokInsErr := rep.RetrieveByID(tokMet, &tokID)
+				if tokInsErr != nil {
+					return nil, tokInsErr
+				}
+
 				if deposit, ok := depIns.(deposit.Deposit); ok {
 					if usr, ok := usrIns.(user.User); ok {
 						if inf, ok := infIns.(information.Information); ok {
-							return createGenesis(&id, inf, deposit, usr)
+							if tok, ok := tokIns.(token.Token); ok {
+								return createGenesis(&id, inf, deposit, usr, tok)
+							}
+
+							str := fmt.Sprintf("the entity (ID: %s) is not a valid Token instance", tokIns.ID().String())
+							return nil, errors.New(str)
 						}
 
 						str := fmt.Sprintf("the entity (ID: %s) is not a valid Information instance", infID.String())
@@ -140,7 +158,7 @@ func representation() entity.Representation {
 				keyname(),
 			}, nil
 		},
-		Sync: func(ds datastore.DataStore, ins entity.Entity) error {
+		OnSave: func(ds datastore.DataStore, ins entity.Entity) error {
 			if gen, ok := ins.(Genesis); ok {
 				// the user must have enough shares in order to fill the concensus, on genesis:
 				genUser := gen.User()
@@ -205,6 +223,20 @@ func representation() entity.Representation {
 				infSaveErr := service.Save(inf, infoRepresentation)
 				if infSaveErr != nil {
 					return infSaveErr
+				}
+
+				// token:
+				tok := gen.Token()
+				tokenRepresentation := token.SDKFunc.CreateRepresentation()
+				_, retTokErr := repository.RetrieveByID(tokenRepresentation.MetaData(), tok.ID())
+				if retTokErr == nil {
+					str := fmt.Sprintf("the Genesis instance contains a Token instance (ID: %s) that is already saved", tok.ID().String())
+					return errors.New(str)
+				}
+
+				tokSaveErr := service.Save(tok, tokenRepresentation)
+				if tokSaveErr != nil {
+					return tokSaveErr
 				}
 
 				return nil

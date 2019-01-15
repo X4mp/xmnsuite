@@ -5,6 +5,7 @@ import (
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/deposit"
+	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/information"
 	"github.com/xmnservices/xmnsuite/datastore"
 )
@@ -15,6 +16,7 @@ type Genesis interface {
 	Info() information.Information
 	User() user.User
 	Deposit() deposit.Deposit
+	Token() token.Token
 }
 
 // Normalized represents the normalized Genesis instance
@@ -37,6 +39,7 @@ type CreateParams struct {
 	Info    information.Information
 	User    user.User
 	Deposit deposit.Deposit
+	Token   token.Token
 }
 
 // CreateRepositoryParams represents the CreateRepository params
@@ -66,7 +69,7 @@ var SDKFunc = struct {
 			params.ID = &id
 		}
 
-		out, outErr := createGenesis(params.ID, params.Info, params.Deposit, params.User)
+		out, outErr := createGenesis(params.ID, params.Info, params.Deposit, params.User, params.Token)
 		if outErr != nil {
 			panic(outErr)
 		}

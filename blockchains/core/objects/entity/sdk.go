@@ -19,8 +19,11 @@ type ToEntity func(repository Repository, data interface{}) (Entity, error)
 // Keynames returns the keynames related to the entity
 type Keynames func(ins Entity) ([]string, error)
 
-// Sync syncs the sub entities with the database.  Can be used to store the sub entities in the database, before storing the current entity
-type Sync func(ds datastore.DataStore, ins Entity) error
+// OnSave is a method executed before saving the entity instance.  Can be used to store the sub entities in the database, before storing the current entity
+type OnSave func(ds datastore.DataStore, ins Entity) error
+
+// OnDelete is a method executed before deleting the entity instance.  Can be used to cleanup sub entities
+type OnDelete func(ds datastore.DataStore, ins Entity) error
 
 // Normalize normalized an entity
 type Normalize func(ins Entity) (interface{}, error)
@@ -59,7 +62,8 @@ type Representation interface {
 	HasKeynames() bool
 	Keynames() Keynames
 	HasSync() bool
-	Sync() Sync
+	OnSave() OnSave
+	OnDelete() OnDelete
 }
 
 // PartialSet represents an  entity partial set
@@ -110,21 +114,20 @@ type CreateRepresentationParams struct {
 	Met        MetaData
 	ToStorable ToStorable
 	Keynames   Keynames
-	Sync       Sync
+	OnSave     OnSave
+	OnDelete   OnDelete
 }
 
 // CreateSDKRepositoryParams represents the CreateSDKRepository params
 type CreateSDKRepositoryParams struct {
-	PK          crypto.PrivateKey
-	Client      applications.Client
-	RoutePrefix string
+	PK     crypto.PrivateKey
+	Client applications.Client
 }
 
 // CreateSDKServiceParams represents the CreateSDKService params
 type CreateSDKServiceParams struct {
-	PK          crypto.PrivateKey
-	Client      applications.Client
-	RoutePrefix string
+	PK     crypto.PrivateKey
+	Client applications.Client
 }
 
 // NormalizePartialSetParams represents the normalize partial set params
@@ -167,7 +170,7 @@ var SDKFunc = struct {
 		return met
 	},
 	CreateRepresentation: func(params CreateRepresentationParams) Representation {
-		out, outErr := createRepresentation(params.Met, params.ToStorable, params.Keynames, params.Sync)
+		out, outErr := createRepresentation(params.Met, params.ToStorable, params.Keynames, params.OnSave, params.OnDelete)
 		if outErr != nil {
 			panic(outErr)
 		}
@@ -184,11 +187,11 @@ var SDKFunc = struct {
 		return out
 	},
 	CreateSDKRepository: func(params CreateSDKRepositoryParams) Repository {
-		out := createSDKRepository(params.PK, params.Client, params.RoutePrefix)
+		out := createSDKRepository(params.PK, params.Client)
 		return out
 	},
 	CreateSDKService: func(params CreateSDKServiceParams) Service {
-		out := createSDKService(params.PK, params.Client, params.RoutePrefix)
+		out := createSDKService(params.PK, params.Client)
 		return out
 	},
 	NormalizePartialSet: func(params NormalizePartialSetParams) NormalizedPartialSet {

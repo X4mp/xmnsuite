@@ -38,6 +38,25 @@ func (app *repository) RetrieveByID(id *uuid.UUID) (Wallet, error) {
 	return nil, errors.New(str)
 }
 
+// RetrieveByName retrieves the wallet by name
+func (app *repository) RetrieveByName(name string) (Wallet, error) {
+	keynames := []string{
+		retrieveByNameKeyname(name),
+	}
+
+	walIns, walInsErr := app.entityRepository.RetrieveByIntersectKeynames(app.metaData, keynames)
+	if walInsErr != nil {
+		return nil, walInsErr
+	}
+
+	if wal, ok := walIns.(Wallet); ok {
+		return wal, nil
+	}
+
+	str := fmt.Sprintf("the given entity (ID: %s) is not a valid Wallet instance", walIns.ID().String())
+	return nil, errors.New(str)
+}
+
 // RetrieveSetByCreatorPublicKey retrieves the wallet set by public key
 func (app *repository) RetrieveSetByCreatorPublicKey(pubKey crypto.PublicKey, index int, amount int) (entity.PartialSet, error) {
 	keynames := []string{

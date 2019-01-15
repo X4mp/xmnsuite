@@ -7,17 +7,15 @@ import (
 
 	uuid "github.com/satori/go.uuid"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token"
 )
 
 type withdrawal struct {
 	UUID       *uuid.UUID    `json:"id"`
 	FromWallet wallet.Wallet `json:"from"`
-	Tok        token.Token   `json:"token"`
 	Am         int           `json:"amount"`
 }
 
-func createWithdrawal(id *uuid.UUID, fromWallet wallet.Wallet, tok token.Token, amount int) (Withdrawal, error) {
+func createWithdrawal(id *uuid.UUID, fromWallet wallet.Wallet, amount int) (Withdrawal, error) {
 
 	if amount <= 0 {
 		return nil, errors.New("the amount (%d) must be bigger than 0")
@@ -31,7 +29,6 @@ func createWithdrawal(id *uuid.UUID, fromWallet wallet.Wallet, tok token.Token, 
 	out := withdrawal{
 		UUID:       id,
 		FromWallet: fromWallet,
-		Tok:        tok,
 		Am:         amount,
 	}
 
@@ -50,18 +47,8 @@ func createWithdrawalFromNormalized(ins *normalizedWithdrawal) (Withdrawal, erro
 		return nil, fromInsErr
 	}
 
-	tokIns, tokInsErr := token.SDKFunc.CreateMetaData().Denormalize()(ins.Token)
-	if tokInsErr != nil {
-		return nil, tokInsErr
-	}
-
 	if from, ok := fromIns.(wallet.Wallet); ok {
-		if tok, ok := tokIns.(token.Token); ok {
-			return createWithdrawal(&id, from, tok, ins.Amount)
-		}
-
-		str := fmt.Sprintf("the entity (ID: %s) is not a valid Token instance", tokIns.ID().String())
-		return nil, errors.New(str)
+		return createWithdrawal(&id, from, ins.Amount)
 	}
 
 	str := fmt.Sprintf("the entity (ID: %s) is not a valid Wallet instance", fromIns.ID().String())
@@ -77,11 +64,6 @@ func (app *withdrawal) ID() *uuid.UUID {
 // From returns the from wallet
 func (app *withdrawal) From() wallet.Wallet {
 	return app.FromWallet
-}
-
-// Token returns the token
-func (app *withdrawal) Token() token.Token {
-	return app.Tok
 }
 
 // Amount returns the amount

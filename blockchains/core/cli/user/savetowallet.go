@@ -4,11 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	uuid "github.com/satori/go.uuid"
 	cliapp "github.com/urfave/cli"
 	"github.com/xmnservices/xmnsuite/blockchains/core/cli/helpers"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity"
-	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/entity/entities/wallet/entities/user"
 	"github.com/xmnservices/xmnsuite/blockchains/core/objects/underlying/token/entities/information"
 	"github.com/xmnservices/xmnsuite/crypto"
@@ -35,11 +33,6 @@ func saveToWallet() *cliapp.Command {
 				Name:  "pass",
 				Value: "",
 				Usage: "This is the password used to decrypt the encrypted configuration file",
-			},
-			cliapp.StringFlag{
-				Name:  "walletid",
-				Value: "",
-				Usage: "This is the id of the wallet we want to add a new user on.  The request will also be sent from your user that is attached to this wallet.  If you have no user on that wallet, it returns an error.",
 			},
 			cliapp.IntFlag{
 				Name:  "shares",
@@ -76,43 +69,25 @@ func saveToWallet() *cliapp.Command {
 				Client: client,
 			})
 
-			walletRepository := wallet.SDKFunc.CreateRepository(wallet.CreateRepositoryParams{
-				EntityRepository: entityRepository,
-			})
-
 			userRepository := user.SDKFunc.CreateRepository(user.CreateRepositoryParams{
 				EntityRepository: entityRepository,
 			})
-
-			// parse the walletID:
-			walletIDAsString := c.String("walletid")
-			walletID, walletIDErr := uuid.FromString(walletIDAsString)
-			if walletIDErr != nil {
-				str := fmt.Sprintf("the given walletid (ID: %s) is not a valid id", walletIDAsString)
-				panic(errors.New(str))
-			}
-
-			// retrieve the wallet:
-			wal, walErr := walletRepository.RetrieveByID(&walletID)
-			if walErr != nil {
-				str := fmt.Sprintf("there was an error while retrieving the wallet (ID: %s): %s", walletID.String(), walErr)
-				panic(errors.New(str))
-			}
 
 			// create the pubKey:
 			pubKey := crypto.SDKFunc.CreatePubKey(crypto.CreatePubKeyParams{
 				PubKeyAsString: pubKeyAsString,
 			})
 
-			// retrieve the user if the shares are not set:
+			// retrieve the user:
+			retUser, retUserErr := userRepository.RetrieveByPubKey(pubKey)
+			if retUserErr != nil {
+				str := fmt.Sprintf("the user (pubKey: %s) does not exists, therefore the shares parameter is mandatory", pubKey.String())
+				panic(errors.New(str))
+			}
+
+			// set the shares if they are not set:
 			shares := c.Int("shares")
 			if shares == 0 {
-				retUser, retUserErr := userRepository.RetrieveByPubKeyAndWallet(pubKey, wal)
-				if retUserErr != nil {
-					str := fmt.Sprintf("the user (pubKey: %s, walletID: %s) does not exists, therefore the shares parameter is mandatory", pubKey.String(), wal.ID().String())
-					panic(errors.New(str))
-				}
-
 				shares = retUser.Shares()
 			}
 
@@ -123,7 +98,7 @@ func saveToWallet() *cliapp.Command {
 				SaveEntity: user.SDKFunc.Create(user.CreateParams{
 					PubKey: pubKey,
 					Shares: shares,
-					Wallet: wal,
+					Wallet: retUser.Wallet(),
 				}),
 			})
 
